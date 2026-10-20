@@ -64,7 +64,10 @@ const requireStub = (spec) => {
 const mod = factoryCapture.factory(requireStub)
 check('exports.apply exists', typeof mod.apply === 'function')
 check('exports.inject lists slots', Array.isArray(mod.inject) && mod.inject.includes('slots'), JSON.stringify(mod.inject))
-check('configForms is optional, not a hard dependency', !mod.inject.includes('configForms'), JSON.stringify(mod.inject))
+// Cordis throws `cannot get property "configForms" without inject` on mere
+// property access, so this must be a declared dependency — reading it lazily
+// "just in case" is a render crash, not a graceful degradation.
+check('declares configForms in inject', Array.isArray(mod.inject) && mod.inject.includes('configForms'), JSON.stringify(mod.inject))
 
 // The wizard writes through the shared Config form of this bundle's entry.
 const getCalls = []
@@ -315,6 +318,28 @@ check(
 // The client fetches exactly these paths — keep them in sync with API in client.js.
 const expectedPaths = ['/state', '/summary', '/character', '/artifacts', '/weapons', '/sync']
 check('all routes the client calls are mounted', expectedPaths.every((path) => hostRoutes.has('/dsh-genshin-account' + path)), [...hostRoutes.keys()].join(','))
+
+// --- a context that refuses configForms must not blank the page -------------
+// Cordis throws `cannot get property "configForms" without inject` on property
+// access; this reproduces the exact render crash that showed an empty panel.
+const hostile = {
+  slots: ctx.slots,
+  get configForms() {
+    throw new Error('cannot get property "configForms" without inject')
+  },
+}
+let hostileThrown = null
+let hostileText = ''
+try {
+  mod.apply(hostile)
+  const pageEntry = registrations.filter((entry) => entry.options.name === 'main').slice(-1)[0]
+  hostileText = textOf(expand(pageEntry.component({})))
+} catch (error) {
+  hostileThrown = error
+}
+check('renders when configForms access throws', hostileThrown === null, hostileThrown && hostileThrown.message)
+check('wizard still renders without configForms', hostileText.includes('本地 GOOD 文件'), hostileText.slice(0, 120))
+check('read-only hint is shown instead of a crash', hostileText.includes('无法写入配置'), hostileText.slice(-200))
 
 console.log('registrations:', registrations.map((entry) => entry.options.name + '(' + (entry.options.key || entry.options.id) + ')').join(', '))
 console.log('page root:', pageTree.type, 'children:', pageTree.children.length)

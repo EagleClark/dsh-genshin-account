@@ -647,15 +647,28 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     var fileInputRef = React.useRef(null);
 
-    // The Config form of this bundle's own entry. Deliberately an *optional*
-    // lookup (no hard `inject` on configForms): if the service is missing the
-    // page still renders and read paths still work, only saving degrades.
+    // The Config form of this bundle's own entry.
+    //
+    // `configForms` IS declared in `exports.inject`: Cordis throws
+    // `cannot get property "configForms" without inject` on access alone, so
+    // reading it while undeclared is not a degradable path — it is a crash.
+    // The try/catch stays as a second line of defence for a context whose
+    // service was torn down.
+    function configFormsService() {
+      try {
+        return (clientCtx && clientCtx.configForms) || null;
+      } catch (error) {
+        return null;
+      }
+    }
+
     function resolveForm() {
-      if (!clientCtx || !clientCtx.configForms) return null;
+      var service = configFormsService();
+      if (!service) return null;
       var fallback = null;
       for (var i = 0; i < ENTRY_ID_CANDIDATES.length; i++) {
         try {
-          var candidate = clientCtx.configForms.get(ENTRY_ID_CANDIDATES[i]);
+          var candidate = service.get(ENTRY_ID_CANDIDATES[i]);
           if (!candidate) continue;
           if (!fallback) fallback = candidate;
           var snap = candidate.getSnapshot();
@@ -1200,9 +1213,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   }
 
   exports.name = PKG;
-  // `configForms` is reached lazily and defensively, so it is not a hard
-  // dependency: a build without it keeps the page mounted and read-only.
-  exports.inject = ["slots"];
+  // `configForms` is a real dependency, not an optional one: Cordis throws on
+  // property access unless it is declared here, and the wizard cannot save
+  // without it.
+  exports.inject = ["slots", "configForms"];
   exports.apply = apply;
   return module.exports;
 }});
