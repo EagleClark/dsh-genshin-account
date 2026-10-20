@@ -50,8 +50,9 @@
     "build:dict": "node scripts/build-dict.mjs",
     "build:names": "node scripts/build-names.mjs",
     "build:skills": "node scripts/build-skill-orders.mjs",
-    "test": "node test/smoke-good.mjs && node test/smoke-enka.mjs && node test/smoke-miyoushe.mjs && node test/smoke-host.mjs && node test/smoke-client.mjs && node test/render-check.mjs",
-    "test:render": "node test/render-check.mjs"
+    "test": "node test/smoke-good.mjs && node test/smoke-enka.mjs && node test/smoke-miyoushe.mjs && node test/smoke-host.mjs && node test/smoke-client.mjs && node test/render-check.mjs && node test/mount-check.mjs",
+    "test:render": "node test/render-check.mjs",
+    "test:mount": "node test/mount-check.mjs"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1"
