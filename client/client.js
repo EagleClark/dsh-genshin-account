@@ -265,6 +265,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h("label", { className: "dga-label" }, "安全验证（读取战绩必过）"),
           h("div", { className: "dga-fileRow" },
             h("button", { className: "dga-btn", onClick: props.onVerify, disabled: props.busy || props.verifyBusy }, props.verifyBusy ? "验证中…" : "开始验证"),
+            h("button", { className: "dga-btn", onClick: props.onVerifyWindow }, "在新窗口验证"),
             props.verifyTask ? h("span", { className: "dga-badge" }, "滑块已就绪") : null),
           h("div", { ref: props.verifyBoxRef, style: { marginTop: 10, minHeight: 4 } }),
           props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null,
@@ -1091,6 +1092,36 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         .then(function () { setVerifyBusy(false); });
     }
 
+    /**
+     * Fallback path: the plugin serves /verify/widget itself, so the slider runs
+     * on a plain same-origin page instead of inside the DSH shell (where a
+     * content-security policy can stop the geetest script from loading).
+     */
+    function verifyInWindow(purpose) {
+      var want = purpose === "characters" ? "characters" : "index";
+      var url = API + "/verify/widget?purpose=" + want;
+      var win = window.open(url, "dga-verify", "width=560,height=640");
+      if (!win) {
+        setVerifyStatus("浏览器拦截了新窗口，请允许弹窗，或继续用页面内的滑块。");
+        return;
+      }
+      setVerifyStatus("已在新窗口打开验证页面，完成后会自动刷新这里。");
+    }
+
+    // The verification page tells us when it is done.
+    React.useEffect(function () {
+      function onMessage(event) {
+        if (event.origin !== window.location.origin) return;
+        var data = event.data || {};
+        if (data.type !== "dga-verify-done") return;
+        setVerifyTask(null);
+        setVerifyStatus("验证已完成，正在刷新账号数据…");
+        loadSummary(true);
+      }
+      window.addEventListener("message", onMessage);
+      return function () { window.removeEventListener("message", onMessage); };
+    }, []);
+
     function submitVerify(challenge, validate) {
       setVerifyStatus("验证通过，正在重新读取账号…");
       postJson("/verify/finish", JSON.stringify({
@@ -1181,6 +1212,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         qrStatus: qrStatus,
         qrBusy: qrBusy,
         onVerify: function () { beginVerify("index"); },
+        onVerifyWindow: function () { verifyInWindow("index"); },
         verifyTask: verifyTask,
         verifyStatus: verifyStatus,
         verifyBusy: verifyBusy,

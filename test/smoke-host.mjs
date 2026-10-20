@@ -143,7 +143,7 @@ check('weapons ok', weaponsResult.value.ok === true, JSON.stringify(weaponsResul
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-check('routes mounted', routePaths.length === 12, routePaths.join(','))
+check('routes mounted', routePaths.length === 13, routePaths.join(','))
 
 function fakeRes() {
   return {
@@ -196,6 +196,21 @@ const verifyFinish = await postJsonRoute('/dsh-genshin-account/verify/finish', J
 const verifyPayload = JSON.parse(verifyFinish.body)
 check('verify/finish retries the read', verifyPayload.ok === true && Array.isArray(verifyPayload.characters), verifyFinish.body.slice(0, 200))
 check('verify/finish keeps the x-rpc-challenge on record calls', seen.some((c) => c.url.includes('/genshin/api/index') && c.headers['x-rpc-challenge'] === 'XRPC-OK'))
+
+const widgetRes = fakeRes()
+await routes.get('/dsh-genshin-account/verify/widget')({ url: '/dsh-genshin-account/verify/widget?purpose=characters', method: 'GET', headers: {} }, widgetRes)
+check('verify/widget serves html', widgetRes.status === 200 && /<html/i.test(widgetRes.body), widgetRes.body.slice(0, 80))
+check('verify/widget loads the geetest script', widgetRes.body.includes('static.geetest.com/static/tools/gt.js'))
+check('verify/widget embeds the purpose', /var purpose = "characters";/.test(widgetRes.body), widgetRes.body.slice(0, 120))
+check('verify/widget sets a csp', Boolean(widgetRes.headers && widgetRes.headers['content-security-policy']), JSON.stringify(widgetRes.headers))
+check('verify/widget never echoes raw input', !widgetRes.body.includes('<script>alert'))
+
+const widgetInject = fakeRes()
+await routes.get('/dsh-genshin-account/verify/widget')({ url: '/dsh-genshin-account/verify/widget?purpose=' + encodeURIComponent('<script>alert(1)</script>'), method: 'GET', headers: {} }, widgetInject)
+check('verify/widget neutralises a hostile purpose', !widgetInject.body.includes('alert(1)'), widgetInject.body.slice(0, 120))
+
+const widgetPost = await postJsonRoute('/dsh-genshin-account/verify/widget', '{}')
+check('verify/widget rejects POST', widgetPost.status === 405, String(widgetPost.status))
 
 const verifyMissing = await postJsonRoute('/dsh-genshin-account/verify/finish', JSON.stringify({ challenge: 'CH' }))
 check('verify/finish needs both values', JSON.parse(verifyMissing.body).ok === false, verifyMissing.body.slice(0, 140))
