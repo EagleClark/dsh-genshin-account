@@ -9,7 +9,7 @@
  *
  *   node test/smoke-client.mjs
  */
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -207,16 +207,16 @@ walk(rendered, (node) => {
   if (className(node).split(' ').includes('dga-src')) cards.push(node)
   if (node.type === 'button') buttons.push(textOf(node))
 })
-check('wizard shows one card per data source', cards.length === 4, String(cards.length))
-check('wizard card names', cards.map(textOf).join('|').includes('本地 GOOD 文件'), cards.map(textOf).join(' | ').slice(0, 160))
-check('wizard names Enka', cards.map(textOf).join('|').includes('Enka.Network'))
+check('wizard shows the single source card', cards.length === 1, String(cards.length))
+check('wizard card names', cards.map(textOf).join('|').includes('扫码登录'), cards.map(textOf).join(' | ').slice(0, 160))
+check('the card names the QR flow', cards.map(textOf).join('|').includes('扫码登录'), cards.map(textOf).join(' | '))
 check('wizard names 米游社', cards.map(textOf).join('|').includes('米游社'))
-check('wizard offers the browser-captured source', cards.map(textOf).join('|').includes('浏览器抓取'), cards.map(textOf).join(' | ').slice(0, 200))
-check('wizard explains what GOOD reads', cards.map(textOf).join('|').includes('完整背包'))
-check('wizard explains Enka limits', cards.map(textOf).join('|').includes('只有展柜角色'))
+check('the card mentions the geetest gate', cards.map(textOf).join('|').includes('geetest'), cards.map(textOf).join(' | ').slice(0, 220))
+check('the card says what it reads', cards.map(textOf).join('|').includes('圣遗物'), cards.map(textOf).join(' | ').slice(0, 220))
+check('the card does not mention GOOD or Enka', !/GOOD|Enka/.test(cards.map(textOf).join('|')), cards.map(textOf).join(' | ').slice(0, 220))
 check('wizard has 保存并同步', buttons.includes('保存并同步'), buttons.join(' / '))
 check('wizard has 仅保存', buttons.includes('仅保存'), buttons.join(' / '))
-check('wizard has a file picker', buttons.some((label) => label.includes('选择 GOOD 文件')), buttons.join(' / '))
+check('wizard has the QR button', buttons.some((label) => label.includes('生成二维码')), buttons.join(' / '))
 
 // The step-by-step guide for the default source (GOOD) is rendered.
 const steps = []
@@ -224,14 +224,24 @@ walk(rendered, (node) => {
   if (node.type === 'li') steps.push(textOf(node))
 })
 check('wizard renders the how-to steps', steps.length >= 3, JSON.stringify(steps).slice(0, 200))
-check('the GOOD guide mentions an export tool', steps.join(' ').includes('Amenoma'), steps.join(' | ').slice(0, 160))
+check('the guide walks through login and verification', steps.join(' ').includes('生成二维码') && steps.join(' ').includes('滑块'), steps.join(' | ').slice(0, 200))
 check('the default tab is 设置 on a cold start', className(pageTree).includes('dga-root') && steps.length > 0)
 
 // --- field contract: what the page reads must exist in the host payload -----
 const { apply: hostApply } = await import('../lib/index.js')
 const hostTools = new Map()
 const hostRoutes = new Map()
-const fixture = decodeURIComponent(new URL('./fixture-good.json', import.meta.url).pathname).replace(/^\/([A-Za-z]:)/, '$1')
+const fixture = (name) => JSON.parse(readFileSync(new URL('./' + name, import.meta.url), 'utf8'))
+const indexFixture = fixture('fixture-miyoushe-index.json')
+const detailFixture = fixture('fixture-miyoushe-detail.json')
+const realFetch = globalThis.fetch
+globalThis.fetch = async (url) => {
+  const target = String(url)
+  const respond = (body) => ({ status: 200, text: async () => JSON.stringify(body), json: async () => body, headers: { getSetCookie: () => [] } })
+  if (target.includes('/device-fp/api/getFp')) return respond({ retcode: 0, data: { device_fp: 'fp' } })
+  if (target.includes('/character/detail')) return respond(detailFixture)
+  return respond(indexFixture)
+}
 hostApply(
   {
     on() {},
@@ -243,7 +253,7 @@ hostApply(
         webServer: { register: (route) => (hostRoutes.set(route.path, route.handler), () => {}) },
       }),
   },
-  { source: 'good', goodPath: fixture, cacheSeconds: 600 },
+  { miyousheUid: '188337967', miyousheCookie: 'ltuid_v2=1; ltoken_v2=v2_x; ltmid_v2=m', cacheSeconds: 0 },
 )
 
 function fakeRes() {
@@ -339,7 +349,7 @@ try {
   hostileThrown = error
 }
 check('renders when configForms access throws', hostileThrown === null, hostileThrown && hostileThrown.message)
-check('wizard still renders without configForms', hostileText.includes('本地 GOOD 文件'), hostileText.slice(0, 120))
+check('wizard still renders without configForms', hostileText.includes('扫码登录'), hostileText.slice(0, 120))
 check('read-only hint is shown instead of a crash', hostileText.includes('无法写入配置'), hostileText.slice(-200))
 
 console.log('registrations:', registrations.map((entry) => entry.options.name + '(' + (entry.options.key || entry.options.id) + ')').join(', '))

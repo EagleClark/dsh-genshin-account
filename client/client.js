@@ -39,74 +39,29 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     dendro: "#a5c83b", cryo: "#9fd6e3", geo: "#fab632", none: "#9aa0a6",
   };
 
-  var SOURCE_LABEL = { good: "本地 GOOD 文件", enka: "Enka.Network", miyoushe: "米游社（国服·直连）", "miyoushe-file": "米游社导出（浏览器抓取）" };
+  var SOURCE_LABEL = { miyoushe: "米游社（扫码登录）" };
 
-  /** One card per data source: what it reads, and its catch. */
-  var SOURCES = [
-    {
-      id: "good",
-      name: "本地 GOOD 文件",
-      badge: "推荐",
-      reads: "完整背包：全部角色、全部武器、全部圣遗物（含每条副词条）",
-      limits: "需要先用导出工具生成一份 JSON；角色/圣遗物变动后要重新导出",
-      servers: "国服 / 国际服都行",
-    },
-    {
-      id: "enka",
-      name: "Enka.Network",
-      badge: "",
-      reads: "角色展柜上的角色详情（最多 8 个）：等级、命座、天赋、武器、圣遗物",
-      limits: "只有展柜角色；国服 UID 不支持；国内网络常连不上 enka.network",
-      servers: "仅国际服",
-    },
-    {
-      id: "miyoushe",
-      name: "米游社（国服·直连）",
-      badge: "实测常被风控",
-      reads: "账号概览 + 全部角色列表 + 已公开角色详情的天赋/武器/圣遗物",
-      limits: "实测：复制来的 Cookie 会被判为换设备使用登录态，一律 retcode 1034（人机验证）；补齐 UA/Referer/设备指纹后仍然如此。不是配置问题",
-      servers: "国服",
-    },
-    {
-      id: "miyoushe-file",
-      name: "米游社导出（浏览器抓取）",
-      badge: "需自备 JSON",
-      reads: "和直连版一样：账号概览 + 角色详情（天赋/武器/圣遗物全部词条）",
-      // Honest scope: the parser works, but obtaining the payload is on the user,
-      // and the official record page requires its own login first — which is not
-      // something this plugin can arrange. Do not call this "guaranteed".
-      limits: "前提：你能在一个**已登录**的米游社战绩页面上抓到 game_record 响应（那个页面本身要先登录成功）；抓不到就没法用",
-      servers: "国服",
-    },
-  ];
+  /** The plugin has exactly one data source now: the miHoYo record API. */
+  var SOURCE_CARD = {
+    id: "miyoushe",
+    name: "米游社 · 扫码登录",
+    badge: "唯一数据源",
+    reads: "账号概览 + 全部角色 + 天赋/命座 + 武器 + 圣遗物（含每条副词条与强化值）",
+    limits: "读取前需要通过一次 geetest 滑块（官方要求，retcode 1034）；通过后 x-rpc-challenge 会一直复用到过期",
+    servers: "国服（cn_gf01 天空岛 / cn_qd01 世界树）",
+  };
 
-  /** Step lists shown under the selected source card. */
+  /** The three steps the setup pane walks through. */
   var GUIDES = {
-    good: [
-      "下载扫描工具 Inventory Kamera（角色+武器+圣遗物全扫）：github.com/Andrewthe13th/Inventory_Kamera/releases/latest",
-      "游戏设为 16:9 或 16:10 窗口（关掉 HDR），键位用默认；运行工具，勾上 weapons / artifacts / characters 后开始扫描",
-      "扫完会导出一个 .GOOD.json 文件（想只扫圣遗物可以用 Amenoma：github.com/daydreaming666/Amenoma/releases）",
-      "回到这里点「选择 GOOD 文件」选中它 —— 不需要手填路径",
-    ],
-    enka: [
-      "在游戏里：派蒙菜单 → 角色 → 展柜设置，把想看的角色放上展柜，并设为「公开」",
-      "确认 UID 是国际服（6/7/8/9 开头）；1/2/5 开头的国服 UID 查不到",
-      "填入 UID 后点「保存并同步」",
-    ],
     miyoushe: [
-      "浏览器登录 bbs.mihoyo.com，并确认米游社「我的角色」→ 设置里已开启角色详情公开",
-      "F12 → Application（应用）→ Cookies → bbs.mihoyo.com",
-      "复制 ltuid_v2、ltoken_v2、ltmid_v2 三项，拼成 ltuid_v2=…; ltoken_v2=…; ltmid_v2=…",
-      "粘贴到下面并点「保存并同步」",
-      "如果报 1034（人机验证）：换用右边的「米游社导出（浏览器抓取）」",
-    ],
-    "miyoushe-file": [
-      "浏览器打开米游社战绩页：webstatic.mihoyo.com/app/community-game-records/，用你的账号登录",
-      "F12 打开开发者工具 → Network（网络）→ 刷新页面 → 在请求列表里筛 game_record",
-      "找到 …/genshin/api/index 这一条：右键 → Copy → Copy response，粘贴到下面并点「导入并同步」",
-      "想看圣遗物就再点开网页里的某个角色，找到 …/genshin/api/character/detail 的响应，同样复制粘贴一次（两段会自动合并）",
+      "填国服 UID（1/2 开头天空岛，5 开头世界树）",
+      "点「生成二维码」，用手机米游社 App 扫码并在手机上确认——会话就归插件所有了",
+      "点「开始验证」拖一次滑块；通过后插件自动换 x-rpc-challenge 并读取角色、武器、圣遗物",
     ],
   };
+
+  var SOURCES = [SOURCE_CARD];
+
 
   // ── stylesheet ───────────────────────────────────────────────────────────
   var CSS = [
@@ -279,37 +234,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var guide = GUIDES[draft.source] || [];
     var fields = null;
 
-    if (draft.source === "good") {
-      fields = h("div", null,
-        h("div", { className: "dga-field" },
-          h("label", { className: "dga-label" }, "GOOD 文件"),
-          h("div", { className: "dga-fileRow" },
-            h("button", { className: "dga-btn dga-btn-primary", onClick: props.onPickFile, disabled: props.busy }, "选择 GOOD 文件…"),
-            h("input", {
-              type: "file",
-              accept: ".json,application/json",
-              style: { display: "none" },
-              ref: props.fileInputRef,
-              onChange: props.onFileChange,
-            }),
-            draft.goodPath
-              ? h("span", { className: "dga-path" }, draft.goodPath)
-              : h("span", { className: "dga-muted" }, "还没有选择文件")),
-          h("p", { className: "dga-hint" }, "文件只在本机读取，会被复制到 DSH 数据目录，不会上传到任何服务器。")));
-    } else if (draft.source === "enka") {
-      fields = h("div", null,
-        h("div", { className: "dga-field" },
-          h("label", { className: "dga-label" }, "国际服 UID"),
-          h("input", {
-            className: "dga-input",
-            type: "text",
-            inputMode: "numeric",
-            placeholder: "例如 812345678",
-            value: draft.enkaUid,
-            onChange: function (event) { set("enkaUid", event.target.value.trim()); },
-          }),
-          h("p", { className: "dga-hint" }, "8/9 开头是亚服，6 美服，7 欧服。1/2/5 开头的国服 UID Enka 不支持。")));
-    } else {
+    {
       fields = h("div", null,
         h("div", { className: "dga-field" },
           h("label", { className: "dga-label" }, "国服 UID"),
@@ -334,16 +259,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             : null,
           props.qrStatus ? h("p", { className: "dga-hint" }, props.qrStatus) : null,
           h("p", { className: "dga-hint" },
-            "用手机米游社 App 扫码并在手机上点确认。登录后插件自己持有会话（session 由它签发），因此不会再触发 1034 人机验证，也不需要你复制 Cookie。")),
-        h("div", { className: "dga-field" },
-          h("label", { className: "dga-label" }, "米游社 Cookie"),
-          h("textarea", {
-            className: "dga-input dga-textarea",
-            placeholder: draft.hasCookie ? "已保存 Cookie（留空表示不修改）" : "ltuid_v2=…; ltoken_v2=…; ltmid_v2=…",
-            value: draft.miyousheCookie,
-            onChange: function (event) { set("miyousheCookie", event.target.value); },
-          }),
-          h("p", { className: "dga-hint" }, "Cookie 等同于登录凭据，会明文保存在本机 profile 配置里。只想读数据的话，优先用 GOOD 文件。")),
+            "用手机米游社 App 扫码并在手机上点确认。会话由这次扫码签发、只存在本机，插件不接触你的密码，也不需要你复制 Cookie。" +
+            (draft.hasCookie ? " 当前：已登录。" : " 当前：未登录。"))),
         h("div", { className: "dga-field" },
           h("label", { className: "dga-label" }, "安全验证（读取战绩必过）"),
           h("div", { className: "dga-fileRow" },
@@ -378,34 +295,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             : null));
     }
 
-    if (draft.source === "miyoushe-file") {
-      fields = h("div", null,
-        h("div", { className: "dga-field" },
-          h("label", { className: "dga-label" }, "粘贴接口响应（JSON）"),
-          h("textarea", {
-            className: "dga-input dga-textarea",
-            style: { minHeight: 120 },
-            placeholder: '把 Copy response 得到的整段 JSON 粘贴到这里，形如 {"retcode":0,"data":{...}}',
-            value: draft.miyoushePaste,
-            onChange: function (event) { set("miyoushePaste", event.target.value); },
-          }),
-          h("div", { className: "dga-fileRow", style: { marginTop: 8 } },
-            h("button", { className: "dga-btn dga-btn-primary", onClick: props.onImportMiyoushe, disabled: props.busy || !draft.miyoushePaste.trim() }, "导入并同步"),
-            h("button", { className: "dga-btn", onClick: props.onPickMiyousheFile, disabled: props.busy }, "从文件选择…"),
-            h("input", {
-              type: "file",
-              accept: ".json,application/json",
-              style: { display: "none" },
-              ref: props.miyousheFileRef,
-              onChange: props.onMiyousheFileChange,
-            }),
-            props.state && props.state.config && props.state.config.hasMiyousheJson
-              ? h("span", { className: "dga-badge dga-badgeOk" }, "已有导入的数据")
-              : h("span", { className: "dga-muted" }, "还没有导入")),
-          h("p", { className: "dga-hint" },
-            "可以只导 index（角色列表 + 账号概览），也可以再导一次 character/detail 补上天赋与圣遗物；两段会自动合并。")));
-    }
-
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-wizard" },
         h("div", { className: "dga-block" },
@@ -423,17 +312,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("details", { className: "dga-adv" },
           h("summary", null, "高级设置"),
           h("div", { style: { marginTop: 12 } },
-            draft.source === "enka"
-              ? h("div", { className: "dga-field" },
-                  h("label", { className: "dga-label" }, "接口地址"),
-                  h("input", {
-                    className: "dga-input",
-                    type: "text",
-                    value: draft.enkaBase,
-                    onChange: function (event) { set("enkaBase", event.target.value.trim()); },
-                  }),
-                  h("p", { className: "dga-hint" }, "连接不上 enka.network 时，可以填一个可达的镜像地址。"))
-              : null,
             draft.source === "miyoushe"
               ? h("div", null,
                   h("div", { className: "dga-field" },
@@ -666,17 +544,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   function draftFrom(config) {
     var c = config || {};
     return {
-      source: c.source || "good",
-      goodPath: c.goodPath || "",
-      enkaUid: c.enkaUid || "",
-      enkaBase: c.enkaBase || "https://enka.network",
+      source: "miyoushe",
       miyousheUid: c.miyousheUid || "",
       miyousheServer: c.miyousheServer || "",
       miyousheCookie: "",
       hasCookie: c.hasCookie === true,
       miyousheAppVersion: c.miyousheAppVersion || "",
       miyousheDsSalt: c.miyousheDsSalt || "",
-      miyoushePaste: "",
       cacheSeconds: c.cacheSeconds == null ? 600 : c.cacheSeconds,
     };
   }
@@ -759,8 +633,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var formState = React.useState(null);
     var formSnap = formState[0], setFormSnap = formState[1];
 
-    var fileInputRef = React.useRef(null);
-    var miyousheFileRef = React.useRef(null);
 
     // The Config form of this bundle's own entry.
     //
@@ -965,9 +837,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     function fieldsFromDraft() {
       var fields = {
         source: draft.source,
-        goodPath: draft.goodPath,
-        enkaUid: draft.enkaUid,
-        enkaBase: draft.enkaBase,
         miyousheUid: draft.miyousheUid,
         cacheSeconds: Number(draft.cacheSeconds) || 0,
       };
@@ -1030,107 +899,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         .then(function () { setBusy(false); });
     }
 
-    function onPickFile() {
-      var input = fileInputRef.current;
-      if (input) input.click();
-    }
 
-    /** Browser file → host (validates + stores), then point the config at it. */
-    function onFileChange(event) {
-      var input = event.target;
-      var file = input && input.files && input.files[0] ? input.files[0] : null;
-      if (!file) return;
-      setBusy(true);
-      showMessage("读取 " + file.name + " …");
-      file
-        .text()
-        .then(function (text) { return postJson("/upload-good", text); })
-        .then(function (data) {
-          if (!data || data.ok === false) throw new Error((data && data.error) || "导入失败");
-          setField("goodPath", data.path);
-          setField("source", "good");
-          showMessage("已导入 " + (data.summary.characters || 0) + " 个角色、" +
-            (data.summary.weapons || 0) + " 把武器、" + (data.summary.artifacts || 0) + " 件圣遗物，正在同步…");
-          return persist({ source: "good", goodPath: data.path }).then(function (accepted) {
-            if (accepted === false) throw new Error("部署未接受这些值");
-            return postJson("/sync");
-          });
-        })
-        .then(function (data) {
-          if (!data || data.ok === false) {
-            showMessage((data && data.error) || "同步失败", true);
-            loadSummary(false);
-            return;
-          }
-          setSummary(data);
-          setDraft(draftFrom((data.state && data.state.config) || {}));
-          showMessage("导入并同步完成：" + data.characters.length + " 个角色");
-          setTab("overview");
-        })
-        .catch(function (failure) {
-          showMessage(String(failure && failure.message ? failure.message : failure), true);
-        })
-        .then(function () {
-          setBusy(false);
-          if (input) input.value = "";
-        });
-    }
 
-    /** Send one pasted miHoYo response to the host, then read the account. */
-    function importMiyoushe(text) {
-      if (!text || !String(text).trim()) {
-        showMessage("先把复制到的响应粘进来", true);
-        return;
-      }
-      setBusy(true);
-      showMessage("导入中…");
-      postJson("/upload-miyoushe", String(text))
-        .then(function (data) {
-          if (!data || data.ok === false) throw new Error((data && data.error) || "导入失败");
-          var s = data.summary || {};
-          showMessage(
-            "已导入" + (data.kind === "index" ? "账号概览" : "角色详情") +
-            "（概览 " + (s.hasIndex ? "有" : "无") + " · 角色详情 " + (s.withDetail || 0) + " 个），正在同步…",
-          );
-          setField("miyoushePaste", "");
-          return persist({ source: "miyoushe-file", miyousheJsonPath: data.path }).then(function (accepted) {
-            if (accepted === false) throw new Error("部署未接受这些值");
-            return postJson("/sync");
-          });
-        })
-        .then(function (data) {
-          if (!data || data.ok === false) {
-            showMessage((data && data.error) || "同步失败", true);
-            loadSummary(false);
-            return;
-          }
-          setSummary(data);
-          setDraft(draftFrom((data.state && data.state.config) || {}));
-          showMessage("同步完成：" + data.characters.length + " 个角色");
-          setTab("overview");
-        })
-        .catch(function (failure) {
-          showMessage(String(failure && failure.message ? failure.message : failure), true);
-        })
-        .then(function () { setBusy(false); });
-    }
-
-    function onImportMiyoushe() {
-      importMiyoushe(draft.miyoushePaste);
-    }
-
-    function onPickMiyousheFile() {
-      var input = miyousheFileRef.current;
-      if (input) input.click();
-    }
-
-    function onMiyousheFileChange(event) {
-      var input = event.target;
-      var file = input && input.files && input.files[0] ? input.files[0] : null;
-      if (!file) return;
-      file.text().then(function (text) { importMiyoushe(text); });
-      if (input) input.value = "";
-    }
 
     /**
      * QR login. The host mints the QR and owns the polling; this half only
@@ -1375,13 +1145,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         },
         onSaveAndSync: saveAndSync,
         onSaveOnly: saveOnly,
-        onPickFile: onPickFile,
-        onFileChange: onFileChange,
-        fileInputRef: fileInputRef,
-        onImportMiyoushe: onImportMiyoushe,
-        onPickMiyousheFile: onPickMiyousheFile,
-        onMiyousheFileChange: onMiyousheFileChange,
-        miyousheFileRef: miyousheFileRef,
         onProbe: runProbe,
         probe: probe,
         probing: probing,
