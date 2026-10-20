@@ -141,6 +141,42 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-path{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--dsw-alias-label-tertiary);word-break:break-all}",
     ".dga-banner{margin:10px 20px 0;padding:8px 12px;border-radius:10px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:1.7;white-space:pre-wrap}",
     ".dga-banner-err{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-label-primary)}",
+    ".dga-art{display:inline-flex;align-items:center;justify-content:center;object-fit:cover;border-radius:12px;border:2px solid transparent;background:var(--dsw-alias-bg-layer-2);flex:0 0 auto}",
+    ".dga-art-ph{color:var(--dsw-alias-label-tertiary);font-weight:600;font-size:18px}",
+    ".dga-hero{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 20px;margin:16px 20px 4px;border:1px solid var(--dsw-alias-border-l2);border-radius:16px;background:linear-gradient(135deg,var(--dsw-alias-bg-layer-2),var(--dsw-alias-bg-base))}",
+    ".dga-heroMain{flex:1;min-width:190px}",
+    ".dga-heroName{font-size:22px;font-weight:650;margin-bottom:4px}",
+    ".dga-heroMeta{color:var(--dsw-alias-label-tertiary);font-size:12px}",
+    ".dga-heroStats{display:flex;gap:10px;flex-wrap:wrap}",
+    ".dga-tile{min-width:78px;padding:10px 14px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);text-align:center}",
+    ".dga-tileValue{font-size:20px;font-weight:650;line-height:1.2}",
+    ".dga-tileLabel{color:var(--dsw-alias-label-tertiary);font-size:11px;margin-top:2px}",
+    ".dga-avatarRow{display:flex;gap:14px;flex-wrap:wrap}",
+    ".dga-avatarCell{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:64px}",
+    ".dga-avatarCell:hover .dga-art{border-color:var(--dsw-alias-label-dimmed)}",
+    ".dga-avatarLv{font-size:11px;color:var(--dsw-alias-label-secondary)}",
+    ".dga-avatarName{font-size:11px;color:var(--dsw-alias-label-tertiary);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".dga-bars{display:flex;flex-direction:column;gap:7px}",
+    ".dga-barRow{display:flex;align-items:center;gap:10px;font-size:12px}",
+    ".dga-barLabel{width:20px;color:var(--dsw-alias-label-secondary)}",
+    ".dga-barTrack{flex:1;height:8px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);overflow:hidden}",
+    ".dga-barFill{display:block;height:100%;border-radius:999px}",
+    ".dga-barValue{width:26px;text-align:right;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-inline{display:flex;align-items:center;gap:12px}",
+    ".dga-detail{padding:4px 2px 24px}",
+    ".dga-charHead{display:flex;align-items:flex-start;gap:16px;padding:4px 0 14px;border-bottom:1px solid var(--dsw-alias-border-l2);margin-bottom:14px}",
+    ".dga-charHeadText{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}",
+    ".dga-charName{font-size:20px;font-weight:650}",
+    ".dga-talentRow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}",
+    ".dga-talent{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 16px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);font-size:11px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-talentLv{font-size:17px;font-weight:650;color:var(--dsw-alias-label-primary)}",
+    ".dga-pieceRow{display:flex;gap:12px;flex-wrap:wrap}",
+    ".dga-pieceCard{width:104px;padding:10px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}",
+    ".dga-pieceName{font-size:11px;line-height:1.35;color:var(--dsw-alias-label-secondary)}",
+    ".dga-cardGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:4px 0 24px}",
+    ".dga-itemCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
+    ".dga-itemText{min-width:0;display:flex;flex-direction:column;gap:3px}",
+    ".dga-itemName{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
   ].join("\n");
 
   var CSS_TAG = PKG + "/panel.css";
@@ -272,48 +308,126 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
 
   // ── data tabs ───────────────────────────────────────────────────────────
+  // ── visual helpers ──────────────────────────────────────────────────────
+  /** Element accent colours, tuned to stay readable on the dark shell. */
+  var ELEMENT_COLOR = {
+    pyro: "#ef7938", hydro: "#4cc2f1", anemo: "#74c2a8", electro: "#af8ec1",
+    cryo: "#9fd6e3", geo: "#fab72e", dendro: "#a5c83b", none: "#8b93a5",
+  };
+  var RARITY_COLOR = { 5: "#c8a24a", 4: "#9c7bb8", 3: "#5f8fc0", 2: "#5c9c6a", 1: "#8b93a5" };
+
+  function elementColor(element) {
+    return ELEMENT_COLOR[element] || ELEMENT_COLOR.none;
+  }
+
+  /** Official art from the miHoYo CDN; degrades to a coloured placeholder. */
+  function Art(props) {
+    var style = Object.assign({ width: props.size, height: props.size }, props.style || {});
+    if (!props.src) {
+      return h("span", {
+        className: "dga-art dga-art-ph" + (props.className ? " " + props.className : ""),
+        style: style,
+        title: props.alt || "",
+      }, (props.alt || "?").slice(0, 1));
+    }
+    return h("img", {
+      className: "dga-art" + (props.className ? " " + props.className : ""),
+      src: props.src,
+      alt: props.alt || "",
+      title: props.alt || "",
+      loading: "lazy",
+      style: style,
+    });
+  }
+
+  function StatTile(props) {
+    return h("div", { className: "dga-tile" },
+      h("div", { className: "dga-tileValue" }, props.value),
+      h("div", { className: "dga-tileLabel" }, props.label));
+  }
+
+  // ── account overview ────────────────────────────────────────────────────
   function OverviewTab(props) {
     var o = props.overview;
     var player = o.player || {};
-    var items = [
-      { label: "角色", value: String(o.counts.characters) },
-      { label: "武器", value: String(o.counts.weapons) },
-      { label: "圣遗物", value: String(o.counts.artifacts) },
-      { label: "五星圣遗物", value: String(o.counts.fiveStarArtifacts || 0) },
-    ];
+    var counts = o.counts || {};
     var elements = Object.keys(o.elements || {});
+    var total = elements.reduce(function (sum, key) { return sum + o.elements[key]; }, 0) || 1;
+    var top = (props.topCharacters || []).slice(0, 8);
+
     return h("div", { className: "dga-scroll" },
-      h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, player.nickname ? player.nickname : "账号概览"),
-        h("div", { className: "dga-sub" },
-          [
-            o.uid ? "UID " + o.uid : "",
-            player.level ? "冒险等级 " + player.level : "",
-            player.worldLevel ? "世界等级 " + player.worldLevel : "",
-            player.region || "",
-          ].filter(Boolean).join(" · "))),
-      h(Cards, { items: items }),
+      h("div", { className: "dga-hero" },
+        h("div", { className: "dga-heroMain" },
+          h("div", { className: "dga-heroName" }, player.nickname || "旅行者"),
+          h("div", { className: "dga-heroMeta" },
+            [
+              o.uid ? "UID " + o.uid : "",
+              player.level ? "冒险等级 " + player.level : "",
+              player.worldLevel ? "世界等级 " + player.worldLevel : "",
+              player.region || "",
+            ].filter(Boolean).join(" · "))),
+        h("div", { className: "dga-heroStats" },
+          h(StatTile, { value: String(counts.characters || 0), label: "角色" }),
+          h(StatTile, { value: String(counts.weapons || 0), label: "武器" }),
+          h(StatTile, { value: String(counts.artifacts || 0), label: "圣遗物" }),
+          h(StatTile, { value: String(counts.fiveStarArtifacts || 0), label: "五星圣遗物" }))),
+
+      top.length
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "练度最高的角色"),
+            h("div", { className: "dga-avatarRow" }, top.map(function (c) {
+              return h("div", {
+                className: "dga-avatarCell",
+                key: c.id,
+                onClick: function () { if (props.onOpenCharacter) props.onOpenCharacter(c.name); },
+              },
+                h(Art, { src: c.icon, alt: c.name, size: 56, style: { borderColor: elementColor(c.element) } }),
+                h("span", { className: "dga-avatarLv" }, "Lv." + c.level),
+                h("span", { className: "dga-avatarName" }, c.name));
+            })))
+        : null,
+
       elements.length
         ? h("div", { className: "dga-block" },
             h("div", { className: "dga-sec" }, "元素分布"),
-            h("div", null, elements.map(function (zh) {
-              return h("span", { className: "dga-chip", key: zh }, zh + " " + o.elements[zh]);
+            h("div", { className: "dga-bars" }, elements.map(function (zh) {
+              var count = o.elements[zh];
+              var key = Object.keys(ELEMENT_COLOR).find(function (k) {
+                return ELEMENT_ZH_KEY[k] === zh;
+              });
+              return h("div", { className: "dga-barRow", key: zh },
+                h("span", { className: "dga-barLabel" }, zh),
+                h("span", { className: "dga-barTrack" },
+                  h("span", {
+                    className: "dga-barFill",
+                    style: { width: Math.max(6, Math.round((count / total) * 100)) + "%", background: elementColor(key) },
+                  })),
+                h("span", { className: "dga-barValue" }, String(count)));
             })))
         : null,
+
       o.bestArtifact
         ? h("div", { className: "dga-block" },
             h("div", { className: "dga-sec" }, "最佳圣遗物"),
-            h("div", { className: "dga-sub" },
-              o.bestArtifact.setName + " " + o.bestArtifact.slotZh +
-              " · CV " + o.bestArtifact.cv + " · 效率 " + o.bestArtifact.efficiency + "%" +
-              (o.bestArtifact.owner ? " · " + o.bestArtifact.owner : "")))
+            h("div", { className: "dga-inline" },
+              h(Art, { src: o.bestArtifact.icon, alt: o.bestArtifact.setName, size: 44 }),
+              h("div", null,
+                h("div", null, o.bestArtifact.setName + " · " + o.bestArtifact.slotZh),
+                h("div", { className: "dga-sub" },
+                  "CV " + o.bestArtifact.cv + " · 效率 " + o.bestArtifact.efficiency + "%" +
+                  (o.bestArtifact.owner ? " · " + o.bestArtifact.owner : "")))))
         : null,
+
       h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, "数据来源"),
-        h("div", { className: "dga-sub" }, (SOURCE_LABEL[o.source] || o.source) + (o.note ? " · " + o.note : ""))),
-      h("div", { className: "dga-sub" }, "同步时间：" + when(o.fetchedAt)));
+        h("div", { className: "dga-sec" }, "数据状态"),
+        h("div", { className: "dga-sub" }, (SOURCE_LABEL[o.source] || o.source) + (o.note ? " · " + o.note : "")),
+        h("div", { className: "dga-sub" }, "同步时间：" + when(o.fetchedAt))));
   }
 
+  /** Chinese element name → key, for colour lookup. */
+  var ELEMENT_ZH_KEY = { pyro: "火", hydro: "水", anemo: "风", electro: "雷", cryo: "冰", geo: "岩", dendro: "草", none: "无" };
+
+  // ── one character ───────────────────────────────────────────────────────
   function CharacterDetail(props) {
     var c = props.character;
     if (!c) return h("div", { className: "dga-empty" }, "从左侧选择一个角色。");
@@ -325,56 +439,77 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       ["元素充能", stats.enerRech_ != null ? stats.enerRech_ + "%" : null],
       ["元素精通", stats.eleMas],
     ].filter(function (pair) { return pair[1] != null && pair[1] !== ""; });
+    var weapon = c.equippedWeapon || c.weapon || null;
+    var pieces = c.equippedPieces || [];
+    var scored = c.artifacts || [];
+    var color = elementColor(c.element);
 
-    return h("div", null,
-      h("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 6 } },
-        h(Dot, { element: c.element }),
-        h("div", { className: "dga-title" }, c.name),
-        h("span", { className: "dga-sub" },
-          "Lv." + c.level + " · " + c.rarity + "★ · " + c.element + " · " + c.weaponType)),
-      h("div", { className: "dga-sub" },
-        "命之座 " + c.constellation +
-        (c.talents ? " · 天赋 " + c.talents.auto + " / " + c.talents.skill + " / " + c.talents.burst : "")),
+    return h("div", { className: "dga-detail" },
+      h("div", { className: "dga-charHead" },
+        h(Art, { src: c.icon, alt: c.name, size: 76, style: { borderColor: color } }),
+        h("div", { className: "dga-charHeadText" },
+          h("div", { className: "dga-charName" }, c.name),
+          h("div", { className: "dga-sub" },
+            "Lv." + c.level + " · " + c.rarity + "★ · " + (c.elementZh || c.element) + " · " + (c.weaponTypeZh || c.weaponType)),
+          h("div", { className: "dga-sub" },
+            "命之座 " + c.constellation +
+            (c.talents ? " · 天赋 " + [c.talents.auto, c.talents.skill, c.talents.burst].map(function (v) { return v == null ? "-" : v; }).join(" / ") : ""))),
+        h("button", { className: "dga-btn", onClick: function () { props.onExport(c); } }, "生成图片")),
+
+      c.talents
+        ? h("div", { className: "dga-talentRow" },
+            h("div", { className: "dga-talent" }, h("span", { className: "dga-talentLv" }, String(c.talents.auto == null ? "-" : c.talents.auto)), h("span", null, "普通攻击")),
+            h("div", { className: "dga-talent" }, h("span", { className: "dga-talentLv" }, String(c.talents.skill == null ? "-" : c.talents.skill)), h("span", null, "元素战技")),
+            h("div", { className: "dga-talent" }, h("span", { className: "dga-talentLv" }, String(c.talents.burst == null ? "-" : c.talents.burst)), h("span", null, "元素爆发")))
+        : null,
+
       statDefs.length
         ? h("div", { className: "dga-statline" }, statDefs.map(function (pair) {
             return h(Stat, { label: pair[0], value: String(pair[1]), key: pair[0] });
           }))
         : null,
 
-      c.weapon
-        ? h("div", { className: "dga-block", style: { marginTop: 16 } },
+      weapon
+        ? h("div", { className: "dga-block" },
             h("div", { className: "dga-sec" }, "武器"),
-            h("div", null,
-              c.weapon.name + "  Lv." + c.weapon.level +
-              (c.weapon.refinement ? "  精" + c.weapon.refinement : "") +
-              "  " + c.weapon.rarity + "★"))
+            h("div", { className: "dga-inline" },
+              h(Art, { src: weapon.icon, alt: weapon.name, size: 48 }),
+              h("div", null,
+                h("div", null, weapon.name),
+                h("div", { className: "dga-sub" },
+                  "Lv." + weapon.level +
+                  (weapon.refinement ? " · 精" + weapon.refinement : "") +
+                  " · " + weapon.rarity + "★"))))
         : null,
 
-      c.sets && c.sets.length
+      scored.length
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "套装"),
-            h("div", null, c.sets.map(function (s) {
-              return h("span", { className: "dga-chip", key: s.setName }, s.setName + " ×" + s.count);
-            })))
-        : null,
-
-      c.artifacts && c.artifacts.length
-        ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "圣遗物"),
+            h("div", { className: "dga-sec" }, "圣遗物（含词条评分）"),
             h("table", { className: "dga-table" },
               h("thead", null, h("tr", null,
                 h("th", null, "部位"), h("th", null, "套装"), h("th", null, "主词条"),
                 h("th", null, "副词条"), h("th", null, "CV"), h("th", null, "效率"))),
-              h("tbody", null, c.artifacts.map(function (a, index) {
+              h("tbody", null, scored.map(function (a, index) {
                 return h("tr", { key: index },
                   h("td", null, a.slotZh),
                   h("td", null, a.setName + (a.rarity ? " " + a.rarity + "★" : "") + (a.level ? " +" + a.level : "")),
-                  h("td", { className: "dga-num" }, a.main),
-                  h("td", { className: "dga-subs" }, (a.subs || []).join(" / ")),
+                  h("td", { className: "dga-num" }, a.main || "—"),
+                  h("td", { className: "dga-subs" }, (a.subs || []).join(" / ") || "—"),
                   h("td", { className: "dga-num" }, String(a.cv)),
                   h("td", { className: "dga-num" }, a.efficiency + "% " + (a.grade || "")));
               }))))
-        : h("div", { className: "dga-empty" }, "这个角色在当前数据源里没有圣遗物数据。"),
+        : pieces.length
+          ? h("div", { className: "dga-block" },
+              h("div", { className: "dga-sec" }, "已装备圣遗物"),
+              h("div", { className: "dga-pieceRow" }, pieces.map(function (piece) {
+                return h("div", { className: "dga-pieceCard", key: piece.slot },
+                  h(Art, { src: piece.icon, alt: piece.name, size: 48 }),
+                  h("div", { className: "dga-pieceName" }, piece.name),
+                  h("div", { className: "dga-sub" }, SLOT_ZH[piece.slot] + " · +" + (piece.level == null ? "-" : piece.level)));
+              })),
+              h("p", { className: "dga-hint" },
+                "这里只显示部位与等级：米游社把圣遗物副词条放在需要人机验证的接口后面。完成一次「打开验证页面」后，这里会换成带 CV / 词条效率的评分表。"))
+          : h("div", { className: "dga-empty" }, "这个角色没有可显示的圣遗物。"),
 
       c.setEffects && c.setEffects.length
         ? h("div", { className: "dga-block" },
@@ -385,12 +520,17 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         : null);
   }
 
+  var SLOT_ZH = { flower: "生之花", plume: "死之羽", sands: "时之沙", goblet: "空之杯", circlet: "理之冠" };
+
+  // ── character list + detail ─────────────────────────────────────────────
   function CharactersTab(props) {
     var snapshot = props.summary;
     var list = snapshot.characters || [];
     var query = props.query;
     var filtered = query
-      ? list.filter(function (c) { return String(c.name).indexOf(query) >= 0 || String(c.elementZh || "").indexOf(query) >= 0; })
+      ? list.filter(function (c) {
+          return String(c.name).indexOf(query) >= 0 || String(c.elementZh || "").indexOf(query) >= 0;
+        })
       : list;
     var selected = props.selected;
 
@@ -408,38 +548,45 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             className: "dga-row" + (selected && selected.id === c.id ? " dga-row-on" : ""),
             onClick: function () { props.onSelect(c.name); },
           },
-            h(Dot, { element: c.element }),
+            h(Art, { src: c.icon, alt: c.name, size: 36, style: { borderColor: elementColor(c.element) } }),
             h("span", { className: "dga-rowname" }, c.name),
             h("span", { className: "dga-rowlv" }, "Lv." + c.level));
         })),
       h("div", { className: "dga-col-detail" },
-        props.loading ? h("div", { className: "dga-empty" }, "读取中…") : h(CharacterDetail, { character: props.selected })));
+        props.loading
+          ? h("div", { className: "dga-empty" }, "读取中…")
+          : h(CharacterDetail, { character: props.selected, onExport: props.onExport })));
   }
 
+  // ── weapons ─────────────────────────────────────────────────────────────
   function WeaponsTab(props) {
     var rows = props.rows || [];
     if (props.loading) return h("div", { className: "dga-empty" }, "读取中…");
-    if (!rows.length) return h("div", { className: "dga-empty" }, "当前数据源没有武器数据（GOOD 文件才包含完整武器背包）。");
+    if (!rows.length) return h("div", { className: "dga-empty" }, "没有武器数据。");
     return h("div", { className: "dga-scroll" },
-      h("table", { className: "dga-table" },
-        h("thead", null, h("tr", null,
-          h("th", null, "武器"), h("th", null, "类型"), h("th", null, "稀有度"),
-          h("th", null, "等级"), h("th", null, "精炼"), h("th", null, "装备角色"))),
-        h("tbody", null, rows.map(function (w, index) {
-          return h("tr", { key: index },
-            h("td", null, w.name),
-            h("td", null, w.typeZh),
-            h("td", { className: "dga-num" }, w.rarity + "★"),
-            h("td", { className: "dga-num" }, "Lv." + w.level),
-            h("td", { className: "dga-num" }, w.refinement ? "精" + w.refinement : "—"),
-            h("td", null, w.owner || h("span", { className: "dga-muted" }, "未装备")));
-        }))));
+      h("div", { className: "dga-cardGrid" }, rows.map(function (w, index) {
+        return h("div", { className: "dga-itemCard", key: index },
+          h(Art, { src: w.icon, alt: w.name, size: 56, style: { borderColor: RARITY_COLOR[w.rarity] || "#8b93a5" } }),
+          h("div", { className: "dga-itemText" },
+            h("div", { className: "dga-itemName" }, w.name),
+            h("div", { className: "dga-sub" },
+              w.rarity + "★ · " + w.typeZh + " · Lv." + w.level +
+              (w.refinement ? " · 精" + w.refinement : "")),
+            h("div", { className: "dga-sub" }, w.owner ? "装备于 " + w.owner : "未装备")));
+      })));
   }
 
+  // ── artifacts ───────────────────────────────────────────────────────────
   function ArtifactsTab(props) {
     var rows = props.rows || [];
     if (props.loading) return h("div", { className: "dga-empty" }, "读取中…");
-    if (!rows.length) return h("div", { className: "dga-empty" }, "当前数据源没有圣遗物数据。");
+    if (!rows.length) {
+      return h("div", { className: "dga-scroll" },
+        h("div", { className: "dga-empty" },
+          "圣遗物评分需要读取圣遗物副词条，而这部分受米游社风控限制。"),
+        h("p", { className: "dga-hint", style: { textAlign: "center" } },
+          "到「设置」点「打开验证页面」拖一次滑块，之后这里会按 CV 从高到低列出全部圣遗物。"));
+    }
     return h("div", { className: "dga-scroll" },
       h("table", { className: "dga-table" },
         h("thead", null, h("tr", null,
@@ -449,13 +596,156 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           return h("tr", { key: index },
             h("td", null, a.slotZh),
             h("td", null, a.setName + " " + a.rarity + "★ +" + a.level),
-            h("td", { className: "dga-num" }, a.main),
+            h("td", { className: "dga-num" }, a.main || "—"),
             h("td", { className: "dga-subs" }, (a.subs || []).join(" / ")),
             h("td", { className: "dga-num" }, String(a.cv)),
             h("td", null, h("span", { className: "dga-grade" }, a.grade || ""), " " + a.efficiency + "%"),
             h("td", null, a.owner || h("span", { className: "dga-muted" }, "—")));
         }))));
   }
+
+  // ── shareable character image ───────────────────────────────────────────
+  function loadArt(src) {
+    return new Promise(function (resolve) {
+      if (!src) { resolve(null); return; }
+      var img = new Image();
+      // The miHoYo CDN echoes our Origin, so this keeps the canvas untainted.
+      img.crossOrigin = "anonymous";
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = src;
+    });
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  /**
+   * Draw one character card to a PNG and hand it to the browser as a download.
+   * Everything is local: images come from the official CDN, text from the
+   * snapshot, and the canvas never leaves the page.
+   */
+  function exportCharacterImage(c) {
+    var W = 760;
+    var H = 460;
+    var canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    var ctx = canvas.getContext("2d");
+    var accent = elementColor(c.element);
+
+    var bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, "#171b23");
+    bg.addColorStop(1, "#0f1218");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.16;
+    ctx.fillRect(0, 0, W, 6);
+    ctx.globalAlpha = 1;
+
+    var images = [loadArt(c.icon), loadArt(c.equippedWeapon && c.equippedWeapon.icon)];
+    var pieces = (c.equippedPieces || []).slice(0, 5);
+    pieces.forEach(function (piece) { images.push(loadArt(piece.icon)); });
+
+    Promise.all(images).then(function (loaded) {
+      var avatar = loaded[0];
+      var weaponIcon = loaded[1];
+      if (avatar) {
+        ctx.save();
+        roundRect(ctx, 36, 40, 148, 148, 18);
+        ctx.clip();
+        ctx.drawImage(avatar, 36, 40, 148, 148);
+        ctx.restore();
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 3;
+        roundRect(ctx, 36, 40, 148, 148, 18);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#f2f4f8";
+      ctx.font = "600 34px system-ui, -apple-system, 'Segoe UI', sans-serif";
+      ctx.fillText(c.name || "", 208, 84);
+
+      ctx.fillStyle = "#a9b1c1";
+      ctx.font = "16px system-ui, -apple-system, 'Segoe UI', sans-serif";
+      ctx.fillText(
+        "Lv." + c.level + " · " + (c.rarity || 0) + "★ · " + (c.elementZh || c.element || "") +
+        " · " + (c.weaponTypeZh || c.weaponType || ""),
+        208, 114,
+      );
+      ctx.fillText("命之座 " + (c.constellation || 0), 208, 140);
+      if (c.talents) {
+        ctx.fillText(
+          "天赋 " + [c.talents.auto, c.talents.skill, c.talents.burst]
+            .map(function (v) { return v == null ? "-" : v; }).join(" / "),
+          208, 166,
+        );
+      }
+
+      // weapon line
+      var y = 206;
+      if (weaponIcon) ctx.drawImage(weaponIcon, 36, y - 22, 44, 44);
+      ctx.fillStyle = "#e6e8ee";
+      ctx.font = "600 18px system-ui, -apple-system, 'Segoe UI', sans-serif";
+      var weapon = c.equippedWeapon;
+      ctx.fillText(weapon ? weapon.name : "未装备武器", 92, y);
+      if (weapon) {
+        ctx.fillStyle = "#a9b1c1";
+        ctx.font = "15px system-ui, -apple-system, 'Segoe UI', sans-serif";
+        ctx.fillText(
+          "Lv." + weapon.level + (weapon.refinement ? " · 精" + weapon.refinement : "") + " · " + weapon.rarity + "★",
+          92, y + 24,
+        );
+      }
+
+      // artifact pieces
+      ctx.fillStyle = "#a9b1c1";
+      ctx.font = "15px system-ui, -apple-system, 'Segoe UI', sans-serif";
+      ctx.fillText("已装备圣遗物", 36, 296);
+      pieces.forEach(function (piece, index) {
+        var x = 36 + index * 140;
+        var icon = loaded[2 + index];
+        if (icon) ctx.drawImage(icon, x, 312, 56, 56);
+        ctx.fillStyle = "#e6e8ee";
+        ctx.font = "14px system-ui, -apple-system, 'Segoe UI', sans-serif";
+        ctx.fillText((SLOT_ZH[piece.slot] || ""), x, 390);
+        ctx.fillStyle = "#a9b1c1";
+        ctx.font = "13px system-ui, -apple-system, 'Segoe UI', sans-serif";
+        ctx.fillText("+" + (piece.level == null ? "-" : piece.level), x, 410);
+      });
+
+      if (!pieces.length) {
+        ctx.fillStyle = "#6f7787";
+        ctx.font = "14px system-ui, -apple-system, 'Segoe UI', sans-serif";
+        ctx.fillText("（没有圣遗物数据）", 36, 330);
+      }
+
+      ctx.fillStyle = "#6f7787";
+      ctx.font = "13px system-ui, -apple-system, 'Segoe UI', sans-serif";
+      ctx.fillText("dsh-genshin-account · " + new Date().toLocaleDateString("zh-CN"), 36, H - 20);
+
+      canvas.toBlob(function (blob) {
+        if (!blob) return;
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = (c.name || "character") + "-" + new Date().toISOString().slice(0, 10) + ".png";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      }, "image/png");
+    });
+  }
+
 
   // ── page ────────────────────────────────────────────────────────────────
   function draftFrom(config) {
@@ -1140,7 +1430,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       body = h("div", { className: "dga-empty" },
         "还没有可显示的数据。" + (configured === false ? "先到「设置」里选一种数据源。" : "配置好数据源后点右上角「同步」。"));
     } else if (tab === "overview") {
-      body = h(OverviewTab, { overview: summary.overview });
+      body = h(OverviewTab, {
+        overview: summary.overview,
+        topCharacters: (summary.characters || []).slice(0, 8),
+        onOpenCharacter: function (name) {
+          setTab("characters");
+          setCharacter(null);
+          loadCharacter(name);
+        },
+      });
     } else if (tab === "characters") {
       body = h(CharactersTab, {
         summary: summary,
@@ -1149,6 +1447,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         selected: character,
         loading: charLoading,
         onSelect: function (name) { setCharacter(null); loadCharacter(name); },
+        onExport: exportCharacterImage,
       });
     } else if (tab === "weapons") {
       body = h(WeaponsTab, { rows: weapons, loading: weaponsLoading });
