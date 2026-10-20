@@ -25,6 +25,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   var PKG = "dsh-genshin-account";
   var PANEL_ID = "genshin";
   var API = "/dsh-genshin-account";
+  /** Memoised loader promise for the geetest v3 widget script. */
+  var gtScriptPromise = null;
   // Package name == Loader row id == the Config entry this bundle edits.
   var ENTRY_ID = PKG;
   // The plugin's own client context, captured in apply(): the page component is
@@ -342,6 +344,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             onChange: function (event) { set("miyousheCookie", event.target.value); },
           }),
           h("p", { className: "dga-hint" }, "Cookie 等同于登录凭据，会明文保存在本机 profile 配置里。只想读数据的话，优先用 GOOD 文件。")),
+        h("div", { className: "dga-field" },
+          h("label", { className: "dga-label" }, "安全验证（读取战绩必过）"),
+          h("div", { className: "dga-fileRow" },
+            h("button", { className: "dga-btn", onClick: props.onVerify, disabled: props.busy || props.verifyBusy }, props.verifyBusy ? "验证中…" : "开始验证"),
+            props.verifyTask ? h("span", { className: "dga-badge" }, "滑块已就绪") : null),
+          h("div", { ref: props.verifyBoxRef, style: { marginTop: 10, minHeight: 4 } }),
+          props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null,
+          h("p", { className: "dga-hint" },
+            "米游社在读取战绩前会要求一次人机验证（retcode 1034）。滑块会在上方弹出，通过后插件立刻用它换 x-rpc-challenge 重新读取——这是官方认可的流程，也是共享会话唯一可行的做法。")),
         h("div", { className: "dga-field" },
           h("button", {
             className: "dga-btn",
@@ -723,6 +734,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var qrBusyState = React.useState(false);
     var qrBusy = qrBusyState[0], setQrBusy = qrBusyState[1];
     var qrTimerRef = React.useRef(null);
+
+    var verifyTaskState = React.useState(null);
+    var verifyTask = verifyTaskState[0], setVerifyTask = verifyTaskState[1];
+    var verifyStatusState = React.useState("");
+    var verifyStatus = verifyStatusState[0], setVerifyStatus = verifyStatusState[1];
+    var verifyBusyState = React.useState(false);
+    var verifyBusy = verifyBusyState[0], setVerifyBusy = verifyBusyState[1];
+    var verifyBoxRef = React.useRef(null);
 
     var messageState = React.useState("");
     var message = messageState[0], setMessage = messageState[1];
@@ -1204,6 +1223,105 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         .then(function () { setBusy(false); });
     }
 
+    /**
+     * The geetest slider that clears `retcode 1034`.
+     *
+     * miHoYo hands out a geetest v3 task for the exact endpoint being read; the
+     * slider produces `geetest_challenge` + `geetest_validate`, the host trades
+     * them for an `x-rpc-challenge`, and the read is retried with that header.
+     * Nothing is bypassed: a person solves one slider, same as the official
+     * page and 胡桃工具箱 do.
+     */
+    function loadGtScript() {
+      if (window.initGeetest) return Promise.resolve(window.initGeetest);
+      if (gtScriptPromise) return gtScriptPromise;
+      gtScriptPromise = new Promise(function (resolve, reject) {
+        var script = document.createElement("script");
+        script.src = "https://static.geetest.com/static/tools/gt.js";
+        script.async = true;
+        script.onload = function () {
+          if (window.initGeetest) resolve(window.initGeetest);
+          else reject(new Error("验证组件已加载，但没有可用的 initGeetest"));
+        };
+        script.onerror = function () {
+          gtScriptPromise = null;
+          reject(new Error("加载验证组件失败（网络或内容安全策略可能拦截了 static.geetest.com）"));
+        };
+        document.head.appendChild(script);
+      });
+      return gtScriptPromise;
+    }
+
+    function beginVerify() {
+      setVerifyBusy(true);
+      setVerifyStatus("正在获取验证任务…");
+      postJson("/verify/start")
+        .then(function (data) {
+          if (!data || data.ok === false) throw new Error((data && data.error) || "获取验证任务失败");
+          setVerifyTask(data);
+          setVerifyStatus("请拖动滑块完成验证");
+          return loadGtScript().then(function (initGeetest) {
+            return new Promise(function (resolve, reject) {
+              // Give React one tick to mount the container this appends into.
+              setTimeout(function () {
+                var box = verifyBoxRef.current;
+                if (!box) {
+                  reject(new Error("验证控件容器没有就绪"));
+                  return;
+                }
+                box.innerHTML = "";
+                initGeetest(
+                  {
+                    gt: data.gt,
+                    challenge: data.challenge,
+                    new_captcha: data.newCaptcha === true,
+                    offline: false,
+                    product: "float",
+                    lang: "zh-cn",
+                  },
+                  function (captcha) {
+                    captcha.onReady(function () { captcha.verify(); });
+                    captcha.onSuccess(function () {
+                      var value = captcha.getValidate() || {};
+                      submitVerify(value.geetest_challenge || "", value.geetest_validate || "");
+                      resolve();
+                    });
+                    captcha.onError(function () {
+                      setVerifyStatus("验证控件报错，请点「开始验证」重试");
+                      reject(new Error("geetest error"));
+                    });
+                    captcha.onClose(function () {
+                      setVerifyStatus("验证窗口已关闭，可以重新开始");
+                    });
+                  },
+                );
+              }, 60);
+            });
+          });
+        })
+        .catch(function (failure) {
+          setVerifyStatus(String(failure && failure.message ? failure.message : failure));
+        })
+        .then(function () { setVerifyBusy(false); });
+    }
+
+    function submitVerify(challenge, validate) {
+      setVerifyStatus("验证通过，正在重新读取账号…");
+      postJson("/verify/finish", JSON.stringify({ challenge: challenge, validate: validate }))
+        .then(function (data) {
+          if (!data || data.ok === false) throw new Error((data && data.error) || "验证后读取失败");
+          setVerifyTask(null);
+          setVerifyStatus("");
+          setSummary(data);
+          setDraft(draftFrom((data.state && data.state.config) || {}));
+          showMessage("验证通过，已同步 " + data.characters.length + " 个角色");
+          setTab("overview");
+        })
+        .catch(function (failure) {
+          setVerifyStatus("仍未通过：" + String(failure && failure.message ? failure.message : failure));
+        });
+    }
+
     /** Ask the host which record endpoints this cookie can actually reach. */
     function runProbe() {
       setProbing(true);
@@ -1272,6 +1390,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         qr: qr,
         qrStatus: qrStatus,
         qrBusy: qrBusy,
+        onVerify: beginVerify,
+        verifyTask: verifyTask,
+        verifyStatus: verifyStatus,
+        verifyBusy: verifyBusy,
+        verifyBoxRef: verifyBoxRef,
       });
     } else if (loading && !summary) {
       body = h("div", { className: "dga-empty" }, "读取中…");

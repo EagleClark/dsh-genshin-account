@@ -189,36 +189,25 @@ node scripts/build-skill-orders.mjs
 
 ---
 
-## 国服直连为什么通常不可用（实测结论）
+## 国服数据是怎么读到的：扫码登录 + 一次人机验证
 
-这一节是为了省下别人的时间：**「复制浏览器 Cookie 填进来直连米游社」这条路，实践中基本走不通。**
+国服没有"填个 UID 就能查"的公开接口：`api-takumi-record.mihoyo.com` 上的每个读取接口都要求登录态，并且在真正返回数据前会要求一次人机验证。正确做法是把这两步都走完——本插件内置了完整流程：
 
-实测矩阵（本机，同一套请求头与 DS 签名）：
-
-| 请求形态 | 返回 | 说明 |
+| 步骤 | 接口 | 说明 |
 | --- | --- | --- |
-| 不带 Cookie，任何 UID | `retcode 10001` Please login | **不存在按 UID 匿名查询**，必须登录态 |
-| 假 Cookie / 过期 Cookie | `retcode 10001` | 鉴权不通过 |
-| 用户浏览器里复制的真 Cookie | `retcode 1034` | 登录成功，但会话被判可疑 → 要求人机验证 |
-| 真 Cookie + 补齐 UA / `X-Requested-With` / `Referer` / `Origin` / `x-rpc-device_id` / `x-rpc-device_fp` | `1034` | 请求形态不是原因 |
-| `/index`、`/character/list`、`/character/detail` 分别试 | 全是 `1034` | 不是单个接口的策略差异 |
-| **插件自己扫码登录拿到的会话**（`/login/qr`，「确认」后从 `Set-Cookie` 取得 `ltoken_v2`/`ltmid_v2`） | **`1034`** | **会话归属也不是原因** |
-| 同上会话 + 换网络（手机热点） | `1034` | 不是 IP |
-| 同上会话 + `client_type` 4 与 5、带与不带 `device_fp` 四种组合 | 全是 `1034` | 不是通道/指纹不一致 |
+| 1. 扫码登录 | `passport-api.miyoushe.com/.../web/createQRLogin` → `.../queryQRLoginStatus` | 插件自己持有会话（`Set-Cookie` 里的 `ltoken_v2` / `ltmid_v2`），不碰密码、不用复制 Cookie |
+| 2. 申请验证任务 | `GET /game_record/app/card/wapi/createVerification?is_high=true` | 返回 geetest 的 `gt` + `challenge` |
+| 3. 完成滑块 | geetest v3 控件（页面内弹出） | 产出 `geetest_challenge` + `geetest_validate` |
+| 4. 兑换通行证 | `POST /game_record/app/card/wapi/verifyVerification` | 返回 `challenge`，即请求头 `x-rpc-challenge` |
+| 5. 重发读取 | `GET /game_record/app/genshin/api/index` 等 | 带上 `x-rpc-challenge`，正常返回角色 / 武器 / 圣遗物 |
 
-结论：
+这一串和 Snap.Hutao 的 `CardClient` + `GeetestService` 完全一致（它的 `RetryIf1034Async` 就是"遇 1034 → 验证 → 带 `x-rpc-challenge` 重发"）。人机验证是官方要求，插件只把这一步搬到自己的界面上，不存在绕过。
 
-- 1034 是「请求遇到验证码」，由 [UIGF 公共错误码](https://uigf.org/zh/mihoyo-api-collection/other/error_code.html) 明确定义。
-- 上面的矩阵把"会话归属 / IP / 请求头 / 接口差异"逐个排除掉了。剩下的最合理解释是**客户端协议栈本身的指纹**：本插件用 Node 的 `fetch`（undici）发请求，TLS/HTTP2 指纹与真实浏览器不同，风控据此判定"不是浏览器"，直接要验证码。这解释了为什么同一套参数在浏览器里能过、在 Node 里过不去。
-- 本插件不打算绕过验证码（也无法伪装 TLS 指纹）：那既不可靠，也违背"不要滥用非公开接口"这条基本约束。
+补充事实（都是实测，不是推测）：
 
-**所以国服想拿数据，现实选择只有**：
-
-1. 用**自己登录的客户端**（如胡桃工具箱）拿到数据——它跑在 Windows 上，走的是系统网络栈，且会话自持；
-2. 用**扫屏导出 GOOD** 的工具（Inventory Kamera / Amenoma），把 GOOD 文件交给本插件；
-3. 让**真实浏览器**发那次请求（插件里的「米游社导出（浏览器抓取）」就是为此存在的），条件是那个页面本身已登录成功。
-
-`enka` 源只对国际服有效，与国服无关。
+- 不带 Cookie 一律 `retcode 10001`「Please login」——**不存在按 UID 的匿名查询**。
+- 会话有效但没做验证时，`/index`、`/character/list`、`/character/detail` 全部返回 `retcode 1034`「请求遇到验证码」，补齐 UA / `Referer` / `Origin` / `x-rpc-device_id` / `x-rpc-device_fp` / `x-rpc-tool_verison` 都不改变这个结果——**只有 `x-rpc-challenge` 能改变它**。
+- `api-takumi.miyoushe.com/binding/api/getUserGameRolesByCookie` 不需要验证，可以用它确认会话有效并列出账号绑定的游戏角色（昵称 / 等级 / 区服）。
 
 ---
 
