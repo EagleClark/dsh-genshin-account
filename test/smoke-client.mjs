@@ -141,7 +141,8 @@ check('icon renders when active', svgActive && svgActive.type === 'svg')
 // asserting on the tree the user actually sees.
 let pageTree
 try {
-  pageTree = expand(main.component({}))
+  pageTree = flatten(expand(main.component({})))
+  pageTree = flatten(pageTree)
 } catch (error) {
   fails.push('page render threw :: ' + (error && error.message))
 }
@@ -171,61 +172,97 @@ check(
   registrations.slice(-2).map((entry) => entry.options.name).join(','),
 )
 
-// --- the setup wizard is reachable and offers all three sources -------------
-// Components are plain functions here, so expand them before walking.
-function expand(node) {
-  if (node === null || node === undefined) return node
-  if (Array.isArray(node)) return node.map(expand)
-  if (typeof node !== 'object') return node
-  if (typeof node.type === 'function') return expand(node.type(node.props || {}))
-  return { type: node.type, props: node.props || {}, children: (node.children || []).map(expand) }
-}
-
-const rendered = expand(pageTree)
-
-function walk(node, visit) {
-  if (node === null || node === undefined || typeof node !== 'object') return
+// --- the setup pane is login-only -------------------------------------------
+/**
+ * Resolve a rendered tree into plain intrinsic nodes.
+ *
+ * Component elements (like the `<SetupTab>` the page renders) are invoked here,
+ * so class assertions see what the browser would actually build.
+ */
+function flatten(node) {
+  if (node == null || node === false || node === true) return null
+  if (typeof node === 'string' || typeof node === 'number') return String(node)
   if (Array.isArray(node)) {
-    for (const child of node) walk(child, visit)
-    return
+    const items = []
+    for (const item of node) {
+      const resolved = flatten(item)
+      if (resolved != null) items.push(resolved)
+    }
+    return items
   }
-  visit(node)
-  if (node.children) walk(node.children, visit)
+  if (typeof node !== 'object') return null
+  if (typeof node.type === 'function') return flatten(expand(node))
+  const children = []
+  for (const child of node.children || []) {
+    const resolved = flatten(child)
+    if (resolved != null) children.push(resolved)
+  }
+  return { type: node.type, props: node.props || {}, children }
 }
 
+/** Depth-first walk over a rendered tree, calling back with every node. */
+function walk(node, visit) {
+  if (!node || typeof node !== 'object') return
+  visit(node)
+  for (const child of node.children || []) walk(child, visit)
+}
+
+/** All text inside a node (strings, numbers, and nested children). */
 function textOf(node) {
-  if (node === null || node === undefined) return ''
+  if (node == null || node === false) return ''
   if (typeof node === 'string' || typeof node === 'number') return String(node)
   if (Array.isArray(node)) return node.map(textOf).join('')
-  return textOf(node.children)
+  if (typeof node === 'object') return textOf(node.children)
+  return ''
 }
 
-const className = (node) => (node.props && typeof node.props.className === 'string' ? node.props.className : '')
-const cards = []
+/** The class attribute of a rendered element. */
+function className(node) {
+  return (node && node.props && node.props.className) || ''
+}
+
+/**
+ * Unwrap a registered component down to real host elements.
+ *
+ * `main` is the error-boundary wrapper (a class component), so rendering it
+ * yields another component element. Instantiate class components / call function
+ * components until an intrinsic element (`div`, …) comes out.
+ */
+function expand(element) {
+  let node = element
+  for (let depth = 0; depth < 10 && node && typeof node === 'object'; depth += 1) {
+    const type = node.type
+    if (typeof type === 'string') return node
+    if (typeof type === 'function' && type.prototype && typeof type.prototype.render === 'function') {
+      node = new type(node.props || {}).render()
+      continue
+    }
+    if (typeof type === 'function') {
+      node = type(node.props || {})
+      continue
+    }
+    return node
+  }
+  return node
+}
+
+const inputs = []
 const buttons = []
-walk(rendered, (node) => {
-  if (className(node).split(' ').includes('dga-src')) cards.push(node)
+walk(pageTree, (node) => {
+  if (node.type === 'input') inputs.push(node)
   if (node.type === 'button') buttons.push(textOf(node))
 })
-check('wizard shows the single source card', cards.length === 1, String(cards.length))
-check('wizard card names', cards.map(textOf).join('|').includes('扫码登录'), cards.map(textOf).join(' | ').slice(0, 160))
-check('the card names the QR flow', cards.map(textOf).join('|').includes('扫码登录'), cards.map(textOf).join(' | '))
-check('wizard names 米游社', cards.map(textOf).join('|').includes('米游社'))
-check('the card mentions the geetest gate', cards.map(textOf).join('|').includes('geetest'), cards.map(textOf).join(' | ').slice(0, 220))
-check('the card says what it reads', cards.map(textOf).join('|').includes('圣遗物'), cards.map(textOf).join(' | ').slice(0, 220))
-check('the card does not mention GOOD or Enka', !/GOOD|Enka/.test(cards.map(textOf).join('|')), cards.map(textOf).join(' | ').slice(0, 220))
-check('wizard has 保存并同步', buttons.includes('保存并同步'), buttons.join(' / '))
-check('wizard has 仅保存', buttons.includes('仅保存'), buttons.join(' / '))
-check('wizard has the QR button', buttons.some((label) => label.includes('生成二维码')), buttons.join(' / '))
+const pageText = textOf(pageTree)
 
-// The step-by-step guide for the default source (GOOD) is rendered.
-const steps = []
-walk(rendered, (node) => {
-  if (node.type === 'li') steps.push(textOf(node))
-})
-check('wizard renders the how-to steps', steps.length >= 3, JSON.stringify(steps).slice(0, 200))
-check('the guide walks through login and verification', steps.join(' ').includes('生成二维码') && steps.join(' ').includes('滑块'), steps.join(' | ').slice(0, 200))
-check('the default tab is 设置 on a cold start', className(pageTree).includes('dga-root') && steps.length > 0)
+check('settings pane has the UID field', inputs.length >= 1, String(inputs.length))
+check('settings pane explains the UID', pageText.includes('UID'), pageText.slice(0, 200))
+check('settings pane has the QR button', buttons.some((label) => label.includes('生成二维码')), buttons.join(' / '))
+check('settings pane links the verification page', buttons.some((label) => label.includes('打开验证页面')), buttons.join(' / '))
+check('settings pane keeps save buttons', buttons.includes('保存并同步') && buttons.includes('仅保存'), buttons.join(' / '))
+check('settings pane no longer offers diagnostics', !buttons.some((label) => label.includes('诊断')), buttons.join(' / '))
+check('settings pane explains the session stays local', pageText.includes('只存在本机'), pageText.slice(0, 240))
+check('settings pane marks the verification as optional', pageText.includes('可选'), pageText.slice(0, 240))
+check('the default tab is the login pane on a cold start', className(pageTree).includes('dga-root') && pageText.includes('扫码登录'), pageText.slice(0, 120))
 
 // --- field contract: what the page reads must exist in the host payload -----
 const { apply: hostApply } = await import('../lib/index.js')
@@ -395,7 +432,7 @@ let hostileText = ''
 try {
   mod.apply(hostile)
   const pageEntry = registrations.filter((entry) => entry.options.name === 'main').slice(-1)[0]
-  hostileText = textOf(expand(pageEntry.component({})))
+  hostileText = textOf(flatten(expand(pageEntry.component({}))))
 } catch (error) {
   hostileThrown = error
 }
@@ -404,7 +441,7 @@ check('wizard still renders without configForms', hostileText.includes('扫码�
 check('read-only hint is shown instead of a crash', hostileText.includes('无法写入配置'), hostileText.slice(-200))
 
 console.log('registrations:', registrations.map((entry) => entry.options.name + '(' + (entry.options.key || entry.options.id) + ')').join(', '))
-console.log('page root:', pageTree.type, 'children:', pageTree.children.length)
+console.log('page root:', pageTree && pageTree.type, 'children:', pageTree && (pageTree.children || []).length)
 console.log('contract checked against', artifact.setName, artifact.main)
 
 if (fails.length) {

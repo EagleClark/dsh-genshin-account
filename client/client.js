@@ -206,147 +206,62 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   // ── setup wizard ────────────────────────────────────────────────────────
   function SetupTab(props) {
     var draft = props.draft;
-    var state = props.state || {};
-    var sources = state.sources || {};
     var set = props.setField;
 
-    var card = function (source) {
-      var on = draft.source === source.id;
-      var status = sources[source.id] || {};
-      return h("button", {
-        key: source.id,
-        type: "button",
-        className: "dga-src" + (on ? " dga-src-on" : ""),
-        onClick: function () { props.setSource(source.id); },
-        "aria-pressed": on,
-      },
-        h("span", { className: "dga-radio" + (on ? " dga-radio-on" : "") }),
-        h("span", { style: { flex: 1, minWidth: 0 } },
-          h("span", { className: "dga-srcName" },
-            source.name,
-            source.badge ? h("span", { className: "dga-badge" }, source.badge) : null,
-            status.configured ? h("span", { className: "dga-badge dga-badgeOk" }, "已配置") : null),
-          h("div", { className: "dga-srcDesc" }, source.reads),
-          h("div", { className: "dga-srcLimit" }, source.limits + " · " + source.servers)),
-      );
-    };
+    var fields = h("div", null,
+      h("div", { className: "dga-field" },
+        h("label", { className: "dga-label" }, "国服 UID"),
+        h("input", {
+          className: "dga-input",
+          type: "text",
+          inputMode: "numeric",
+          placeholder: "例如 123456789",
+          value: draft.miyousheUid,
+          onChange: function (event) { props.setMiyousheUid(event.target.value.trim()); },
+        }),
+        h("p", { className: "dga-hint" },
+          "填游戏里的 UID。区服自动判断：1/2 开头天空岛，5 开头世界树。" +
+          (draft.miyousheServer ? " 当前：" + draft.miyousheServer : ""))),
 
-    var guide = GUIDES[draft.source] || [];
-    var fields = null;
-
-    {
-      fields = h("div", null,
-        h("div", { className: "dga-field" },
-          h("label", { className: "dga-label" }, "国服 UID"),
-          h("input", {
-            className: "dga-input",
-            type: "text",
-            inputMode: "numeric",
-            placeholder: "例如 123456789",
-            value: draft.miyousheUid,
-            onChange: function (event) { props.setMiyousheUid(event.target.value.trim()); },
-          }),
-          h("p", { className: "dga-hint" },
-            "服务器按 UID 自动判断：1/2/3 → 官服（天空岛），5 → 渠道服（世界树）。当前：" +
-            (draft.miyousheServer || "（自动）"))),
-        h("div", { className: "dga-field" },
-          h("label", { className: "dga-label" }, "扫码登录（推荐）"),
-          h("div", { className: "dga-fileRow" },
-            h("button", { className: "dga-btn dga-btn-primary", onClick: props.onStartQr, disabled: props.busy || props.qrBusy }, props.qrBusy ? "生成中…" : (props.qr ? "换一张二维码" : "生成二维码")),
-            props.qr ? h("button", { className: "dga-btn", onClick: props.onCancelQr, disabled: props.qrBusy }, "取消") : null),
-          props.qr
-            ? h("div", { style: { marginTop: 10, padding: 8, background: "#fff", width: 276, borderRadius: 8 }, dangerouslySetInnerHTML: { __html: props.qr.svg } })
-            : null,
-          props.qrStatus ? h("p", { className: "dga-hint" }, props.qrStatus) : null,
-          h("p", { className: "dga-hint" },
-            "用手机米游社 App 扫码并在手机上点确认。会话由这次扫码签发、只存在本机，插件不接触你的密码，也不需要你复制 Cookie。" +
-            (draft.hasCookie ? " 当前：已登录。" : " 当前：未登录。"))),
-        h("div", { className: "dga-field" },
-          h("label", { className: "dga-label" }, "安全验证（读取战绩必过）"),
-          h("div", { className: "dga-fileRow" },
-            h("button", { className: "dga-btn", onClick: props.onVerify, disabled: props.busy || props.verifyBusy }, props.verifyBusy ? "验证中…" : "开始验证"),
-            h("button", { className: "dga-btn", onClick: props.onVerifyWindow }, "在新窗口验证"),
-            props.verifyTask ? h("span", { className: "dga-badge" }, "滑块已就绪") : null),
-          h("div", { ref: props.verifyBoxRef, style: { marginTop: 10, minHeight: 4 } }),
-          props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null,
-          h("p", { className: "dga-hint" },
-            "米游社在读取战绩前会要求一次人机验证（retcode 1034）。滑块会在上方弹出，通过后插件立刻用它换 x-rpc-challenge 重新读取——这是官方认可的流程，也是共享会话唯一可行的做法。")),
-        h("div", { className: "dga-field" },
+      h("div", { className: "dga-field" },
+        h("label", { className: "dga-label" }, "扫码登录"),
+        h("div", { className: "dga-fileRow" },
           h("button", {
-            className: "dga-btn",
-            onClick: props.onProbe,
-            disabled: props.busy || !draft.miyousheUid.trim(),
-          }, props.probing ? "诊断中…" : "接口诊断（看哪几个接口能过）"),
-          h("p", { className: "dga-hint" }, "用你已保存的 Cookie 依次请求 /index、/character/list、/character/detail，告诉你每个接口的真实返回码。配置不会因此改变。"),
-          props.probe && props.probe.length
-            ? h("table", { className: "dga-table", style: { marginTop: 8 } },
-                h("thead", null, h("tr", null,
-                  h("th", null, "接口"), h("th", null, "结果"), h("th", null, "详情"))),
-                h("tbody", null, props.probe.map(function (row, index) {
-                  return h("tr", { key: index },
-                    h("td", { className: "dga-num" }, row.step),
-                    h("td", null, row.ok
-                      ? h("span", { className: "dga-badge dga-badgeOk" }, "通过")
-                      : h("span", { className: "dga-badge" }, row.skipped ? "跳过" : "被拦")),
-                    h("td", { className: "dga-subs" },
-                      row.ok
-                        ? "角色 " + (row.characters || 0) + " · " + (row.ms || 0) + "ms"
-                        : (row.retcode != null ? "retcode " + row.retcode + " · " : "") + (row.message || "")));
-                })))
-            : null));
-    }
+            className: "dga-btn dga-btn-primary",
+            onClick: props.onStartQr,
+            disabled: props.busy || props.qrBusy,
+          }, props.qrBusy ? "生成中…" : (props.qr ? "换一张二维码" : "生成二维码")),
+          props.qr
+            ? h("button", { className: "dga-btn", onClick: props.onCancelQr, disabled: props.qrBusy }, "取消")
+            : null),
+        props.qr
+          ? h("div", {
+              style: { marginTop: 10, padding: 10, background: "#fff", width: 280, borderRadius: 10 },
+              dangerouslySetInnerHTML: { __html: props.qr.svg },
+            })
+          : null,
+        props.qrStatus ? h("p", { className: "dga-hint" }, props.qrStatus) : null,
+        h("p", { className: "dga-hint" },
+          "用手机米游社 App 扫码并在手机上确认。会话由这次扫码签发、只存在本机：插件不接触你的密码，也不需要你复制 Cookie。" +
+          (draft.hasCookie ? " 当前状态：已登录。" : " 当前状态：未登录。"))),
+
+      h("div", { className: "dga-field" },
+        h("label", { className: "dga-label" }, "圣遗物词条验证（可选）"),
+        h("button", { className: "dga-btn", onClick: props.onVerifyWindow }, "打开验证页面"),
+        props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null,
+        h("p", { className: "dga-hint" },
+          "角色、等级、命座、天赋、武器不需要验证就能读。只有「圣遗物副词条」受米游社风控限制，" +
+          "需要在弹出的页面里拖一次滑块；通过后 CV / 词条效率才会有数据。")));
 
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-wizard" },
         h("div", { className: "dga-block" },
-          h("div", { className: "dga-sec" }, "选择数据源"),
-          h("div", { className: "dga-srcList" }, SOURCES.map(card))),
-
-        h("div", { className: "dga-block" },
-          h("div", { className: "dga-sec" }, (SOURCE_LABEL[draft.source] || draft.source) + " 的配置"),
-          fields,
-          h("p", { className: "dga-hint" }, "怎么拿到这些数据："),
-          h("ol", { className: "dga-steps" }, guide.map(function (line, index) {
-            return h("li", { key: index }, line);
-          }))),
-
-        h("details", { className: "dga-adv" },
-          h("summary", null, "高级设置"),
-          h("div", { style: { marginTop: 12 } },
-            draft.source === "miyoushe"
-              ? h("div", null,
-                  h("div", { className: "dga-field" },
-                    h("label", { className: "dga-label" }, "签名盐 miyousheDsSalt"),
-                    h("input", {
-                      className: "dga-input",
-                      type: "text",
-                      placeholder: "留空使用内置默认值",
-                      value: draft.miyousheDsSalt,
-                      onChange: function (event) { set("miyousheDsSalt", event.target.value.trim()); },
-                    })),
-                  h("div", { className: "dga-field" },
-                    h("label", { className: "dga-label" }, "app_version"),
-                    h("input", {
-                      className: "dga-input",
-                      type: "text",
-                      placeholder: "留空使用内置默认值",
-                      value: draft.miyousheAppVersion,
-                      onChange: function (event) { set("miyousheAppVersion", event.target.value.trim()); },
-                    })),
-                  h("p", { className: "dga-hint" }, "只有出现「签名被拒绝 retcode=-10001」时才需要动这里，而且两个值必须配对更新。"))
-              : null,
-            h("div", { className: "dga-field" },
-              h("label", { className: "dga-label" }, "缓存时间（秒）"),
-              h("input", {
-                className: "dga-input",
-                type: "number",
-                value: String(draft.cacheSeconds),
-                onChange: function (event) { set("cacheSeconds", Number(event.target.value) || 0); },
-              }),
-              h("p", { className: "dga-hint" }, "这段时间内重复查询直接用缓存，避免频繁打接口。")))),
+          h("div", { className: "dga-sec" }, "登录"),
+          fields),
 
         h("div", { className: "dga-actions" },
-          h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSaveAndSync, disabled: props.busy }, props.busy ? "处理中…" : "保存并同步"),
+          h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSaveAndSync, disabled: props.busy },
+            props.busy ? "处理中…" : "保存并同步"),
           h("button", { className: "dga-btn", onClick: props.onSaveOnly, disabled: props.busy }, "仅保存"),
           h("span", { className: "dga-msg" }, props.message || "")),
         !props.writable
@@ -354,6 +269,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               "当前页面无法写入配置（可能不是从本机打开，或插件配置未就绪）。可以直接编辑 profile 的 cordis.patch.yml。")
           : null));
   }
+
 
   // ── data tabs ───────────────────────────────────────────────────────────
   function OverviewTab(props) {

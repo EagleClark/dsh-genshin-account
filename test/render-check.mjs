@@ -117,7 +117,7 @@ const pageResult = render('page', React.createElement(page.component, {}))
 check('page renders with real React', pageResult.error === null, pageResult.error)
 check('page output mentions the plugin', pageResult.html.includes('原神账号'), pageResult.html.slice(0, 200))
 const cardCount = (pageResult.html.match(/class="dga-src(?=[" ])/g) || []).length
-check('page output contains the single source card', cardCount === 1, String(cardCount))
+check('page output no longer renders source cards', cardCount === 0, String(cardCount))
 
 const iconResult = render('icon', React.createElement(icon.component, { size: 18, active: false }))
 check('icon renders with real React', iconResult.error === null, iconResult.error)

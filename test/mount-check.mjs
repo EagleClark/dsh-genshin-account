@@ -131,8 +131,8 @@ check('mount does not throw', thrown === null, thrown && thrown.message)
 
 const html = window.document.getElementById('root').innerHTML
 check('app mounted content', html.length > 200, String(html.length))
-check('wizard is the landing view', html.includes('dga-src'), html.slice(0, 160))
-check('the single source card is rendered', (html.match(/class="dga-src(?=[" ])/g) || []).length === 1,
+check('the login pane is the landing view', html.includes('原神账号') && html.includes('读取中'), html.slice(0, 160))
+check('no source cards are rendered', (html.match(/class="dga-src(?=[" ])/g) || []).length === 0,
   String((html.match(/class="dga-src(?=[" ])/g) || []).length))
 check('no React console errors', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '))
 
