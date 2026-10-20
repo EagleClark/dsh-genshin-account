@@ -1075,9 +1075,34 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     owned = [];
   }
 
-  function apply(ctx) {
-    ensureCss();
-    clientCtx = ctx;
+  var INSTANCE_ID = Math.random().toString(36).slice(2, 8);
+  var applyCount = 0;
+  var healScheduled = false;
+  var healTimers = [];
+
+  /** Report one lifecycle event to the host, which exposes it through /state. */
+  function report(event, detail) {
+    try {
+      fetch(API + "/diag", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          instance: INSTANCE_ID,
+          event: event,
+          detail: detail === undefined ? null : detail,
+          url: typeof location !== "undefined" ? String(location.pathname) : "",
+        }),
+      }).catch(function () {
+        /* diagnostics never break the page */
+      });
+    } catch (error) {
+      /* ignore */
+    }
+  }
+
+  /** Register both seats from scratch: any registrations still owned are dropped
+   *  first, so a cell is never left with an abdicated occupant only. */
+  function registerBoth(ctx) {
     disposeOwned();
     // `main` first: the sidebar's click validates the key against the live
     // `main` entries, so the panel must exist before the icon can be pressed.
@@ -1094,6 +1119,45 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         );
       }),
     );
+  }
+
+  /**
+   * Re-register shortly after boot.
+   *
+   * A cell left with only an abdicated occupant is not observable through the
+   * public slot API, so the plugin cannot detect it and ask for a repair.
+   * Re-registering from this still-live fiber is cheap and always yields a live
+   * occupant — turning "blank panel until the app restarts" into "the panel
+   * appears a moment later".
+   */
+  function scheduleHeal(ctx) {
+    if (healScheduled) return;
+    healScheduled = true;
+    var delays = [1200, 5000];
+    for (var i = 0; i < delays.length; i++) {
+      (function (delay) {
+        var timer = setTimeout(function () {
+          try {
+            registerBoth(ctx);
+            report("heal", { after: delay, applies: applyCount });
+          } catch (error) {
+            report("heal-failed", { message: String((error && error.message) || error) });
+          }
+        }, delay);
+        if (timer && typeof timer.unref === "function") timer.unref();
+        healTimers.push(timer);
+      })(delays[i]);
+    }
+  }
+
+  function apply(ctx) {
+    ensureCss();
+    clientCtx = ctx;
+    applyCount += 1;
+    report("apply", { count: applyCount, hasSlots: Boolean(ctx && ctx.slots) });
+    registerBoth(ctx);
+    report("registered", { owned: owned.length });
+    scheduleHeal(ctx);
   }
 
   exports.name = PKG;

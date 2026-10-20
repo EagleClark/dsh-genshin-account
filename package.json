@@ -1,7 +1,7 @@
 {
   "name": "dsh-genshin-account",
-  "description": "璇诲彇鍘熺璐﹀彿鐨勮鑹层€佹鍣ㄤ笌鍦ｉ仐鐗╋細鏀寔鏈湴 GOOD 鏂囦欢 / Enka.Network / 绫虫父绀句笁绉嶆暟鎹簮锛屾敞鍐?5 涓?agent 宸ュ叿骞跺湪 GUI 閲屾彁渚涙祻瑙堥〉闈?/ Read your Genshin Impact characters, weapons and artifacts from a GOOD export, Enka.Network or the miHoYo record API, with agent tools and a browsing page.",
-  "version": "0.2.2",
+  "description": "鐠囪褰囬崢鐔侯殻鐠愶箑褰块惃鍕潡閼瑰眰鈧焦顒熼崳銊ょ瑢閸︼綁浠愰悧鈺嬬窗閺€顖涘瘮閺堫剙婀?GOOD 閺傚洣娆?/ Enka.Network / 缁櫕鐖剁粈鍙ョ瑏缁夊秵鏆熼幑顔界爱閿涘本鏁為崘?5 娑?agent 瀹搞儱鍙块獮璺烘躬 GUI 闁插本褰佹笟娑欑セ鐟欏牓銆夐棃?/ Read your Genshin Impact characters, weapons and artifacts from a GOOD export, Enka.Network or the miHoYo record API, with agent tools and a browsing page.",
+  "version": "0.2.3",
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",

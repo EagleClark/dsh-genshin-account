@@ -108,7 +108,7 @@ check('weapons rarity filter', weaponsResult.value.weapons.every((w) => w.rarity
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-check('routes mounted', routePaths.length === 7, routePaths.join(','))
+check('routes mounted', routePaths.length === 8, routePaths.join(','))
 
 function fakeRes() {
   const res = {
@@ -205,6 +205,29 @@ check('upload-good rejects cross origin', uploadBadOrigin.status === 403, String
 const uploadGet = fakeRes()
 await routes.get('/dsh-genshin-account/upload-good')(fakeUpload('{}', { method: 'GET' }), uploadGet)
 check('upload-good rejects GET', uploadGet.status === 405, String(uploadGet.status))
+
+// --- diagnostics: the browser half's only channel when it cannot be debugged --
+const diagRes = fakeRes()
+const diagReq = {
+  url: '/dsh-genshin-account/diag',
+  method: 'POST',
+  headers: {},
+  async *[Symbol.asyncIterator]() {
+    yield Buffer.from(JSON.stringify({ instance: 'abc123', event: 'apply', detail: { count: 1 }, url: '/' }))
+  },
+}
+await routes.get('/dsh-genshin-account/diag')(diagReq, diagRes)
+check('diag accepts an event', JSON.parse(diagRes.body).ok === true, diagRes.body.slice(0, 80))
+
+const afterDiag = fakeRes()
+await routes.get('/dsh-genshin-account/state')({ url: '/dsh-genshin-account/state', method: 'GET', headers: {} }, afterDiag)
+const diagState = JSON.parse(afterDiag.body)
+check('state exposes diagnostics', Array.isArray(diagState.diagnostics) && diagState.diagnostics.length === 1, JSON.stringify(diagState.diagnostics).slice(0, 160))
+check('diagnostic keeps instance and event', diagState.diagnostics[0].instance === 'abc123' && diagState.diagnostics[0].event === 'apply', JSON.stringify(diagState.diagnostics[0]))
+
+const diagGet = fakeRes()
+await routes.get('/dsh-genshin-account/diag')(fakeUpload('{}', { method: 'GET' }), diagGet)
+check('diag rejects GET', diagGet.status === 405, String(diagGet.status))
 
 // A source that cannot work must degrade to a soft error, not a throw.
 // Drop the persisted snapshot first: keeping a stale one is correct behaviour,
