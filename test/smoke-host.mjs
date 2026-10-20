@@ -108,7 +108,7 @@ check('weapons rarity filter', weaponsResult.value.weapons.every((w) => w.rarity
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-check('routes mounted', routePaths.length === 8, routePaths.join(','))
+check('routes mounted', routePaths.length === 9, routePaths.join(','))
 
 function fakeRes() {
   const res = {
@@ -228,6 +228,39 @@ check('diagnostic keeps instance and event', diagState.diagnostics[0].instance =
 const diagGet = fakeRes()
 await routes.get('/dsh-genshin-account/diag')(fakeUpload('{}', { method: 'GET' }), diagGet)
 check('diag rejects GET', diagGet.status === 405, String(diagGet.status))
+
+// --- upload-miyoushe: the browser-captured response path -------------------
+const detailFixture = readFileSync(new URL('./fixture-miyoushe-detail.json', import.meta.url), 'utf8')
+const indexFixture = readFileSync(new URL('./fixture-miyoushe-index.json', import.meta.url), 'utf8')
+
+function postRoute(path, text) {
+  const req = {
+    url: '/dsh-genshin-account' + path,
+    method: 'POST',
+    headers: {},
+    async *[Symbol.asyncIterator]() {
+      yield Buffer.from(text, 'utf8')
+    },
+  }
+  const res = fakeRes()
+  return routes.get('/dsh-genshin-account' + path)(req, res).then(() => res)
+}
+
+const detailRes = await postRoute('/upload-miyoushe', detailFixture)
+const detailPayload = JSON.parse(detailRes.body)
+check('upload-miyoushe accepts a detail response', detailPayload.ok === true && detailPayload.kind === 'details', detailRes.body.slice(0, 160))
+check('upload-miyoushe reports detail coverage', detailPayload.summary && detailPayload.summary.hasDetails === true && detailPayload.summary.withDetail === 1, JSON.stringify(detailPayload.summary))
+
+const indexRes = await postRoute('/upload-miyoushe', indexFixture)
+const indexPayload = JSON.parse(indexRes.body)
+check('upload-miyoushe accepts an index response', indexPayload.ok === true && indexPayload.kind === 'index', indexRes.body.slice(0, 160))
+check('upload-miyoushe merges both halves', indexPayload.summary && indexPayload.summary.hasIndex && indexPayload.summary.hasDetails, JSON.stringify(indexPayload.summary))
+
+const failedRes = await postRoute('/upload-miyoushe', '{"retcode":1034,"data":null}')
+check('upload-miyoushe rejects a failed response', JSON.parse(failedRes.body).ok === false, failedRes.body.slice(0, 160))
+
+const junkRes = await postRoute('/upload-miyoushe', '{"hello":1}')
+check('upload-miyoushe rejects an unknown shape', JSON.parse(junkRes.body).ok === false, junkRes.body.slice(0, 160))
 
 // A source that cannot work must degrade to a soft error, not a throw.
 // Drop the persisted snapshot first: keeping a stale one is correct behaviour,

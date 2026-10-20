@@ -132,7 +132,7 @@ check('mount does not throw', thrown === null, thrown && thrown.message)
 const html = window.document.getElementById('root').innerHTML
 check('app mounted content', html.length > 200, String(html.length))
 check('wizard is the landing view', html.includes('dga-src'), html.slice(0, 160))
-check('three source cards rendered', (html.match(/class="dga-src(?=[" ])/g) || []).length === 3,
+check('one card per data source rendered', (html.match(/class="dga-src(?=[" ])/g) || []).length === 4,
   String((html.match(/class="dga-src(?=[" ])/g) || []).length))
 check('no React console errors', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '))
 

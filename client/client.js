@@ -37,7 +37,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     dendro: "#a5c83b", cryo: "#9fd6e3", geo: "#fab632", none: "#9aa0a6",
   };
 
-  var SOURCE_LABEL = { good: "本地 GOOD 文件", enka: "Enka.Network", miyoushe: "米游社（国服）" };
+  var SOURCE_LABEL = { good: "本地 GOOD 文件", enka: "Enka.Network", miyoushe: "米游社（国服·直连）", "miyoushe-file": "米游社导出（浏览器抓取）" };
 
   /** One card per data source: what it reads, and its catch. */
   var SOURCES = [
@@ -59,10 +59,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     },
     {
       id: "miyoushe",
-      name: "米游社（国服）",
+      name: "米游社（国服·直连）",
       badge: "",
       reads: "账号概览 + 全部角色列表 + 已公开角色详情的天赋/武器/圣遗物",
-      limits: "只对「角色详情已公开」的角色返回详细数据；官方改版时签名会失效",
+      limits: "从别的设备用你的 Cookie 调接口会被要求人机验证（retcode 1034）；官方改版时签名也会失效",
+      servers: "国服",
+    },
+    {
+      id: "miyoushe-file",
+      name: "米游社导出（浏览器抓取）",
+      badge: "保证可用",
+      reads: "和直连版一样：账号概览 + 角色详情（天赋/武器/圣遗物全部词条）",
+      limits: "需要你在浏览器里复制一次接口响应；游戏数据变化后要重新抓一次",
       servers: "国服",
     },
   ];
@@ -85,6 +93,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       "F12 → Application（应用）→ Cookies → bbs.mihoyo.com",
       "复制 ltuid_v2、ltoken_v2、ltmid_v2 三项，拼成 ltuid_v2=…; ltoken_v2=…; ltmid_v2=…",
       "粘贴到下面并点「保存并同步」",
+      "如果报 1034（人机验证）：换用右边的「米游社导出（浏览器抓取）」",
+    ],
+    "miyoushe-file": [
+      "浏览器打开米游社战绩页：webstatic.mihoyo.com/app/community-game-records/，用你的账号登录",
+      "F12 打开开发者工具 → Network（网络）→ 刷新页面 → 在请求列表里筛 game_record",
+      "找到 …/genshin/api/index 这一条：右键 → Copy → Copy response，粘贴到下面并点「导入并同步」",
+      "想看圣遗物就再点开网页里的某个角色，找到 …/genshin/api/character/detail 的响应，同样复制粘贴一次（两段会自动合并）",
     ],
   };
 
@@ -313,6 +328,34 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             onChange: function (event) { set("miyousheCookie", event.target.value); },
           }),
           h("p", { className: "dga-hint" }, "Cookie 等同于登录凭据，会明文保存在本机 profile 配置里。只想读数据的话，优先用 GOOD 文件。")));
+    }
+
+    if (draft.source === "miyoushe-file") {
+      fields = h("div", null,
+        h("div", { className: "dga-field" },
+          h("label", { className: "dga-label" }, "粘贴接口响应（JSON）"),
+          h("textarea", {
+            className: "dga-input dga-textarea",
+            style: { minHeight: 120 },
+            placeholder: '把 Copy response 得到的整段 JSON 粘贴到这里，形如 {"retcode":0,"data":{...}}',
+            value: draft.miyoushePaste,
+            onChange: function (event) { set("miyoushePaste", event.target.value); },
+          }),
+          h("div", { className: "dga-fileRow", style: { marginTop: 8 } },
+            h("button", { className: "dga-btn dga-btn-primary", onClick: props.onImportMiyoushe, disabled: props.busy || !draft.miyoushePaste.trim() }, "导入并同步"),
+            h("button", { className: "dga-btn", onClick: props.onPickMiyousheFile, disabled: props.busy }, "从文件选择…"),
+            h("input", {
+              type: "file",
+              accept: ".json,application/json",
+              style: { display: "none" },
+              ref: props.miyousheFileRef,
+              onChange: props.onMiyousheFileChange,
+            }),
+            props.state && props.state.config && props.state.config.hasMiyousheJson
+              ? h("span", { className: "dga-badge dga-badgeOk" }, "已有导入的数据")
+              : h("span", { className: "dga-muted" }, "还没有导入")),
+          h("p", { className: "dga-hint" },
+            "可以只导 index（角色列表 + 账号概览），也可以再导一次 character/detail 补上天赋与圣遗物；两段会自动合并。")));
     }
 
     return h("div", { className: "dga-scroll" },
@@ -585,6 +628,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       hasCookie: c.hasCookie === true,
       miyousheAppVersion: c.miyousheAppVersion || "",
       miyousheDsSalt: c.miyousheDsSalt || "",
+      miyoushePaste: "",
       cacheSeconds: c.cacheSeconds == null ? 600 : c.cacheSeconds,
     };
   }
@@ -647,6 +691,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var formSnap = formState[0], setFormSnap = formState[1];
 
     var fileInputRef = React.useRef(null);
+    var miyousheFileRef = React.useRef(null);
 
     // The Config form of this bundle's own entry.
     //
@@ -962,6 +1007,62 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         });
     }
 
+    /** Send one pasted miHoYo response to the host, then read the account. */
+    function importMiyoushe(text) {
+      if (!text || !String(text).trim()) {
+        showMessage("先把复制到的响应粘进来", true);
+        return;
+      }
+      setBusy(true);
+      showMessage("导入中…");
+      postJson("/upload-miyoushe", String(text))
+        .then(function (data) {
+          if (!data || data.ok === false) throw new Error((data && data.error) || "导入失败");
+          var s = data.summary || {};
+          showMessage(
+            "已导入" + (data.kind === "index" ? "账号概览" : "角色详情") +
+            "（概览 " + (s.hasIndex ? "有" : "无") + " · 角色详情 " + (s.withDetail || 0) + " 个），正在同步…",
+          );
+          setField("miyoushePaste", "");
+          return persist({ source: "miyoushe-file", miyousheJsonPath: data.path }).then(function (accepted) {
+            if (accepted === false) throw new Error("部署未接受这些值");
+            return postJson("/sync");
+          });
+        })
+        .then(function (data) {
+          if (!data || data.ok === false) {
+            showMessage((data && data.error) || "同步失败", true);
+            loadSummary(false);
+            return;
+          }
+          setSummary(data);
+          setDraft(draftFrom((data.state && data.state.config) || {}));
+          showMessage("同步完成：" + data.characters.length + " 个角色");
+          setTab("overview");
+        })
+        .catch(function (failure) {
+          showMessage(String(failure && failure.message ? failure.message : failure), true);
+        })
+        .then(function () { setBusy(false); });
+    }
+
+    function onImportMiyoushe() {
+      importMiyoushe(draft.miyoushePaste);
+    }
+
+    function onPickMiyousheFile() {
+      var input = miyousheFileRef.current;
+      if (input) input.click();
+    }
+
+    function onMiyousheFileChange(event) {
+      var input = event.target;
+      var file = input && input.files && input.files[0] ? input.files[0] : null;
+      if (!file) return;
+      file.text().then(function (text) { importMiyoushe(text); });
+      if (input) input.value = "";
+    }
+
     var tabs = [
       { id: "overview", label: "概览" },
       { id: "characters", label: "角色" },
@@ -996,6 +1097,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         onPickFile: onPickFile,
         onFileChange: onFileChange,
         fileInputRef: fileInputRef,
+        onImportMiyoushe: onImportMiyoushe,
+        onPickMiyousheFile: onPickMiyousheFile,
+        onMiyousheFileChange: onMiyousheFileChange,
+        miyousheFileRef: miyousheFileRef,
       });
     } else if (loading && !summary) {
       body = h("div", { className: "dga-empty" }, "读取中…");
