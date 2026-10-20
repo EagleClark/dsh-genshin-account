@@ -1055,6 +1055,45 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("circle", { cx: 12, cy: 12, r: 1.1, fill: color }));
   }
 
+  /**
+   * Catches a render-time throw inside the panel so a bug shows a message
+   * instead of an empty column, and reports it to the host for diagnosis.
+   *
+   * Built only when the host React actually exposes `Component`; a build whose
+   * React does not would otherwise throw while this bundle is being evaluated,
+   * which is far worse than losing the boundary.
+   */
+  var PageBoundary = null;
+  if (React && React.Component && React.Component.prototype) {
+    PageBoundary = function PageBoundary(props) {
+      React.Component.call(this, props);
+      this.state = { error: null };
+    };
+    PageBoundary.prototype = Object.create(React.Component.prototype);
+    PageBoundary.prototype.constructor = PageBoundary;
+    PageBoundary.getDerivedStateFromError = function (error) {
+      return { error: error };
+    };
+    PageBoundary.prototype.componentDidCatch = function (error) {
+      report("render-error", { message: String((error && error.message) || error) });
+    };
+    PageBoundary.prototype.render = function () {
+      if (this.state.error) {
+        return h("div", { className: "dga-root" },
+          h("div", { className: "dga-scroll" },
+            h("div", { className: "dga-err" },
+              "原神账号面板渲染出错：\n" +
+              String((this.state.error && this.state.error.message) || this.state.error) +
+              "\n\n详细信息已上报，可以把这段文字发给开发者。")));
+      }
+      return this.props.children;
+    };
+  }
+
+  function GenshinPageSafe(props) {
+    return PageBoundary ? h(PageBoundary, null, h(GenshinPage, props)) : h(GenshinPage, props);
+  }
+
   // Every registration this module currently owns. The client module table can
   // load/re-apply a plugin bundle more than once in one page session (module
   // recomposition, HMR); without this, the second registration displaces the
@@ -1108,7 +1147,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     // `main` entries, so the panel must exist before the icon can be pressed.
     owned.push(
       ctx.slots.inject("main", function () {
-        return ctx.slots.register({ name: "main", key: PANEL_ID, registrant: PKG }, GenshinPage);
+        return ctx.slots.register({ name: "main", key: PANEL_ID, registrant: PKG }, GenshinPageSafe);
       }),
     );
     owned.push(

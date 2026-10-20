@@ -134,9 +134,11 @@ const svgActive = icon.component({ size: 16, active: true })
 check('icon renders when active', svgActive && svgActive.type === 'svg')
 
 // --- render the page with no data (nothing fetched) --------------------------
+// The registered component is the error-boundary wrapper, so expand it before
+// asserting on the tree the user actually sees.
 let pageTree
 try {
-  pageTree = main.component({})
+  pageTree = expand(main.component({}))
 } catch (error) {
   fails.push('page render threw :: ' + (error && error.message))
 }
