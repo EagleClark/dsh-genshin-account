@@ -652,12 +652,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("div", { className: "dga-heroMain" },
           h("div", { className: "dga-heroName" }, "祈愿记录"),
           h("div", { className: "dga-heroMeta" },
-            "共 " + a.total + " 抽 · " + (a.updatedAt ? "更新于 " + when(a.updatedAt) : "尚未同步"))),
+            "共 " + a.total + " 抽 · " +
+            (a.lastPullAt ? "最近一抽 " + a.lastPullAt : "") +
+            (a.updatedAt ? " · 更新于 " + when(a.updatedAt) : " · 尚未同步"))),
         h("div", { className: "dga-heroStats" },
           h(StatTile, { value: String(a.total), label: "总抽数" }),
           h(StatTile, { value: String(a.five), label: "五星" }),
           h(StatTile, { value: String(a.four), label: "四星" }),
-          h(StatTile, { value: a.averageFive == null ? "—" : String(a.averageFive), label: "平均出金" }))),
+          h(StatTile, { value: a.averageFive == null ? "—" : String(a.averageFive), label: "平均出金" }),
+          h(StatTile, { value: a.luck == null ? "—" : "×" + a.luck, label: "欧非比" }))),
 
       h("div", { className: "dga-block" },
         h("div", { className: "dga-fileRow" },
@@ -693,6 +696,36 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                   h("td", { className: "dga-num" }, String(item.pity)),
                   h("td", { className: "dga-num" }, item.time));
               }))))
+        : null,
+
+      a.monthly && a.monthly.length
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "每月抽卡量"),
+            h("div", { className: "dga-bars" }, a.monthly.map(function (row) {
+              var max = Math.max.apply(null, a.monthly.map(function (m) { return m.pulls; })) || 1;
+              return h("div", { className: "dga-barRow", key: row.month },
+                h("span", { className: "dga-barLabel", style: { width: 56 } }, row.month.slice(2)),
+                h("span", { className: "dga-barTrack" },
+                  h("span", {
+                    className: "dga-barFill",
+                    style: { width: Math.max(4, Math.round((row.pulls / max) * 100)) + "%", background: "#c8a24a" },
+                  })),
+                h("span", { className: "dga-barValue" }, String(row.pulls)));
+            })))
+        : null,
+
+      a.pityBuckets && a.five
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "五星出货区间"),
+            h("table", { className: "dga-table" },
+              h("thead", null, h("tr", null, h("th", null, "第几抽"), h("th", null, "次数"))),
+              h("tbody", null, a.pityBuckets.map(function (bucket) {
+                return h("tr", { key: bucket.label },
+                  h("td", null, bucket.label),
+                  h("td", { className: "dga-num" }, String(bucket.count)));
+              }))),
+            h("p", { className: "dga-hint" },
+              "基础出率 1.6%，折算约 " + a.expectedAverage + " 抽一个五星；「欧非比」>1 表示比基础出率更欧。"))
         : null,
 
       h("p", { className: "dga-hint" },
