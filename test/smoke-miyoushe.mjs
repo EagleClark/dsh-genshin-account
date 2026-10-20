@@ -5,7 +5,7 @@
  *   node test/smoke-miyoushe.mjs
  */
 import { readFile } from 'node:fs/promises'
-import { buildFromResponses, buildQuery, serverOfUid, signDs } from '../lib/sources/miyoushe.js'
+import { buildFromResponses, buildQuery, cookieOf, serverOfUid, signDs } from '../lib/sources/miyoushe.js'
 import { getCharacter, listArtifacts, overview } from '../lib/model.js'
 
 const fails = []
@@ -28,6 +28,31 @@ check('ds hash is md5 hex', /^[0-9a-f]{32}$/.test(dsHash), dsHash)
 // Same inputs, different r → different hash (sanity: it is a real digest of r).
 const ds2 = signDs({ salt: 'xV8v4Qu54lUKrEYFZkJhB8cuOh9Asafs', body: '{"a":1}', query: 'role_id=1', now: 1700000000000 })
 check('ds is time-deterministic in t', ds2.split(',')[0] === dsT, ds2)
+
+// --- cookie shape -----------------------------------------------------------
+// `ltoken_v2` without `ltmid_v2` reads as an abnormal session to the record API
+// and is a usual reason it answers with a geetest challenge instead of data.
+check('complete cookie accepted', cookieOf('ltuid_v2=1; ltoken_v2=t; ltmid_v2=m') === 'ltuid_v2=1; ltoken_v2=t; ltmid_v2=m')
+const missingMid = (() => {
+  try {
+    cookieOf('ltuid_v2=1; ltoken_v2=t')
+    return ''
+  } catch (error) {
+    return error.message
+  }
+})()
+check('cookie missing ltmid_v2 is rejected', missingMid.includes('ltmid_v2'), missingMid)
+check('cookie rejection names the pairing rule', missingMid.includes('配对'), missingMid)
+const missingAll = (() => {
+  try {
+    cookieOf('foo=bar')
+    return ''
+  } catch (error) {
+    return error.message
+  }
+})()
+check('cookie with no account fields is rejected', missingAll.includes('ltuid_v2') && missingAll.includes('ltoken_v2'), missingAll)
+check('empty cookie is rejected', (() => { try { cookieOf('') ; return false } catch { return true } })())
 
 // --- parsing ----------------------------------------------------------------
 const index = JSON.parse(await readFile(new URL('./fixture-miyoushe-index.json', import.meta.url), 'utf8'))
