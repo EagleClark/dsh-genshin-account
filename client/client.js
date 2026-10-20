@@ -604,6 +604,88 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         }))));
   }
 
+  // ── wish history ────────────────────────────────────────────────────────
+  function GachaTab(props) {
+    var a = props.analysis;
+    var busy = props.busy;
+
+    if (!a || !a.total) {
+      return h("div", { className: "dga-scroll" },
+        h("div", { className: "dga-block" },
+          h("div", { className: "dga-sec" }, "还没有抽卡记录"),
+          h("p", { className: "dga-hint" },
+            "插件的祈愿数据来自游戏自己的祈愿历史：先在游戏里打开一次「祈愿 → 历史记录」" +
+            "（这一步会让游戏把带 authkey 的链接写进本地缓存），然后回到这里点「同步抽卡」。"),
+          h("div", { className: "dga-fileRow" },
+            h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSync, disabled: busy },
+              busy ? "同步中…" : "同步抽卡")),
+          h("p", { className: "dga-hint" }, props.status || ""),
+          h("details", { className: "dga-adv" },
+            h("summary", null, "同步失败？手动粘贴祈愿链接"),
+            h("div", { style: { marginTop: 10 } },
+              h("textarea", {
+                className: "dga-input dga-textarea",
+                placeholder: "https://public-operation-hk4e.mihoyo.com/gacha_info/api/getGachaLog?...authkey=...",
+                value: props.url,
+                onChange: function (event) { props.onUrl(event.target.value); },
+              }),
+              h("div", { className: "dga-fileRow", style: { marginTop: 8 } },
+                h("button", { className: "dga-btn", onClick: props.onSyncManual, disabled: busy || !String(props.url || "").trim() },
+                  "用这段链接同步"))))));
+    }
+
+    return h("div", { className: "dga-scroll" },
+      h("div", { className: "dga-hero" },
+        h("div", { className: "dga-heroMain" },
+          h("div", { className: "dga-heroName" }, "祈愿记录"),
+          h("div", { className: "dga-heroMeta" },
+            "共 " + a.total + " 抽 · " + (a.updatedAt ? "更新于 " + when(a.updatedAt) : "尚未同步"))),
+        h("div", { className: "dga-heroStats" },
+          h(StatTile, { value: String(a.total), label: "总抽数" }),
+          h(StatTile, { value: String(a.five), label: "五星" }),
+          h(StatTile, { value: String(a.four), label: "四星" }),
+          h(StatTile, { value: a.averageFive == null ? "—" : String(a.averageFive), label: "平均出金" }))),
+
+      h("div", { className: "dga-block" },
+        h("div", { className: "dga-fileRow" },
+          h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSync, disabled: busy },
+            busy ? "同步中…" : "同步抽卡"),
+          h("span", { className: "dga-hint" }, props.status || ""))),
+
+      h("div", { className: "dga-block" },
+        h("div", { className: "dga-sec" }, "各祈愿池"),
+        h("table", { className: "dga-table" },
+          h("thead", null, h("tr", null,
+            h("th", null, "祈愿"), h("th", null, "抽数"), h("th", null, "五星"),
+            h("th", null, "四星"), h("th", null, "距离上次五星"))),
+          h("tbody", null, a.banners.map(function (bucket) {
+            return h("tr", { key: bucket.type },
+              h("td", null, bucket.label),
+              h("td", { className: "dga-num" }, String(bucket.pulls)),
+              h("td", { className: "dga-num" }, String(bucket.five)),
+              h("td", { className: "dga-num" }, String(bucket.four)),
+              h("td", { className: "dga-num" }, String(bucket.sinceFive)));
+          })))),
+
+      a.fiveStars.length
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "五星记录（最新在前）"),
+            h("table", { className: "dga-table" },
+              h("thead", null, h("tr", null,
+                h("th", null, "名称"), h("th", null, "祈愿"), h("th", null, "第几抽"), h("th", null, "时间"))),
+              h("tbody", null, a.fiveStars.slice(0, 50).map(function (item, index) {
+                return h("tr", { key: item.id || index },
+                  h("td", null, item.name),
+                  h("td", null, item.banner || item.gacha_type),
+                  h("td", { className: "dga-num" }, String(item.pity)),
+                  h("td", { className: "dga-num" }, item.time));
+              }))))
+        : null,
+
+      h("p", { className: "dga-hint" },
+        "「距离上次五星」= 该池子自上一个五星之后又抽了多少次，用来判断保底进度。"));
+  }
+
   // ── shareable character image ───────────────────────────────────────────
   function loadArt(src) {
     return new Promise(function (resolve) {
@@ -816,6 +898,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var qrBusy = qrBusyState[0], setQrBusy = qrBusyState[1];
     var qrTimerRef = React.useRef(null);
 
+    var gachaState = React.useState(null);
+    var gacha = gachaState[0], setGacha = gachaState[1];
+    var gachaBusyState = React.useState(false);
+    var gachaBusy = gachaBusyState[0], setGachaBusy = gachaBusyState[1];
+    var gachaStatusState = React.useState("");
+    var gachaStatus = gachaStatusState[0], setGachaStatus = gachaStatusState[1];
+    var gachaUrlState = React.useState("");
+    var gachaUrl = gachaUrlState[0], setGachaUrl = gachaUrlState[1];
+
     var verifyTaskState = React.useState(null);
     var verifyTask = verifyTaskState[0], setVerifyTask = verifyTaskState[1];
     var verifyStatusState = React.useState("");
@@ -974,6 +1065,31 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       return true;
     }
 
+    /** Read the locally stored wish history (no network). */
+    function loadGacha() {
+      getJson("/gacha")
+        .then(function (data) {
+          if (data && data.ok && data.analysis) setGacha(data.analysis);
+        })
+        .catch(function () { /* the pane simply stays empty */ });
+    }
+
+    /** Pull fresh records; the host reads the game cache for the authkey. */
+    function runGachaSync(urlOverride) {
+      setGachaBusy(true);
+      setGachaStatus("正在读取祈愿记录…");
+      postJson("/gacha/sync", JSON.stringify(urlOverride ? { url: urlOverride } : {}))
+        .then(function (data) {
+          if (data && data.analysis) setGacha(data.analysis);
+          if (!data || data.ok === false) throw new Error((data && data.error) || "同步失败");
+          setGachaStatus("新增 " + (data.added || 0) + " 条，共 " + (data.total || 0) + " 条");
+        })
+        .catch(function (failure) {
+          setGachaStatus(String(failure && failure.message ? failure.message : failure));
+        })
+        .then(function () { setGachaBusy(false); });
+    }
+
     function loadSummary(force) {
       setLoading(true);
       var request = force ? postJson("/sync") : getJson("/summary");
@@ -1018,7 +1134,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     React.useEffect(function () {
       loadSummary(false);
+      loadGacha();
     }, []);
+
+    React.useEffect(function () {
+      if (tab === "gacha" && !gacha) loadGacha();
+    }, [tab]);
 
     React.useEffect(function () {
       if (tab !== "weapons" || weapons.length) return;
@@ -1381,6 +1502,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var tabs = [
       { id: "overview", label: "概览" },
       { id: "characters", label: "角色" },
+      { id: "gacha", label: "抽卡" },
       { id: "weapons", label: "武器" },
       { id: "artifacts", label: "圣遗物" },
       { id: "settings", label: "设置" },
@@ -1448,6 +1570,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         loading: charLoading,
         onSelect: function (name) { setCharacter(null); loadCharacter(name); },
         onExport: exportCharacterImage,
+      });
+    } else if (tab === "gacha") {
+      body = h(GachaTab, {
+        analysis: gacha ? gacha.analysis : null,
+        busy: gachaBusy,
+        status: gachaStatus,
+        url: gachaUrl,
+        onUrl: setGachaUrl,
+        onSync: function () { runGachaSync(); },
+        onSyncManual: function () { runGachaSync(gachaUrl); },
       });
     } else if (tab === "weapons") {
       body = h(WeaponsTab, { rows: weapons, loading: weaponsLoading });

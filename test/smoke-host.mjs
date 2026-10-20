@@ -135,7 +135,7 @@ const call = main.call
 
 // --- config schema ---------------------------------------------------------
 const schemaKeys = Object.keys(Config.dict || {})
-check('config only carries the miyoushe fields', schemaKeys.every((k) => k.startsWith('miyoushe') || k === 'cacheSeconds'), schemaKeys.join(','))
+check('config only carries login and gacha settings', schemaKeys.every((k) => k.startsWith('miyoushe') || ['cacheSeconds', 'gamePath', 'gachaUrl'].includes(k)), schemaKeys.join(','))
 check('config dropped the GOOD path', !schemaKeys.includes('goodPath'), schemaKeys.join(','))
 check('config dropped Enka', !schemaKeys.includes('enkaUid') && !schemaKeys.includes('enkaBase'), schemaKeys.join(','))
 check('config dropped the browser-capture path', !schemaKeys.includes('miyousheJsonPath'), schemaKeys.join(','))
@@ -178,7 +178,7 @@ check('weapons ok', weaponsResult.value.ok === true, JSON.stringify(weaponsResul
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-check('routes mounted', routePaths.length === 13, routePaths.join(','))
+check('routes mounted', routePaths.length === 15, routePaths.join(','))
 
 function fakeRes() {
   return {
@@ -232,6 +232,16 @@ const verifyPayload = JSON.parse(verifyFinish.body)
 check('verify/finish retries the read', verifyPayload.ok === true && Array.isArray(verifyPayload.characters), verifyFinish.body.slice(0, 200))
 check('after verification the record path supplies artifacts', verifyPayload.overview && verifyPayload.overview.counts.artifacts === 5, JSON.stringify(verifyPayload.overview && verifyPayload.overview.counts))
 check('verify/finish keeps the x-rpc-challenge on record calls', seen.some((c) => c.url.includes('/genshin/api/index') && c.headers['x-rpc-challenge'] === 'XRPC-OK'))
+
+const gachaRes = fakeRes()
+await routes.get('/dsh-genshin-account/gacha')({ url: '/dsh-genshin-account/gacha', method: 'GET', headers: {} }, gachaRes)
+const gachaPayload = JSON.parse(gachaRes.body)
+check('gacha route answers with an analysis', gachaPayload.ok === true && Boolean(gachaPayload.analysis), gachaRes.body.slice(0, 140))
+check('gacha analysis counts pulls', typeof gachaPayload.analysis.total === 'number', JSON.stringify(gachaPayload.analysis).slice(0, 120))
+
+const gachaSyncGet = fakeRes()
+await routes.get('/dsh-genshin-account/gacha/sync')({ url: '/dsh-genshin-account/gacha/sync', method: 'GET', headers: {} }, gachaSyncGet)
+check('gacha/sync rejects GET', gachaSyncGet.status === 405, String(gachaSyncGet.status))
 
 const widgetRes = fakeRes()
 await routes.get('/dsh-genshin-account/verify/widget')({ url: '/dsh-genshin-account/verify/widget?purpose=characters', method: 'GET', headers: {} }, widgetRes)
