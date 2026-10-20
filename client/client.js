@@ -327,7 +327,30 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             value: draft.miyousheCookie,
             onChange: function (event) { set("miyousheCookie", event.target.value); },
           }),
-          h("p", { className: "dga-hint" }, "Cookie 等同于登录凭据，会明文保存在本机 profile 配置里。只想读数据的话，优先用 GOOD 文件。")));
+          h("p", { className: "dga-hint" }, "Cookie 等同于登录凭据，会明文保存在本机 profile 配置里。只想读数据的话，优先用 GOOD 文件。")),
+        h("div", { className: "dga-field" },
+          h("button", {
+            className: "dga-btn",
+            onClick: props.onProbe,
+            disabled: props.busy || !draft.miyousheUid.trim(),
+          }, props.probing ? "诊断中…" : "接口诊断（看哪几个接口能过）"),
+          h("p", { className: "dga-hint" }, "用你已保存的 Cookie 依次请求 /index、/character/list、/character/detail，告诉你每个接口的真实返回码。配置不会因此改变。"),
+          props.probe && props.probe.length
+            ? h("table", { className: "dga-table", style: { marginTop: 8 } },
+                h("thead", null, h("tr", null,
+                  h("th", null, "接口"), h("th", null, "结果"), h("th", null, "详情"))),
+                h("tbody", null, props.probe.map(function (row, index) {
+                  return h("tr", { key: index },
+                    h("td", { className: "dga-num" }, row.step),
+                    h("td", null, row.ok
+                      ? h("span", { className: "dga-badge dga-badgeOk" }, "通过")
+                      : h("span", { className: "dga-badge" }, row.skipped ? "跳过" : "被拦")),
+                    h("td", { className: "dga-subs" },
+                      row.ok
+                        ? "角色 " + (row.characters || 0) + " · " + (row.ms || 0) + "ms"
+                        : (row.retcode != null ? "retcode " + row.retcode + " · " : "") + (row.message || "")));
+                })))
+            : null));
     }
 
     if (draft.source === "miyoushe-file") {
@@ -673,6 +696,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     var busyState = React.useState(false);
     var busy = busyState[0], setBusy = busyState[1];
+
+    var probeState = React.useState(null);
+    var probe = probeState[0], setProbe = probeState[1];
+    var probingState = React.useState(false);
+    var probing = probingState[0], setProbing = probingState[1];
 
     var messageState = React.useState("");
     var message = messageState[0], setMessage = messageState[1];
@@ -1063,6 +1091,28 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (input) input.value = "";
     }
 
+    /** Ask the host which record endpoints this cookie can actually reach. */
+    function runProbe() {
+      setProbing(true);
+      setProbe(null);
+      postJson("/probe-miyoushe")
+        .then(function (data) {
+          if (!data || data.ok === false) throw new Error((data && data.error) || "诊断失败");
+          setProbe(data.results || []);
+          var blocked = (data.results || []).filter(function (row) { return !row.ok && !row.skipped });
+          showMessage(
+            blocked.length === 0
+              ? "所有接口都通过了"
+              : blocked.length + " 个接口被拦，具体返回码见下方表格",
+            blocked.length > 0,
+          );
+        })
+        .catch(function (failure) {
+          showMessage(String(failure && failure.message ? failure.message : failure), true);
+        })
+        .then(function () { setProbing(false); });
+    }
+
     var tabs = [
       { id: "overview", label: "概览" },
       { id: "characters", label: "角色" },
@@ -1101,6 +1151,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         onPickMiyousheFile: onPickMiyousheFile,
         onMiyousheFileChange: onMiyousheFileChange,
         miyousheFileRef: miyousheFileRef,
+        onProbe: runProbe,
+        probe: probe,
+        probing: probing,
       });
     } else if (loading && !summary) {
       body = h("div", { className: "dga-empty" }, "读取中…");
