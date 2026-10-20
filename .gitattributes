@@ -1,0 +1,5 @@
+# Keep line endings stable across Windows and POSIX checkouts.
+* text=auto eol=lf
+
+# Game data is generated and compared byte-for-byte by the build scripts.
+data/*.json text eol=lf

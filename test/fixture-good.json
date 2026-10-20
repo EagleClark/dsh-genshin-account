@@ -1,0 +1,117 @@
+{
+  "format": "GOOD",
+  "version": 2,
+  "source": "dsh-genshin-account test fixture",
+  "characters": [
+    { "key": "HuTao", "level": 90, "ascension": 6, "constellation": 1, "talent": { "auto": 9, "skill": 10, "burst": 8 } },
+    { "key": "KamisatoAyaka", "level": 80, "ascension": 5, "constellation": 0, "talent": { "auto": 8, "skill": 6, "burst": 9 } },
+    { "key": "TravelerDendro", "level": 70, "ascension": 4, "talent": 6 }
+  ],
+  "weapons": [
+    { "key": "StaffOfHoma", "level": 90, "ascension": 6, "refinement": 1, "location": "HuTao" },
+    { "key": "AmenomaKageuchi", "level": 80, "ascension": 5, "refinement": 3, "location": "KamisatoAyaka" },
+    { "key": "Deathmatch", "level": 1, "ascension": 0, "refinement": 1, "location": "" }
+  ],
+  "artifacts": [
+    {
+      "setKey": "CrimsonWitchOfFlames",
+      "slotKey": "flower",
+      "rarity": 5,
+      "level": 20,
+      "mainStatKey": "hp",
+      "substats": [
+        { "key": "critRate_", "value": 10.5 },
+        { "key": "critDMG_", "value": 21.8 },
+        { "key": "atk_", "value": 5.8 },
+        { "key": "hp_", "value": 5.3 }
+      ],
+      "location": "HuTao",
+      "lock": true
+    },
+    {
+      "setKey": "CrimsonWitchOfFlames",
+      "slotKey": "plume",
+      "rarity": 5,
+      "level": 20,
+      "mainStatKey": "atk",
+      "substats": [
+        { "key": "critRate_", "value": 3.9 },
+        { "key": "critDMG_", "value": 28.0 },
+        { "key": "eleMas", "value": 40 },
+        { "key": "enerRech_", "value": 6.5 }
+      ],
+      "location": "HuTao",
+      "lock": true
+    },
+    {
+      "setKey": "CrimsonWitchOfFlames",
+      "slotKey": "sands",
+      "rarity": 5,
+      "level": 20,
+      "mainStatKey": "hp_",
+      "substats": [
+        { "key": "critRate_", "value": 7.0 },
+        { "key": "critDMG_", "value": 14.0 },
+        { "key": "eleMas", "value": 21 },
+        { "key": "def", "value": 23 }
+      ],
+      "location": "HuTao",
+      "lock": false
+    },
+    {
+      "setKey": "CrimsonWitchOfFlames",
+      "slotKey": "goblet",
+      "rarity": 5,
+      "level": 20,
+      "mainStatKey": "pyro_dmg_",
+      "substats": [
+        { "key": "critRate_", "value": 6.2 },
+        { "key": "critDMG_", "value": 18.7 },
+        { "key": "hp_", "value": 9.3 },
+        { "key": "def_", "value": 7.3 }
+      ],
+      "location": "HuTao",
+      "lock": true
+    },
+    {
+      "setKey": "CrimsonWitchOfFlames",
+      "slotKey": "circlet",
+      "rarity": 4,
+      "level": 16,
+      "mainStatKey": "critRate_",
+      "substats": [
+        { "key": "critDMG_", "value": 7.8 },
+        { "key": "atk_", "value": 4.7 },
+        { "key": "eleMas", "value": 19 }
+      ],
+      "location": "HuTao",
+      "lock": false
+    },
+    {
+      "setKey": "BlizzardStrayer",
+      "slotKey": "flower",
+      "rarity": 5,
+      "level": 20,
+      "mainStatKey": "hp",
+      "substats": [
+        { "key": "critDMG_", "value": 14.0 },
+        { "key": "atk_", "value": 9.3 },
+        { "key": "enerRech_", "value": 11.0 },
+        { "key": "hp_", "value": 4.7 }
+      ],
+      "location": "KamisatoAyaka"
+    },
+    {
+      "setKey": "BlizzardStrayer",
+      "slotKey": "plume",
+      "rarity": 5,
+      "level": 20,
+      "mainStatKey": "atk",
+      "substats": [
+        { "key": "critRate_", "value": 3.1 },
+        { "key": "critDMG_", "value": 7.0 }
+      ],
+      "location": "KamisatoAyaka"
+    }
+  ]
+}

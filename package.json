@@ -1,0 +1,53 @@
+{
+  "name": "dsh-genshin-account",
+  "description": "读取原神账号的角色、武器与圣遗物：支持本地 GOOD 文件 / Enka.Network / 米游社三种数据源，注册 5 个 agent 工具并在 GUI 里提供浏览页面 / Read your Genshin Impact characters, weapons and artifacts from a GOOD export, Enka.Network or the miHoYo record API, with agent tools and a browsing page.",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "keywords": [
+    "deepseek",
+    "harness",
+    "dsh",
+    "dsh-plugin",
+    "genshin",
+    "genshin-impact",
+    "good",
+    "enka",
+    "artifacts"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./client/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "client",
+    "data",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build:dict": "node scripts/build-dict.mjs",
+    "build:names": "node scripts/build-names.mjs",
+    "build:skills": "node scripts/build-skill-orders.mjs",
+    "test": "node test/smoke-good.mjs && node test/smoke-enka.mjs && node test/smoke-miyoushe.mjs && node test/smoke-host.mjs && node test/smoke-client.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.4"
+  }
+}

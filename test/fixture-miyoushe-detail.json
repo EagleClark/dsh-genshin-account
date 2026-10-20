@@ -1,0 +1,136 @@
+{
+  "retcode": 0,
+  "message": "OK",
+  "data": {
+    "list": [
+      {
+        "base": {
+          "id": 10000046,
+          "name": "胡桃",
+          "element": "Pyro",
+          "rarity": 5,
+          "level": 90,
+          "fetter": 10,
+          "actived_constellation_num": 1,
+          "weapon_type": 13
+        },
+        "is_chosen": true,
+        "weapon": {
+          "id": 13501,
+          "name": "护摩之杖",
+          "rarity": 5,
+          "level": 90,
+          "type": 13,
+          "affix_level": 1,
+          "promote_level": 6,
+          "main_property": { "property_type": 1, "base": "608", "add": "", "final": "608" },
+          "sub_property": { "property_type": 22, "base": "66.2%", "add": "", "final": "66.2%" }
+        },
+        "relics": [
+          {
+            "id": 75544,
+            "name": "魔女的炎之花",
+            "pos": 1,
+            "pos_name": "生之花",
+            "rarity": 5,
+            "level": 20,
+            "set": { "id": 2150041, "name": "炽烈的炎之魔女" },
+            "main_property": { "property_type": 2, "value": "4780", "times": 0 },
+            "sub_property_list": [
+              { "property_type": 20, "value": "27.2%", "times": 4 },
+              { "property_type": 22, "value": "13.6%", "times": 2 }
+            ]
+          },
+          {
+            "id": 75545,
+            "name": "魔女常燃之羽",
+            "pos": 2,
+            "pos_name": "死之羽",
+            "rarity": 5,
+            "level": 20,
+            "set": { "id": 2150041, "name": "炽烈的炎之魔女" },
+            "main_property": { "property_type": 5, "value": "311", "times": 0 },
+            "sub_property_list": [
+              { "property_type": 20, "value": "3.9%", "times": 1 },
+              { "property_type": 22, "value": "28.0%", "times": 4 },
+              { "property_type": 28, "value": "40", "times": 2 },
+              { "property_type": 23, "value": "6.5%", "times": 1 }
+            ]
+          },
+          {
+            "id": 75546,
+            "name": "魔女破灭之时",
+            "pos": 3,
+            "pos_name": "时之沙",
+            "rarity": 5,
+            "level": 20,
+            "set": { "id": 2150041, "name": "炽烈的炎之魔女" },
+            "main_property": { "property_type": 3, "value": "46.6%", "times": 0 },
+            "sub_property_list": [
+              { "property_type": 20, "value": "7.0%", "times": 2 },
+              { "property_type": 22, "value": "14.0%", "times": 2 },
+              { "property_type": 28, "value": "21", "times": 1 },
+              { "property_type": 8, "value": "23", "times": 1 }
+            ]
+          },
+          {
+            "id": 75547,
+            "name": "魔女的心之火",
+            "pos": 4,
+            "pos_name": "空之杯",
+            "rarity": 5,
+            "level": 20,
+            "set": { "id": 2150041, "name": "炽烈的炎之魔女" },
+            "main_property": { "property_type": 40, "value": "46.6%", "times": 0 },
+            "sub_property_list": [
+              { "property_type": 20, "value": "6.2%", "times": 2 },
+              { "property_type": 22, "value": "18.7%", "times": 3 },
+              { "property_type": 3, "value": "9.3%", "times": 1 },
+              { "property_type": 9, "value": "7.3%", "times": 1 }
+            ]
+          },
+          {
+            "id": 75548,
+            "name": "焦灼的魔女帽",
+            "pos": 5,
+            "pos_name": "理之冠",
+            "rarity": 4,
+            "level": 16,
+            "set": { "id": 2150041, "name": "炽烈的炎之魔女" },
+            "main_property": { "property_type": 20, "value": "23.2%", "times": 0 },
+            "sub_property_list": [
+              { "property_type": 22, "value": "7.8%", "times": 1 },
+              { "property_type": 6, "value": "4.7%", "times": 1 },
+              { "property_type": 28, "value": "19", "times": 1 }
+            ]
+          }
+        ],
+        "skills": [
+          { "skill_id": 462, "skill_type": 1, "name": "普通攻击·往生秘传枪法", "level": 10, "is_unlock": true },
+          { "skill_id": 463, "skill_type": 2, "name": "蝶引来生", "level": 9, "is_unlock": true },
+          { "skill_id": 464, "skill_type": 3, "name": "安神秘法", "level": 8, "is_unlock": true },
+          { "skill_id": 465, "skill_type": 4, "name": "固有天赋", "level": 1, "is_unlock": true }
+        ],
+        "constellations": [{ "id": 461, "pos": 1, "name": "「赤团开时」", "is_actived": true }]
+      }
+    ],
+    "property_map": {
+      "1": { "property_type": 1, "name": "基础攻击力" },
+      "2": { "property_type": 2, "name": "生命值" },
+      "3": { "property_type": 3, "name": "生命值" },
+      "5": { "property_type": 5, "name": "攻击力" },
+      "6": { "property_type": 6, "name": "攻击力" },
+      "8": { "property_type": 8, "name": "防御力" },
+      "9": { "property_type": 9, "name": "防御力" },
+      "20": { "property_type": 20, "name": "暴击率" },
+      "22": { "property_type": 22, "name": "暴击伤害" },
+      "23": { "property_type": 23, "name": "元素充能效率" },
+      "28": { "property_type": 28, "name": "元素精通" },
+      "40": { "property_type": 40, "name": "火元素伤害加成" }
+    },
+    "relic_property_options": {
+      "1": [2, 3, 5, 8, 20, 22, 23, 28],
+      "5": [2, 3, 5, 8, 20, 22, 23, 28]
+    }
+  }
+}

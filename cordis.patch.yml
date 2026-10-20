@@ -1,0 +1,7 @@
+# dsh bundle patch: inserts this plugin into a profile's layer stack.
+# The row id is the plugin's stable identity; `name` is the npm package that
+# provides it (the same package also declares `dsh.client`, so the web client
+# module scanner serves its browser bundle automatically).
+- insert:
+    - id: dsh-genshin-account
+      name: dsh-genshin-account

@@ -1,0 +1,36 @@
+{
+  "retcode": 0,
+  "message": "OK",
+  "data": {
+    "role": { "nickname": "测试旅行者", "level": 58, "region": "天空岛" },
+    "stats": { "active_day_number": 812, "achievement_number": 640, "avatar_number": 2 },
+    "list": [
+      {
+        "base": {
+          "id": 10000046,
+          "name": "胡桃",
+          "element": "Pyro",
+          "rarity": 5,
+          "level": 90,
+          "fetter": 10,
+          "actived_constellation_num": 1,
+          "weapon_type": 13
+        },
+        "is_chosen": true
+      },
+      {
+        "base": {
+          "id": 10000002,
+          "name": "神里绫华",
+          "element": "Cryo",
+          "rarity": 5,
+          "level": 80,
+          "fetter": 8,
+          "actived_constellation_num": 0,
+          "weapon_type": 1
+        },
+        "is_chosen": false
+      }
+    ]
+  }
+}
