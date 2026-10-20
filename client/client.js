@@ -756,6 +756,17 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       return "配置暂不可写。";
     }
 
+    /**
+     * A 1034 is not a dead end: send the user to the wizard and open the slider
+     * for them. Any other failure just shows its message.
+     */
+    function offerVerification(message) {
+      if (!/1034/.test(String(message || ""))) return false;
+      setTab("settings");
+      if (!verifyBusy) beginVerify();
+      return true;
+    }
+
     function loadSummary(force) {
       setLoading(true);
       var request = force ? postJson("/sync") : getJson("/summary");
@@ -773,7 +784,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             if (state.configured === false) setTab("settings");
           }
           if (!data || data.ok === false) {
-            if (data && data.error) showMessage(data.error, true);
+            var reason = (data && data.error) || "";
+            if (reason) showMessage(reason, true);
+            offerVerification(reason);
             return;
           }
           setSummary(data);
@@ -865,7 +878,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         })
         .then(function (data) {
           if (!data || data.ok === false) {
-            showMessage((data && data.error) || "同步失败", true);
+            var failure = (data && data.error) || "同步失败";
+            showMessage(failure, true);
+            offerVerification(failure);
             loadSummary(false);
             return;
           }
