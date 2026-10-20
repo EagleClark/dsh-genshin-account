@@ -323,6 +323,17 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             "服务器按 UID 自动判断：1/2/3 → 官服（天空岛），5 → 渠道服（世界树）。当前：" +
             (draft.miyousheServer || "（自动）"))),
         h("div", { className: "dga-field" },
+          h("label", { className: "dga-label" }, "扫码登录（推荐）"),
+          h("div", { className: "dga-fileRow" },
+            h("button", { className: "dga-btn dga-btn-primary", onClick: props.onStartQr, disabled: props.busy || props.qrBusy }, props.qrBusy ? "生成中…" : (props.qr ? "换一张二维码" : "生成二维码")),
+            props.qr ? h("button", { className: "dga-btn", onClick: props.onCancelQr, disabled: props.qrBusy }, "取消") : null),
+          props.qr
+            ? h("div", { style: { marginTop: 10, padding: 8, background: "#fff", width: 276, borderRadius: 8 }, dangerouslySetInnerHTML: { __html: props.qr.svg } })
+            : null,
+          props.qrStatus ? h("p", { className: "dga-hint" }, props.qrStatus) : null,
+          h("p", { className: "dga-hint" },
+            "用手机米游社 App 扫码并在手机上点确认。登录后插件自己持有会话（session 由它签发），因此不会再触发 1034 人机验证，也不需要你复制 Cookie。")),
+        h("div", { className: "dga-field" },
           h("label", { className: "dga-label" }, "米游社 Cookie"),
           h("textarea", {
             className: "dga-input dga-textarea",
@@ -704,6 +715,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var probe = probeState[0], setProbe = probeState[1];
     var probingState = React.useState(false);
     var probing = probingState[0], setProbing = probingState[1];
+
+    var qrState = React.useState(null);
+    var qr = qrState[0], setQr = qrState[1];
+    var qrStatusState = React.useState("");
+    var qrStatus = qrStatusState[0], setQrStatus = qrStatusState[1];
+    var qrBusyState = React.useState(false);
+    var qrBusy = qrBusyState[0], setQrBusy = qrBusyState[1];
+    var qrTimerRef = React.useRef(null);
 
     var messageState = React.useState("");
     var message = messageState[0], setMessage = messageState[1];
@@ -1094,6 +1113,97 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (input) input.value = "";
     }
 
+    /**
+     * QR login. The host mints the QR and owns the polling; this half only
+     * renders the SVG, keeps the user oriented, and writes the resulting cookie
+     * through the settings document once miHoYo confirms the scan.
+     */
+    function stopQrPolling() {
+      if (qrTimerRef.current) {
+        clearInterval(qrTimerRef.current);
+        qrTimerRef.current = null;
+      }
+    }
+
+    function startQr() {
+      stopQrPolling();
+      setQrBusy(true);
+      setQr(null);
+      setQrStatus("生成二维码…");
+      postJson("/login/qr")
+        .then(function (data) {
+          if (!data || data.ok === false) throw new Error((data && data.error) || "生成二维码失败");
+          setQr({ svg: data.svg, ticket: data.ticket });
+          setQrStatus("用手机米游社 App 扫码，然后在手机上点「确认登录」");
+          var attempts = 0;
+          qrTimerRef.current = setInterval(function () {
+            attempts += 1;
+            if (attempts > 60) {
+              stopQrPolling();
+              setQrStatus("二维码已超时，请重新生成");
+              return;
+            }
+            postJson("/login/poll", JSON.stringify({ ticket: data.ticket }))
+              .then(function (poll) {
+                if (!poll || poll.ok === false) throw new Error((poll && poll.error) || "查询失败");
+                if (poll.status === "Confirmed") {
+                  stopQrPolling();
+                  setQrStatus("登录成功，正在写入会话并同步…");
+                  setQr(null);
+                  return finishQrLogin(poll.cookie);
+                }
+                if (poll.status === "Scanned") setQrStatus("已扫描，请在手机上点「确认登录」");
+                else if (poll.status === "Expired") {
+                  stopQrPolling();
+                  setQrStatus("二维码已过期，请重新生成");
+                } else if (poll.status === "Canceled") {
+                  stopQrPolling();
+                  setQrStatus("已在手机上取消登录");
+                }
+              })
+              .catch(function (failure) {
+                stopQrPolling();
+                setQrStatus("查询扫码状态失败：" + String(failure && failure.message ? failure.message : failure));
+              });
+          }, 2000);
+        })
+        .catch(function (failure) {
+          setQrStatus("生成二维码失败：" + String(failure && failure.message ? failure.message : failure));
+        })
+        .then(function () { setQrBusy(false); });
+    }
+
+    function cancelQr() {
+      stopQrPolling();
+      setQr(null);
+      setQrStatus("");
+    }
+
+    function finishQrLogin(cookie) {
+      setBusy(true);
+      persist({ source: "miyoushe", miyousheCookie: cookie })
+        .then(function (accepted) {
+          if (accepted === false) throw new Error("部署未接受登录得到的 Cookie");
+          setField("miyousheCookie", "");
+          setField("hasCookie", true);
+          return postJson("/sync");
+        })
+        .then(function (data) {
+          if (!data || data.ok === false) {
+            showMessage((data && data.error) || "同步失败", true);
+            return;
+          }
+          setSummary(data);
+          setDraft(draftFrom((data.state && data.state.config) || {}));
+          showMessage("扫码登录成功，已同步 " + data.characters.length + " 个角色");
+          setTab("overview");
+        })
+        .catch(function (failure) {
+          showMessage("写入登录会话失败：" + String(failure && failure.message ? failure.message : failure), true);
+        })
+        .then(function () { setBusy(false); });
+    }
+
     /** Ask the host which record endpoints this cookie can actually reach. */
     function runProbe() {
       setProbing(true);
@@ -1157,6 +1267,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         onProbe: runProbe,
         probe: probe,
         probing: probing,
+        onStartQr: startQr,
+        onCancelQr: cancelQr,
+        qr: qr,
+        qrStatus: qrStatus,
+        qrBusy: qrBusy,
       });
     } else if (loading && !summary) {
       body = h("div", { className: "dga-empty" }, "读取中…");

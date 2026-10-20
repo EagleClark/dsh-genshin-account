@@ -108,7 +108,7 @@ check('weapons rarity filter', weaponsResult.value.weapons.every((w) => w.rarity
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-check('routes mounted', routePaths.length === 10, routePaths.join(','))
+check('routes mounted', routePaths.length === 12, routePaths.join(','))
 
 function fakeRes() {
   const res = {
