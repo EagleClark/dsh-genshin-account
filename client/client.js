@@ -141,6 +141,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-path{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--dsw-alias-label-tertiary);word-break:break-all}",
     ".dga-banner{margin:10px 20px 0;padding:8px 12px;border-radius:10px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:1.7;white-space:pre-wrap}",
     ".dga-banner-err{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-label-primary)}",
+    ".dga-verifyFrame{width:100%;max-width:520px;height:420px;margin-top:12px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-layer-2)}",
     ".dga-art{display:inline-flex;align-items:center;justify-content:center;object-fit:cover;border-radius:12px;border:2px solid transparent;background:var(--dsw-alias-bg-layer-2);flex:0 0 auto}",
     ".dga-art-ph{color:var(--dsw-alias-label-tertiary);font-weight:600;font-size:18px}",
     ".dga-hero{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 20px;margin:16px 20px 4px;border:1px solid var(--dsw-alias-border-l2);border-radius:16px;background:linear-gradient(135deg,var(--dsw-alias-bg-layer-2),var(--dsw-alias-bg-base))}",
@@ -283,11 +284,23 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       h("div", { className: "dga-field" },
         h("label", { className: "dga-label" }, "圣遗物词条验证（可选）"),
-        h("button", { className: "dga-btn", onClick: props.onVerifyWindow }, "打开验证页面"),
+        h("div", { className: "dga-fileRow" },
+          h("button", { className: "dga-btn dga-btn-primary", onClick: props.onVerifyInline },
+            props.verifyInline ? "收起验证" : "在页面内验证"),
+          h("button", { className: "dga-btn", onClick: props.onVerifyWindow }, "在新窗口验证"),
+          h("button", { className: "dga-btn", onClick: props.onRefresh }, "已完成，刷新数据")),
+        props.verifyInline
+          ? h("iframe", {
+              className: "dga-verifyFrame",
+              src: API + "/verify/widget?purpose=index",
+              title: "米游社安全验证",
+            })
+          : null,
         props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null,
         h("p", { className: "dga-hint" },
           "角色、等级、命座、天赋、武器不需要验证就能读。只有「圣遗物副词条」受米游社风控限制，" +
-          "需要在弹出的页面里拖一次滑块；通过后 CV / 词条效率才会有数据。")));
+          "需要拖一次滑块；通过后 CV / 词条效率才会有数据。如果上面的框里没有出现滑块，" +
+          "换「在新窗口验证」即可。")));
 
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-wizard" },
@@ -898,6 +911,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var qrBusy = qrBusyState[0], setQrBusy = qrBusyState[1];
     var qrTimerRef = React.useRef(null);
 
+    var verifyInlineState = React.useState(false);
+    var verifyInline = verifyInlineState[0], setVerifyInline = verifyInlineState[1];
+
     var gachaState = React.useState(null);
     var gacha = gachaState[0], setGacha = gachaState[1];
     var gachaBusyState = React.useState(false);
@@ -1441,6 +1457,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         if (event.origin !== window.location.origin) return;
         var data = event.data || {};
         if (data.type !== "dga-verify-done") return;
+        setVerifyInline(false);
         setVerifyTask(null);
         setVerifyStatus("验证已完成，正在刷新账号数据…");
         loadSummary(true);
@@ -1541,6 +1558,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         qrBusy: qrBusy,
         onVerify: function () { beginVerify("index"); },
         onVerifyWindow: function () { verifyInWindow("index"); },
+        onVerifyInline: function () { setVerifyInline(!verifyInline); },
+        onRefresh: function () { loadSummary(true); },
+        verifyInline: verifyInline,
         verifyTask: verifyTask,
         verifyStatus: verifyStatus,
         verifyBusy: verifyBusy,
