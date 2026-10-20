@@ -239,7 +239,38 @@ globalThis.fetch = async (url) => {
   const target = String(url)
   const respond = (body) => ({ status: 200, text: async () => JSON.stringify(body), json: async () => body, headers: { getSetCookie: () => [] } })
   if (target.includes('/device-fp/api/getFp')) return respond({ retcode: 0, data: { device_fp: 'fp' } })
+  if (target.includes('/card/wapi/createVerification')) return respond({ retcode: 0, data: { gt: 'GT', challenge: 'CH', new_captcha: 1 } })
+  if (target.includes('/card/wapi/verifyVerification')) return respond({ retcode: 0, data: { challenge: 'XRPC-OK' } })
   if (target.includes('/character/detail')) return respond(detailFixture)
+  if (target.includes('/sync/avatar/detail')) {
+    const id = Number((target.match(/avatar_id=(\d+)/) || [])[1])
+    if (id === 10000046) {
+      return respond({
+        retcode: 0,
+        data: {
+          level: 90,
+          avatar: { id, name: '胡桃', constellation_num: 1 },
+          skill_list: [{ id: 10461, level_current: 9 }, { id: 10462, level_current: 10 }, { id: 10463, level_current: 8 }],
+          weapon: { id: 13501, name: '护摩之杖', level_current: 90 },
+          reliquary_list: [{ id: 8054 }],
+        },
+      })
+    }
+    if (id === 10000002) {
+      return respond({
+        retcode: 0,
+        data: {
+          level: 80,
+          avatar: { id, name: '神里绫华', constellation_num: 0 },
+          skill_list: [{ id: 10024, level_current: 8 }],
+          weapon: { id: 11432, name: '厄水之祸', level_current: 80 },
+          reliquary_list: [],
+        },
+      })
+    }
+    return respond({ retcode: 0, data: {} })
+  }
+  if (target.includes('/roleBasicInfo')) return respond({ retcode: 0, data: { nickname: '测试旅行者', level: 58, region: 'cn_gf01' } })
   return respond(indexFixture)
 }
 hostApply(
@@ -269,6 +300,21 @@ function fakeRes() {
   }
 }
 
+async function postRoute(target, text) {
+  const pathname = target.split('?')[0]
+  const req = {
+    url: '/dsh-genshin-account' + pathname,
+    method: 'POST',
+    headers: {},
+    async *[Symbol.asyncIterator]() {
+      yield Buffer.from(text, 'utf8')
+    },
+  }
+  const res = fakeRes()
+  await hostRoutes.get('/dsh-genshin-account' + pathname)(req, res)
+  return JSON.parse(res.body)
+}
+
 async function fetchRoute(target) {
   // The router matches the pathname only; the browser helper keeps the query.
   const pathname = target.split('?')[0]
@@ -289,10 +335,15 @@ check('overview.player', summary.overview.player && typeof summary.overview.play
 check('overview.counts', summary.overview.counts && typeof summary.overview.counts.characters === 'number')
 check('overview.fiveStarArtifacts', typeof summary.overview.counts.fiveStarArtifacts === 'number')
 check('overview.elements', summary.overview.elements && typeof summary.overview.elements === 'object')
-check('overview.bestArtifact fields', summary.overview.bestArtifact && 'setName' in summary.overview.bestArtifact && 'cv' in summary.overview.bestArtifact)
+check('overview.bestArtifact is null or complete', summary.overview.bestArtifact === null || ('setName' in summary.overview.bestArtifact && 'cv' in summary.overview.bestArtifact), JSON.stringify(summary.overview.bestArtifact))
 check('overview.note', typeof summary.overview.note === 'string')
 const listItem = summary.characters[0]
 check('character list item fields', ['id', 'name', 'level', 'element', 'elementZh', 'rarity', 'constellation'].every((key) => key in listItem), JSON.stringify(listItem))
+
+// Per-character artifacts only exist on the record path; pass one verification
+// (stubbed) so the contract below is checked against the full snapshot.
+const verified = await postRoute('/verify/finish', JSON.stringify({ purpose: 'index', challenge: 'CH', validate: 'VAL' }))
+check('stubbed verification yields the full snapshot', verified.ok === true && verified.overview.counts.artifacts > 0, JSON.stringify(verified.overview && verified.overview.counts))
 
 const character = (await fetchRoute('/character?name=' + encodeURIComponent('胡桃'))).character
 check('character.name', typeof character.name === 'string')

@@ -8,7 +8,18 @@ A DeepSeek Harness plugin that reads your Genshin Impact account (characters, ta
 
 ## 数据从哪来
 
-国服没有"填个 UID 就能查"的公开接口：`api-takumi-record.mihoyo.com` 上的每个读取接口都要求登录态，并且在返回数据前要求一次人机验证。插件把这两步都做完了，只有一条数据链路：
+插件有两条读取通道，自动选用，**不需要你做选择**：
+
+| 通道 | 要不要验证 | 能读到 |
+| --- | --- | --- |
+| **养成计算器同步**（默认，`api-takumi.mihoyo.com/.../sync/avatar/detail`） | **不需要** | 全部角色、等级、命座、三段天赋、武器名与等级、圣遗物件数与等级 |
+| **战绩接口**（`/game_record/app/genshin/api/*`） | 需要一次 geetest 滑块 | 在上面的基础上补上**圣遗物副词条**，从而能算 CV / 词条效率 |
+
+默认先用计算器把角色数据给你；只有当你完成过一次验证，才切到战绩接口拿副词条。
+
+两条通道都要**登录态**：国服没有"填个 UID 就能查"的公开接口。登录由插件自己完成，扫码即可。
+
+战绩接口那条链路完整长这样（只有在算圣遗物评分时才会走）：
 
 | 步骤 | 接口 / 机制 |
 | --- | --- |
@@ -17,8 +28,6 @@ A DeepSeek Harness plugin that reads your Genshin Impact account (characters, ta
 | 3. 拖滑块 | 页面内加载 geetest v3 控件，产出 `geetest_challenge` + `geetest_validate`；`x-rpc-challenge_path` 决定这次验证解锁哪个接口（`/index` 与 `/character/list` 分别验证） |
 | 4. 兑换通行证 | `POST /game_record/app/card/wapi/verifyVerification` → `x-rpc-challenge` |
 | 5. 读取数据 | `GET /game_record/app/genshin/api/index`、`POST /character/detail`，带上 `x-rpc-challenge` |
-
-能读到：账号概览（昵称/等级/区服/成就/活跃天数）、全部角色（等级、命座、三段天赋、武器、五件圣遗物含每条副词条与强化值）。
 
 > 这套流程与 Snap.Hutao 的 `CardClient` + `GeetestService` 一致（它的 `RetryIf1034Async` 就是"遇 1034 → 验证 → 带 `x-rpc-challenge` 重发"）。人机验证是官方要求，插件只把这一步搬到自己界面上，不绕过任何风控。
 
