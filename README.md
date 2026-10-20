@@ -59,9 +59,24 @@ dsh plugin --profile web add <仓库绝对路径>
 
 ### 怎么拿 GOOD 文件
 
-1. 装一个导出工具：**Amenoma**、**Genshin Optimizer**（导入 UID 后另存 GOOD）、或 **Inventory Kamera**。
-2. 导出得到 `GOOD.json`。
-3. 回页面点 **选择 GOOD 文件** 选中它即可。
+GOOD 是社区通用的账号数据格式，由第三方扫描工具从游戏界面 OCR 导出。**三个工具导出的内容不一样**，按需要的字段选：
+
+| 工具 | 导出内容 | 下载地址 | 说明 |
+| --- | --- | --- | --- |
+| **Inventory Kamera**（推荐） | 角色 + 武器 + 圣遗物 + 材料 | <https://github.com/Andrewthe13th/Inventory_Kamera/releases/latest> | 只有它能一次拿到**角色和武器**，本插件吃全套数据用它。Windows 工具，需装 VC++ 运行库 |
+| **Amenoma**（天目） | **只有圣遗物** + 材料 | <https://github.com/daydreaming666/Amenoma/releases> | 轻量、中文界面；导出文件名类似 `artifacts.GOOD.json`。中文界面**别下** `Amenoma_EN.exe` |
+| **Genshin Optimizer** | 不导出，是分析工具 | <https://frzyc.github.io/genshin-optimizer/> | 网页版，可直接导入上面任一工具产出的 GOOD；也能按 UID 从 Enka 拉数据（仅国际服） |
+
+**Inventory Kamera 使用要点**（官方 README 明确要求，踩了会扫歪）：
+
+1. 游戏分辨率必须是 **16:9 或 16:10**（1920×1080 / 2560×1440 等），否则改成匹配的窗口化分辨率
+2. **关闭 HDR**（Windows 设置里的 HDR 会导致识别失败）
+3. 键位用默认：背包 `B`、角色 `C`、选角色 `1`；改过就在工具里配对应键
+4. 运行工具 → 勾选 **weapons / artifacts / characters** → 开始扫描 → 导出 `.GOOD.json`
+
+拿到文件后，回设置页点 **选择 GOOD 文件** 选中它即可（自动复制到 DSH 数据目录并填入路径）。
+
+> 再次强调：EXE 从 **Releases** 页下载，不要点 GitHub 仓库右上角的 `Code → Download ZIP`（那是源码）。
 
 ### 怎么拿米游社 Cookie
 

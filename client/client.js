@@ -70,9 +70,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   /** Step lists shown under the selected source card. */
   var GUIDES = {
     good: [
-      "装一个导出工具：Amenoma（最省事）、Genshin Optimizer、或 Inventory Kamera",
-      "在工具里读取你的角色（展柜或本地背包），导出为 GOOD 格式的 JSON",
-      "回到这里点「选择 GOOD 文件」并选中那个 JSON —— 不需要手填路径",
+      "下载扫描工具 Inventory Kamera（角色+武器+圣遗物全扫）：github.com/Andrewthe13th/Inventory_Kamera/releases/latest",
+      "游戏设为 16:9 或 16:10 窗口（关掉 HDR），键位用默认；运行工具，勾上 weapons / artifacts / characters 后开始扫描",
+      "扫完会导出一个 .GOOD.json 文件（想只扫圣遗物可以用 Amenoma：github.com/daydreaming666/Amenoma/releases）",
+      "回到这里点「选择 GOOD 文件」选中它 —— 不需要手填路径",
     ],
     enka: [
       "在游戏里：派蒙菜单 → 角色 → 展柜设置，把想看的角色放上展柜，并设为「公开」",
