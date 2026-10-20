@@ -90,6 +90,7 @@ globalThis.fetch = () =>
 
 // --- fake ctx: record slot registrations ------------------------------------
 const registrations = []
+let disposed = 0
 const ctx = {
   slots: {
     inject(key, callback) {
@@ -97,7 +98,9 @@ const ctx = {
     },
     register(options, component) {
       registrations.push({ options, component })
-      return () => {}
+      return () => {
+        disposed += 1
+      }
     },
   },
   configForms: {
@@ -148,6 +151,20 @@ check(
   getCalls.join(','),
 )
 check('subscribes to the config form snapshot', subscribed === true)
+
+// The client module table can re-apply a bundle in one session (recomposition /
+// HMR). Registering the same keyed cell twice abdicates the first occupant and,
+// once the second is disposed, leaves a dead entry: selecting that panel key
+// renders an empty column. Re-applying must therefore dispose the previous pair.
+const beforeReapply = registrations.length
+mod.apply(ctx)
+check('re-apply disposes the previous registrations', disposed === 2, String(disposed))
+check('re-apply registers one fresh pair', registrations.length === beforeReapply + 2, String(registrations.length))
+check(
+  'the fresh pair still covers both seats',
+  registrations.slice(-2).map((entry) => entry.options.name).join(',') === 'main,sidebar.panellist',
+  registrations.slice(-2).map((entry) => entry.options.name).join(','),
+)
 
 // --- the setup wizard is reachable and offers all three sources -------------
 // Components are plain functions here, so expand them before walking.

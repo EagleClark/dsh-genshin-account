@@ -1055,20 +1055,45 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("circle", { cx: 12, cy: 12, r: 1.1, fill: color }));
   }
 
+  // Every registration this module currently owns. The client module table can
+  // load/re-apply a plugin bundle more than once in one page session (module
+  // recomposition, HMR); without this, the second registration displaces the
+  // first in the same keyed cell, the second is then disposed, and what is left
+  // is an ABDICATED entry — the panel key resolves to nothing and selecting it
+  // renders an empty column. Disposing the previous set before registering
+  // again keeps exactly one live occupant.
+  var owned = [];
+
+  function disposeOwned() {
+    for (var i = 0; i < owned.length; i++) {
+      try {
+        owned[i]();
+      } catch (error) {
+        /* already gone */
+      }
+    }
+    owned = [];
+  }
+
   function apply(ctx) {
     ensureCss();
     clientCtx = ctx;
+    disposeOwned();
     // `main` first: the sidebar's click validates the key against the live
     // `main` entries, so the panel must exist before the icon can be pressed.
-    ctx.slots.inject("main", function () {
-      return ctx.slots.register({ name: "main", key: PANEL_ID, registrant: PKG }, GenshinPage);
-    });
-    ctx.slots.inject("sidebar.panellist", function () {
-      return ctx.slots.register(
-        { name: "sidebar.panellist", id: PANEL_ID, order: 20, label: function () { return "原神账号"; }, registrant: PKG },
-        GenshinIcon,
-      );
-    });
+    owned.push(
+      ctx.slots.inject("main", function () {
+        return ctx.slots.register({ name: "main", key: PANEL_ID, registrant: PKG }, GenshinPage);
+      }),
+    );
+    owned.push(
+      ctx.slots.inject("sidebar.panellist", function () {
+        return ctx.slots.register(
+          { name: "sidebar.panellist", id: PANEL_ID, order: 20, label: function () { return "原神账号"; }, registrant: PKG },
+          GenshinIcon,
+        );
+      }),
+    );
   }
 
   exports.name = PKG;

@@ -1,7 +1,7 @@
 {
   "name": "dsh-genshin-account",
-  "description": "读取原神账号的角色、武器与圣遗物：支持本地 GOOD 文件 / Enka.Network / 米游社三种数据源，注册 5 个 agent 工具并在 GUI 里提供浏览页面 / Read your Genshin Impact characters, weapons and artifacts from a GOOD export, Enka.Network or the miHoYo record API, with agent tools and a browsing page.",
-  "version": "0.2.1",
+  "description": "璇诲彇鍘熺璐﹀彿鐨勮鑹层€佹鍣ㄤ笌鍦ｉ仐鐗╋細鏀寔鏈湴 GOOD 鏂囦欢 / Enka.Network / 绫虫父绀句笁绉嶆暟鎹簮锛屾敞鍐?5 涓?agent 宸ュ叿骞跺湪 GUI 閲屾彁渚涙祻瑙堥〉闈?/ Read your Genshin Impact characters, weapons and artifacts from a GOOD export, Enka.Network or the miHoYo record API, with agent tools and a browsing page.",
+  "version": "0.2.2",
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",
