@@ -1,7 +1,7 @@
 {
   "name": "dsh-genshin-account",
   "description": "读取原神账号的角色、武器与圣遗物：支持本地 GOOD 文件 / Enka.Network / 米游社三种数据源，注册 5 个 agent 工具并在 GUI 里提供浏览页面 / Read your Genshin Impact characters, weapons and artifacts from a GOOD export, Enka.Network or the miHoYo record API, with agent tools and a browsing page.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",

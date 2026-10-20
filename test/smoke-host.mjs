@@ -7,7 +7,7 @@
  * renderers produce something readable, and the HTTP routes the browser half
  * calls answer with the documented shapes.
  */
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { apply, Config } from '../lib/index.js'
@@ -108,7 +108,7 @@ check('weapons rarity filter', weaponsResult.value.weapons.every((w) => w.rarity
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-check('routes mounted', routePaths.length === 6, routePaths.join(','))
+check('routes mounted', routePaths.length === 7, routePaths.join(','))
 
 function fakeRes() {
   const res = {
@@ -149,7 +149,17 @@ check('artifacts route ok', JSON.parse(artifactsRes.body).ok === true, artifacts
 
 const stateRes = fakeRes()
 await routes.get('/dsh-genshin-account/state')({ url: '/dsh-genshin-account/state', method: 'GET', headers: {} }, stateRes)
-check('state route ok', JSON.parse(stateRes.body).source === 'good', stateRes.body.slice(0, 120))
+const statePayload = JSON.parse(stateRes.body)
+check('state route ok', statePayload.source === 'good', stateRes.body.slice(0, 120))
+check('state carries the wizard config', Boolean(statePayload.config) && statePayload.config.source === 'good', JSON.stringify(statePayload.config))
+check('state carries the good path', statePayload.config && statePayload.config.goodPath === fixture, String(statePayload.config && statePayload.config.goodPath))
+check(
+  'state carries per-source status',
+  Boolean(statePayload.sources) && ['good', 'enka', 'miyoushe'].every((key) => key in statePayload.sources),
+  JSON.stringify(statePayload.sources),
+)
+check('good source reads as configured', statePayload.sources.good.configured === true)
+check('enka source reads as unconfigured', statePayload.sources.enka.configured === false)
 
 const syncRes = fakeRes()
 await routes.get('/dsh-genshin-account/sync')({ url: '/dsh-genshin-account/sync', method: 'POST', headers: {} }, syncRes)
@@ -158,6 +168,43 @@ check('sync route ok', JSON.parse(syncRes.body).ok === true, syncRes.body.slice(
 const badOriginRes = fakeRes()
 await routes.get('/dsh-genshin-account/sync')({ url: '/x', method: 'POST', headers: { origin: 'https://evil.example', host: 'localhost:1' } }, badOriginRes)
 check('sync rejects cross origin', badOriginRes.status === 403, String(badOriginRes.status))
+
+// --- upload-good: the wizard's "选择文件" path -------------------------------
+function fakeUpload(text, { origin, method = 'POST' } = {}) {
+  const req = {
+    url: '/dsh-genshin-account/upload-good',
+    method,
+    headers: origin ? { origin, host: 'localhost:1' } : {},
+    async *[Symbol.asyncIterator]() {
+      yield Buffer.from(text, 'utf8')
+    },
+  }
+  return req
+}
+
+const uploaded = fakeRes()
+await routes.get('/dsh-genshin-account/upload-good')(fakeUpload(readFileSync(fixture, 'utf8')), uploaded)
+const uploadPayload = JSON.parse(uploaded.body)
+check('upload-good accepts a GOOD file', uploadPayload.ok === true, uploaded.body.slice(0, 160))
+check('upload-good reports counts', uploadPayload.summary && uploadPayload.summary.characters === 3 && uploadPayload.summary.artifacts === 7, JSON.stringify(uploadPayload.summary))
+check('upload-good stores under DSH_HOME', typeof uploadPayload.path === 'string' && uploadPayload.path.includes('dsh-genshin-account'), String(uploadPayload.path))
+check('upload-good wrote the file', existsSync(uploadPayload.path), String(uploadPayload.path))
+
+const notGood = fakeRes()
+await routes.get('/dsh-genshin-account/upload-good')(fakeUpload('{"some":"json"}'), notGood)
+check('upload-good rejects non-GOOD json', JSON.parse(notGood.body).ok === false, notGood.body.slice(0, 140))
+
+const brokenJson = fakeRes()
+await routes.get('/dsh-genshin-account/upload-good')(fakeUpload('not json at all'), brokenJson)
+check('upload-good rejects invalid json', JSON.parse(brokenJson.body).ok === false, brokenJson.body.slice(0, 140))
+
+const uploadBadOrigin = fakeRes()
+await routes.get('/dsh-genshin-account/upload-good')(fakeUpload('{}', { origin: 'https://evil.example' }), uploadBadOrigin)
+check('upload-good rejects cross origin', uploadBadOrigin.status === 403, String(uploadBadOrigin.status))
+
+const uploadGet = fakeRes()
+await routes.get('/dsh-genshin-account/upload-good')(fakeUpload('{}', { method: 'GET' }), uploadGet)
+check('upload-good rejects GET', uploadGet.status === 405, String(uploadGet.status))
 
 // A source that cannot work must degrade to a soft error, not a throw.
 // Drop the persisted snapshot first: keeping a stale one is correct behaviour,
@@ -180,6 +227,28 @@ apply(
 )
 const brokenValue = await brokenTools.get('genshin_account_overview').execute({ refresh: true }, {})
 check('missing GOOD file is a soft error', brokenValue.ok === false && /找不到 GOOD 文件/.test(brokenValue.error), JSON.stringify(brokenValue).slice(0, 160))
+
+// The wizard prefills from /state, so the cookie must never travel back out.
+const SECRET = 'ltuid_v2=123456789; ltoken_v2=SUPER_SECRET_TOKEN_VALUE; ltmid_v2=abc'
+const secretRoutes = new Map()
+apply(
+  {
+    on() {},
+    effect: (fn) => fn(),
+    inject: (names, callback) =>
+      callback({
+        effect: (fn) => fn(),
+        tools: { register: () => () => {} },
+        webServer: { register: (route) => (secretRoutes.set(route.path, route.handler), () => {}) },
+      }),
+  },
+  { source: 'miyoushe', miyousheUid: '123456789', miyousheCookie: SECRET, cacheSeconds: 0 },
+)
+const secretRes = fakeRes()
+await secretRoutes.get('/dsh-genshin-account/state')({ url: '/dsh-genshin-account/state', method: 'GET', headers: {} }, secretRes)
+check('state never echoes the cookie', !secretRes.body.includes('SUPER_SECRET_TOKEN_VALUE'), secretRes.body.slice(0, 200))
+check('state reports the cookie as stored', JSON.parse(secretRes.body).config.hasCookie === true, secretRes.body.slice(0, 200))
+check('state marks miyoushe configured', JSON.parse(secretRes.body).sources.miyoushe.configured === true, secretRes.body.slice(0, 200))
 
 // --- schema ---------------------------------------------------------------
 // A schemastery object is a callable schema, so it is a function, not a plain object.

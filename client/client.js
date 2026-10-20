@@ -8,8 +8,12 @@
 //   - `sidebar.panellist` renders the icon (props: { size, active } only — the
 //     sidebar owns the button and the click),
 //   - `main` (keyed by the same id) renders the panel.
-// Nothing here talks to a business service: everything is read from the host's
-// same-origin JSON routes mounted by ../lib/index.js.
+//
+// Two kinds of traffic with the host half:
+//   - reads: same-origin JSON routes under /dsh-genshin-account (summary,
+//     character, artifacts, weapons, state, sync, upload-good),
+//   - writes: this plugin's own Config through `ctx.configForms`, which rides
+//     the settings document's revision fence instead of a private namespace.
 window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => {
   var module = { exports: {} };
   var exports = module.exports;
@@ -21,12 +25,67 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   var PKG = "dsh-genshin-account";
   var PANEL_ID = "genshin";
   var API = "/dsh-genshin-account";
+  // Package name == Loader row id == the Config entry this bundle edits.
+  var ENTRY_ID = PKG;
+  // The plugin's own client context, captured in apply(): the page component is
+  // defined at module scope, so it reaches the Config form through this rather
+  // than through slot props (which carry only the framework shares).
+  var clientCtx = null;
 
   var ELEMENT_COLOR = {
     pyro: "#ef7938", hydro: "#4cc2f1", anemo: "#74c2a8", electro: "#af8ec1",
     dendro: "#a5c83b", cryo: "#9fd6e3", geo: "#fab632", none: "#9aa0a6",
   };
-  var SLOT_ZH = { flower: "生之花", plume: "死之羽", sands: "时之沙", goblet: "空之杯", circlet: "理之冠" };
+
+  var SOURCE_LABEL = { good: "本地 GOOD 文件", enka: "Enka.Network", miyoushe: "米游社（国服）" };
+
+  /** One card per data source: what it reads, and its catch. */
+  var SOURCES = [
+    {
+      id: "good",
+      name: "本地 GOOD 文件",
+      badge: "推荐",
+      reads: "完整背包：全部角色、全部武器、全部圣遗物（含每条副词条）",
+      limits: "需要先用导出工具生成一份 JSON；角色/圣遗物变动后要重新导出",
+      servers: "国服 / 国际服都行",
+    },
+    {
+      id: "enka",
+      name: "Enka.Network",
+      badge: "",
+      reads: "角色展柜上的角色详情（最多 8 个）：等级、命座、天赋、武器、圣遗物",
+      limits: "只有展柜角色；国服 UID 不支持；国内网络常连不上 enka.network",
+      servers: "仅国际服",
+    },
+    {
+      id: "miyoushe",
+      name: "米游社（国服）",
+      badge: "",
+      reads: "账号概览 + 全部角色列表 + 已公开角色详情的天赋/武器/圣遗物",
+      limits: "只对「角色详情已公开」的角色返回详细数据；官方改版时签名会失效",
+      servers: "国服",
+    },
+  ];
+
+  /** Step lists shown under the selected source card. */
+  var GUIDES = {
+    good: [
+      "装一个导出工具：Amenoma（最省事）、Genshin Optimizer、或 Inventory Kamera",
+      "在工具里读取你的角色（展柜或本地背包），导出为 GOOD 格式的 JSON",
+      "回到这里点「选择 GOOD 文件」并选中那个 JSON —— 不需要手填路径",
+    ],
+    enka: [
+      "在游戏里：派蒙菜单 → 角色 → 展柜设置，把想看的角色放上展柜，并设为「公开」",
+      "确认 UID 是国际服（6/7/8/9 开头）；1/2/5 开头的国服 UID 查不到",
+      "填入 UID 后点「保存并同步」",
+    ],
+    miyoushe: [
+      "浏览器登录 bbs.mihoyo.com，并确认米游社「我的角色」→ 设置里已开启角色详情公开",
+      "F12 → Application（应用）→ Cookies → bbs.mihoyo.com",
+      "复制 ltuid_v2、ltoken_v2、ltmid_v2 三项，拼成 ltuid_v2=…; ltoken_v2=…; ltmid_v2=…",
+      "粘贴到下面并点「保存并同步」",
+    ],
+  };
 
   // ── stylesheet ───────────────────────────────────────────────────────────
   var CSS = [
@@ -76,6 +135,34 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-statK{color:var(--dsw-alias-label-tertiary);font-size:12px}",
     ".dga-statV{font-variant-numeric:tabular-nums}",
     ".dga-effect{color:var(--dsw-alias-label-secondary);line-height:1.7;margin:2px 0 0;padding-left:12px}",
+
+    // setup wizard
+    ".dga-wizard{max-width:780px}",
+    ".dga-srcList{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}",
+    ".dga-src{display:flex;gap:12px;align-items:flex-start;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;padding:12px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}",
+    ".dga-src:hover{border-color:var(--dsw-alias-label-dimmed)}",
+    ".dga-src-on{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-2)}",
+    ".dga-radio{width:14px;height:14px;border-radius:50%;border:2px solid var(--dsw-alias-border-l2);flex:0 0 auto;margin-top:3px;box-sizing:border-box}",
+    ".dga-radio-on{border-color:var(--dsw-alias-brand-primary);box-shadow:inset 0 0 0 3px var(--dsw-alias-brand-primary)}",
+    ".dga-srcName{font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}",
+    ".dga-srcDesc{color:var(--dsw-alias-label-secondary);font-size:12px;line-height:1.6;margin-top:3px}",
+    ".dga-srcLimit{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.6;margin-top:2px}",
+    ".dga-badge{background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;padding:1px 8px;font-size:11px;line-height:17px;font-weight:500}",
+    ".dga-badgeOk{background:var(--dsw-alias-state-success-primary);color:var(--dsw-alias-bg-layer-3)}",
+    ".dga-field{margin-bottom:14px}",
+    ".dga-label{display:block;color:var(--dsw-alias-label-primary);font-size:12.5px;font-weight:500;margin-bottom:5px}",
+    ".dga-input{width:100%;box-sizing:border-box;font:inherit;font-size:13px;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:8px;padding:7px 10px}",
+    ".dga-input:focus{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}",
+    ".dga-textarea{min-height:64px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5}",
+    ".dga-hint{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.6;margin:5px 0 0}",
+    ".dga-steps{margin:8px 0 0;padding-left:20px;color:var(--dsw-alias-label-secondary);font-size:12px;line-height:1.9}",
+    ".dga-steps li{margin:0}",
+    ".dga-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 8px;padding-top:14px;border-top:1px solid var(--dsw-alias-border-l2)}",
+    ".dga-msg{font-size:12px;line-height:1.6;flex:1;min-width:200px;color:var(--dsw-alias-label-secondary)}",
+    ".dga-adv{border:1px dashed var(--dsw-alias-border-l2);border-radius:10px;padding:12px 14px;margin-bottom:16px}",
+    ".dga-adv summary{cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:12.5px}",
+    ".dga-fileRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}",
+    ".dga-path{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--dsw-alias-label-tertiary);word-break:break-all}",
   ].join("\n");
 
   var CSS_TAG = PKG + "/panel.css";
@@ -96,8 +183,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     });
   }
 
-  function postJson(path) {
-    return fetch(API + path, { method: "POST", headers: { accept: "application/json" } }).then(function (res) {
+  function postJson(path, body) {
+    var headers = { accept: "application/json" };
+    if (body !== undefined) headers["content-type"] = "application/json";
+    return fetch(API + path, {
+      method: "POST",
+      headers: headers,
+      body: body === undefined ? undefined : body,
+    }).then(function (res) {
       return res.json();
     });
   }
@@ -110,8 +203,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       return String(ms);
     }
   }
-
-  var SOURCE_LABEL = { good: "本地 GOOD 文件", enka: "Enka.Network", miyoushe: "米游社" };
 
   // ── small pieces ─────────────────────────────────────────────────────────
   function Dot(props) {
@@ -134,12 +225,164 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       }));
   }
 
-  function Problem(props) {
-    if (!props.error) return null;
-    return h("div", { className: "dga-err" }, props.error + (props.hint ? "\n" + props.hint : ""));
+  // ── setup wizard ────────────────────────────────────────────────────────
+  function SetupTab(props) {
+    var draft = props.draft;
+    var state = props.state || {};
+    var sources = state.sources || {};
+    var set = props.setField;
+
+    var card = function (source) {
+      var on = draft.source === source.id;
+      var status = sources[source.id] || {};
+      return h("button", {
+        key: source.id,
+        type: "button",
+        className: "dga-src" + (on ? " dga-src-on" : ""),
+        onClick: function () { props.setSource(source.id); },
+        "aria-pressed": on,
+      },
+        h("span", { className: "dga-radio" + (on ? " dga-radio-on" : "") }),
+        h("span", { style: { flex: 1, minWidth: 0 } },
+          h("span", { className: "dga-srcName" },
+            source.name,
+            source.badge ? h("span", { className: "dga-badge" }, source.badge) : null,
+            status.configured ? h("span", { className: "dga-badge dga-badgeOk" }, "已配置") : null),
+          h("div", { className: "dga-srcDesc" }, source.reads),
+          h("div", { className: "dga-srcLimit" }, source.limits + " · " + source.servers)),
+      );
+    };
+
+    var guide = GUIDES[draft.source] || [];
+    var fields = null;
+
+    if (draft.source === "good") {
+      fields = h("div", null,
+        h("div", { className: "dga-field" },
+          h("label", { className: "dga-label" }, "GOOD 文件"),
+          h("div", { className: "dga-fileRow" },
+            h("button", { className: "dga-btn dga-btn-primary", onClick: props.onPickFile, disabled: props.busy }, "选择 GOOD 文件…"),
+            h("input", {
+              type: "file",
+              accept: ".json,application/json",
+              style: { display: "none" },
+              ref: props.fileInputRef,
+              onChange: props.onFileChange,
+            }),
+            draft.goodPath
+              ? h("span", { className: "dga-path" }, draft.goodPath)
+              : h("span", { className: "dga-muted" }, "还没有选择文件")),
+          h("p", { className: "dga-hint" }, "文件只在本机读取，会被复制到 DSH 数据目录，不会上传到任何服务器。")));
+    } else if (draft.source === "enka") {
+      fields = h("div", null,
+        h("div", { className: "dga-field" },
+          h("label", { className: "dga-label" }, "国际服 UID"),
+          h("input", {
+            className: "dga-input",
+            type: "text",
+            inputMode: "numeric",
+            placeholder: "例如 812345678",
+            value: draft.enkaUid,
+            onChange: function (event) { set("enkaUid", event.target.value.trim()); },
+          }),
+          h("p", { className: "dga-hint" }, "8/9 开头是亚服，6 美服，7 欧服。1/2/5 开头的国服 UID Enka 不支持。")));
+    } else {
+      fields = h("div", null,
+        h("div", { className: "dga-field" },
+          h("label", { className: "dga-label" }, "国服 UID"),
+          h("input", {
+            className: "dga-input",
+            type: "text",
+            inputMode: "numeric",
+            placeholder: "例如 123456789",
+            value: draft.miyousheUid,
+            onChange: function (event) { props.setMiyousheUid(event.target.value.trim()); },
+          }),
+          h("p", { className: "dga-hint" },
+            "服务器按 UID 自动判断：1/2/3 → 官服（天空岛），5 → 渠道服（世界树）。当前：" +
+            (draft.miyousheServer || "（自动）"))),
+        h("div", { className: "dga-field" },
+          h("label", { className: "dga-label" }, "米游社 Cookie"),
+          h("textarea", {
+            className: "dga-input dga-textarea",
+            placeholder: draft.hasCookie ? "已保存 Cookie（留空表示不修改）" : "ltuid_v2=…; ltoken_v2=…; ltmid_v2=…",
+            value: draft.miyousheCookie,
+            onChange: function (event) { set("miyousheCookie", event.target.value); },
+          }),
+          h("p", { className: "dga-hint" }, "Cookie 等同于登录凭据，会明文保存在本机 profile 配置里。只想读数据的话，优先用 GOOD 文件。")));
+    }
+
+    return h("div", { className: "dga-scroll" },
+      h("div", { className: "dga-wizard" },
+        h("div", { className: "dga-block" },
+          h("div", { className: "dga-sec" }, "选择数据源"),
+          h("div", { className: "dga-srcList" }, SOURCES.map(card))),
+
+        h("div", { className: "dga-block" },
+          h("div", { className: "dga-sec" }, (SOURCE_LABEL[draft.source] || draft.source) + " 的配置"),
+          fields,
+          h("p", { className: "dga-hint" }, "怎么拿到这些数据："),
+          h("ol", { className: "dga-steps" }, guide.map(function (line, index) {
+            return h("li", { key: index }, line);
+          }))),
+
+        h("details", { className: "dga-adv" },
+          h("summary", null, "高级设置"),
+          h("div", { style: { marginTop: 12 } },
+            draft.source === "enka"
+              ? h("div", { className: "dga-field" },
+                  h("label", { className: "dga-label" }, "接口地址"),
+                  h("input", {
+                    className: "dga-input",
+                    type: "text",
+                    value: draft.enkaBase,
+                    onChange: function (event) { set("enkaBase", event.target.value.trim()); },
+                  }),
+                  h("p", { className: "dga-hint" }, "连接不上 enka.network 时，可以填一个可达的镜像地址。"))
+              : null,
+            draft.source === "miyoushe"
+              ? h("div", null,
+                  h("div", { className: "dga-field" },
+                    h("label", { className: "dga-label" }, "签名盐 miyousheDsSalt"),
+                    h("input", {
+                      className: "dga-input",
+                      type: "text",
+                      placeholder: "留空使用内置默认值",
+                      value: draft.miyousheDsSalt,
+                      onChange: function (event) { set("miyousheDsSalt", event.target.value.trim()); },
+                    })),
+                  h("div", { className: "dga-field" },
+                    h("label", { className: "dga-label" }, "app_version"),
+                    h("input", {
+                      className: "dga-input",
+                      type: "text",
+                      placeholder: "留空使用内置默认值",
+                      value: draft.miyousheAppVersion,
+                      onChange: function (event) { set("miyousheAppVersion", event.target.value.trim()); },
+                    })),
+                  h("p", { className: "dga-hint" }, "只有出现「签名被拒绝 retcode=-10001」时才需要动这里，而且两个值必须配对更新。"))
+              : null,
+            h("div", { className: "dga-field" },
+              h("label", { className: "dga-label" }, "缓存时间（秒）"),
+              h("input", {
+                className: "dga-input",
+                type: "number",
+                value: String(draft.cacheSeconds),
+                onChange: function (event) { set("cacheSeconds", Number(event.target.value) || 0); },
+              }),
+              h("p", { className: "dga-hint" }, "这段时间内重复查询直接用缓存，避免频繁打接口。")))),
+
+        h("div", { className: "dga-actions" },
+          h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSaveAndSync, disabled: props.busy }, props.busy ? "处理中…" : "保存并同步"),
+          h("button", { className: "dga-btn", onClick: props.onSaveOnly, disabled: props.busy }, "仅保存"),
+          h("span", { className: "dga-msg" }, props.message || "")),
+        !props.writable
+          ? h("p", { className: "dga-hint", style: { marginTop: 12 } },
+              "当前页面无法写入配置（可能不是从本机打开，或插件配置未就绪）。可以直接编辑 profile 的 cordis.patch.yml。")
+          : null));
   }
 
-  // ── tabs ─────────────────────────────────────────────────────────────────
+  // ── data tabs ───────────────────────────────────────────────────────────
   function OverviewTab(props) {
     var o = props.overview;
     var player = o.player || {};
@@ -161,21 +404,24 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             player.region || "",
           ].filter(Boolean).join(" · "))),
       h(Cards, { items: items }),
-      elements.length ? h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, "元素分布"),
-        h("div", null, elements.map(function (zh) {
-          return h("span", { className: "dga-chip", key: zh }, zh + " " + o.elements[zh]);
-        }))) : null,
-      o.bestArtifact ? h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, "最佳圣遗物"),
-        h("div", { className: "dga-sub" },
-          o.bestArtifact.setName + " " + o.bestArtifact.slotZh +
-          " · CV " + o.bestArtifact.cv + " · 效率 " + o.bestArtifact.efficiency + "%" +
-          (o.bestArtifact.owner ? " · " + o.bestArtifact.owner : ""))) : null,
+      elements.length
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "元素分布"),
+            h("div", null, elements.map(function (zh) {
+              return h("span", { className: "dga-chip", key: zh }, zh + " " + o.elements[zh]);
+            })))
+        : null,
+      o.bestArtifact
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "最佳圣遗物"),
+            h("div", { className: "dga-sub" },
+              o.bestArtifact.setName + " " + o.bestArtifact.slotZh +
+              " · CV " + o.bestArtifact.cv + " · 效率 " + o.bestArtifact.efficiency + "%" +
+              (o.bestArtifact.owner ? " · " + o.bestArtifact.owner : "")))
+        : null,
       h("div", { className: "dga-block" },
         h("div", { className: "dga-sec" }, "数据来源"),
-        h("div", { className: "dga-sub" },
-          (SOURCE_LABEL[o.source] || o.source) + (o.note ? " · " + o.note : ""))),
+        h("div", { className: "dga-sub" }, (SOURCE_LABEL[o.source] || o.source) + (o.note ? " · " + o.note : ""))),
       h("div", { className: "dga-sub" }, "同步时间：" + when(o.fetchedAt)));
   }
 
@@ -200,22 +446,28 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-sub" },
         "命之座 " + c.constellation +
         (c.talents ? " · 天赋 " + c.talents.auto + " / " + c.talents.skill + " / " + c.talents.burst : "")),
-      statDefs.length ? h("div", { className: "dga-statline" }, statDefs.map(function (pair) {
-        return h(Stat, { label: pair[0], value: String(pair[1]), key: pair[0] });
-      })) : null,
+      statDefs.length
+        ? h("div", { className: "dga-statline" }, statDefs.map(function (pair) {
+            return h(Stat, { label: pair[0], value: String(pair[1]), key: pair[0] });
+          }))
+        : null,
 
-      c.weapon ? h("div", { className: "dga-block", style: { marginTop: 16 } },
-        h("div", { className: "dga-sec" }, "武器"),
-        h("div", null,
-          c.weapon.name + "  Lv." + c.weapon.level +
-          (c.weapon.refinement ? "  精" + c.weapon.refinement : "") +
-          "  " + c.weapon.rarity + "★")) : null,
+      c.weapon
+        ? h("div", { className: "dga-block", style: { marginTop: 16 } },
+            h("div", { className: "dga-sec" }, "武器"),
+            h("div", null,
+              c.weapon.name + "  Lv." + c.weapon.level +
+              (c.weapon.refinement ? "  精" + c.weapon.refinement : "") +
+              "  " + c.weapon.rarity + "★"))
+        : null,
 
-      c.sets && c.sets.length ? h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, "套装"),
-        h("div", null, c.sets.map(function (s) {
-          return h("span", { className: "dga-chip", key: s.setName }, s.setName + " ×" + s.count);
-        }))) : null,
+      c.sets && c.sets.length
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "套装"),
+            h("div", null, c.sets.map(function (s) {
+              return h("span", { className: "dga-chip", key: s.setName }, s.setName + " ×" + s.count);
+            })))
+        : null,
 
       c.artifacts && c.artifacts.length
         ? h("div", { className: "dga-block" },
@@ -311,21 +563,42 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             h("td", { className: "dga-num" }, a.main),
             h("td", { className: "dga-subs" }, (a.subs || []).join(" / ")),
             h("td", { className: "dga-num" }, String(a.cv)),
-            h("td", null, h("span", { className: "dga-grade" }, a.grade || "") , " " + a.efficiency + "%"),
+            h("td", null, h("span", { className: "dga-grade" }, a.grade || ""), " " + a.efficiency + "%"),
             h("td", null, a.owner || h("span", { className: "dga-muted" }, "—")));
         }))));
   }
 
   // ── page ────────────────────────────────────────────────────────────────
-  function GenshinPage() {
-    var tabState = React.useState("overview");
+  function draftFrom(config) {
+    var c = config || {};
+    return {
+      source: c.source || "good",
+      goodPath: c.goodPath || "",
+      enkaUid: c.enkaUid || "",
+      enkaBase: c.enkaBase || "https://enka.network",
+      miyousheUid: c.miyousheUid || "",
+      miyousheServer: c.miyousheServer || "",
+      miyousheCookie: "",
+      hasCookie: c.hasCookie === true,
+      miyousheAppVersion: c.miyousheAppVersion || "",
+      miyousheDsSalt: c.miyousheDsSalt || "",
+      cacheSeconds: c.cacheSeconds == null ? 600 : c.cacheSeconds,
+    };
+  }
+
+  function serverOfUid(uid) {
+    var first = String(uid || "")[0];
+    if (first === "1" || first === "2" || first === "3") return "cn_gf01";
+    if (first === "5") return "cn_qd01";
+    return "";
+  }
+
+  function GenshinPage(props) {
+    var tabState = React.useState("settings");
     var tab = tabState[0], setTab = tabState[1];
 
     var summaryState = React.useState(null);
     var summary = summaryState[0], setSummary = summaryState[1];
-
-    var errorState = React.useState("");
-    var error = errorState[0], setError = errorState[1];
 
     var loadingState = React.useState(true);
     var loading = loadingState[0], setLoading = loadingState[1];
@@ -335,38 +608,113 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     var charState = React.useState(null);
     var character = charState[0], setCharacter = charState[1];
-
     var charLoadingState = React.useState(false);
     var charLoading = charLoadingState[0], setCharLoading = charLoadingState[1];
 
     var weaponsState = React.useState([]);
     var weapons = weaponsState[0], setWeapons = weaponsState[1];
+    var weaponsLoadingState = React.useState(false);
+    var weaponsLoading = weaponsLoadingState[0], setWeaponsLoading = weaponsLoadingState[1];
 
     var artifactsState = React.useState([]);
     var artifacts = artifactsState[0], setArtifacts = artifactsState[1];
     var artifactsLoadingState = React.useState(false);
     var artifactsLoading = artifactsLoadingState[0], setArtifactsLoading = artifactsLoadingState[1];
-    var weaponsLoadingState = React.useState(false);
-    var weaponsLoading = weaponsLoadingState[0], setWeaponsLoading = weaponsLoadingState[1];
 
-    var syncState = React.useState(false);
-    var syncing = syncState[0], setSyncing = syncState[1];
+    var syncingState = React.useState(false);
+    var syncing = syncingState[0], setSyncing = syncingState[1];
+
+    var busyState = React.useState(false);
+    var busy = busyState[0], setBusy = busyState[1];
+
+    var messageState = React.useState("");
+    var message = messageState[0], setMessage = messageState[1];
+
+    var draftState = React.useState(draftFrom(null));
+    var draft = draftState[0], setDraft = draftState[1];
+
+    var writableState = React.useState(false);
+    var writable = writableState[0], setWritable = writableState[1];
+
+    var fileInputRef = React.useRef(null);
+
+    // The Config form of this bundle's own entry. Deliberately an *optional*
+    // lookup (no hard `inject` on configForms): if the service is missing the
+    // page still renders and read paths still work, only saving degrades.
+    function configForm() {
+      try {
+        return clientCtx && clientCtx.configForms ? clientCtx.configForms.get(ENTRY_ID) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function formSnapshot() {
+      var form = configForm();
+      if (!form) return null;
+      try {
+        return form.getSnapshot();
+      } catch (error) {
+        return null;
+      }
+    }
+
+    /** Write changed fields in one revision-fenced mutation. */
+    function persist(fields) {
+      var form = configForm();
+      var snap = formSnapshot();
+      if (!form || !snap) return Promise.reject(new Error("配置暂不可写"));
+      var current = snap.value || {};
+      var ops = [];
+      Object.keys(fields).forEach(function (key) {
+        var next = fields[key];
+        var prev = current[key];
+        if (next === prev) return;
+        ops.push({ op: "set", path: [key], value: next });
+      });
+      if (!ops.length) return Promise.resolve(true);
+      return form.mutate(ops, snap.revision);
+    }
+
+    function setField(key, value) {
+      setDraft(function (previous) {
+        var next = Object.assign({}, previous);
+        next[key] = value;
+        return next;
+      });
+    }
+
+    function showMessage(text) {
+      setMessage(text);
+    }
 
     function loadSummary(force) {
       setLoading(true);
       var request = force ? postJson("/sync") : getJson("/summary");
       return request
         .then(function (data) {
+          var state = (data && data.state) || null;
+          if (state) {
+            setDraft(function (previous) {
+              var next = draftFrom(state.config);
+              // Keep an in-progress cookie edit across a refresh.
+              next.miyousheCookie = previous.miyousheCookie;
+              return next;
+            });
+            var snapshot = formSnapshot();
+            setWritable(Boolean(configForm()) && !(snapshot && snapshot.status === "unavailable"));
+            // Land on the wizard until the account actually renders.
+            if (state.configured === false) setTab("settings");
+          }
           if (!data || data.ok === false) {
-            setError((data && data.error) || "读取失败");
-            setSummary(null);
+            if (data && data.error) showMessage(data.error);
             return;
           }
-          setError("");
           setSummary(data);
+          return data;
         })
         .catch(function (failure) {
-          setError(String(failure && failure.message ? failure.message : failure));
+          showMessage(String(failure && failure.message ? failure.message : failure));
         })
         .then(function () { setLoading(false); });
     }
@@ -377,9 +725,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       getJson("/character?name=" + encodeURIComponent(name))
         .then(function (data) {
           setCharacter(data && data.ok ? data.character : null);
-          if (data && data.ok === false) setError(data.error || "");
         })
-        .catch(function (failure) { setError(String(failure && failure.message ? failure.message : failure)); })
+        .catch(function (failure) { showMessage(String(failure && failure.message ? failure.message : failure)); })
         .then(function () { setCharLoading(false); });
     }
 
@@ -405,7 +752,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         .then(function () { setArtifactsLoading(false); });
     }, [tab]);
 
-    // Auto-select the first character the first time the list arrives.
     React.useEffect(function () {
       if (!summary || !summary.characters || !summary.characters.length) return;
       if (character) return;
@@ -414,13 +760,126 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     function onSync() {
       setSyncing(true);
-      loadSummary(true)
-        .then(function () {
-          setWeapons([]);
-          setArtifacts([]);
-          if (character) loadCharacter(character.name);
+      loadSummary(true).then(function () {
+        setWeapons([]);
+        setArtifacts([]);
+        if (character) loadCharacter(character.name);
+        setSyncing(false);
+      });
+    }
+
+    function fieldsFromDraft() {
+      var fields = {
+        source: draft.source,
+        goodPath: draft.goodPath,
+        enkaUid: draft.enkaUid,
+        enkaBase: draft.enkaBase,
+        miyousheUid: draft.miyousheUid,
+        cacheSeconds: Number(draft.cacheSeconds) || 0,
+      };
+      if (draft.miyousheServer) fields.miyousheServer = draft.miyousheServer;
+      if (draft.miyousheAppVersion) fields.miyousheAppVersion = draft.miyousheAppVersion;
+      if (draft.miyousheDsSalt) fields.miyousheDsSalt = draft.miyousheDsSalt;
+      // Never overwrite a stored cookie with an empty draft.
+      if (draft.miyousheCookie) fields.miyousheCookie = draft.miyousheCookie;
+      return fields;
+    }
+
+    /** Persist every wizard field, then read the account back. */
+    function saveAndSync() {
+      if (!writable) {
+        showMessage("配置暂不可写：当前页面不是从本机打开的，或插件配置未就绪。");
+        return;
+      }
+      setBusy(true);
+      showMessage("保存中…");
+      persist(fieldsFromDraft())
+        .then(function (accepted) {
+          if (accepted === false) throw new Error("部署未接受这些值");
+          setField("miyousheCookie", "");
+          setField("hasCookie", draft.hasCookie || Boolean(draft.miyousheCookie));
+          return postJson("/sync");
         })
-        .then(function () { setSyncing(false); });
+        .then(function (data) {
+          if (!data || data.ok === false) {
+            showMessage((data && data.error) || "同步失败");
+            loadSummary(false);
+            return;
+          }
+          setSummary(data);
+          setDraft(draftFrom((data.state && data.state.config) || {}));
+          showMessage("已同步：" + data.characters.length + " 个角色");
+          if (data.state && data.state.configured) setTab("overview");
+        })
+        .catch(function (failure) {
+          showMessage("保存/同步失败：" + String(failure && failure.message ? failure.message : failure));
+        })
+        .then(function () { setBusy(false); });
+    }
+
+    function saveOnly() {
+      if (!writable) {
+        showMessage("配置暂不可写：当前页面不是从本机打开的，或插件配置未就绪。");
+        return;
+      }
+      setBusy(true);
+      persist(fieldsFromDraft())
+        .then(function (accepted) {
+          if (accepted === false) throw new Error("部署未接受这些值");
+          setField("miyousheCookie", "");
+          setField("hasCookie", draft.hasCookie || Boolean(draft.miyousheCookie));
+          showMessage("已保存配置，点右上角「同步」读取账号。");
+        })
+        .catch(function (failure) {
+          showMessage("保存失败：" + String(failure && failure.message ? failure.message : failure));
+        })
+        .then(function () { setBusy(false); });
+    }
+
+    function onPickFile() {
+      var input = fileInputRef.current;
+      if (input) input.click();
+    }
+
+    /** Browser file → host (validates + stores), then point the config at it. */
+    function onFileChange(event) {
+      var input = event.target;
+      var file = input && input.files && input.files[0] ? input.files[0] : null;
+      if (!file) return;
+      setBusy(true);
+      showMessage("读取 " + file.name + " …");
+      file
+        .text()
+        .then(function (text) { return postJson("/upload-good", text); })
+        .then(function (data) {
+          if (!data || data.ok === false) throw new Error((data && data.error) || "导入失败");
+          setField("goodPath", data.path);
+          setField("source", "good");
+          showMessage("已导入 " + (data.summary.characters || 0) + " 个角色、" +
+            (data.summary.weapons || 0) + " 把武器、" + (data.summary.artifacts || 0) + " 件圣遗物，正在同步…");
+          return persist({ source: "good", goodPath: data.path }).then(function (accepted) {
+            if (accepted === false) throw new Error("部署未接受这些值");
+            return postJson("/sync");
+          });
+        })
+        .then(function (data) {
+          if (!data || data.ok === false) {
+            showMessage((data && data.error) || "同步失败");
+            loadSummary(false);
+            return;
+          }
+          setSummary(data);
+          setDraft(draftFrom((data.state && data.state.config) || {}));
+          showMessage("导入并同步完成：" + data.characters.length + " 个角色");
+          setTab("overview");
+        })
+        .catch(function (failure) {
+          showMessage(String(failure && failure.message ? failure.message : failure));
+        })
+        .then(function () {
+          setBusy(false);
+          if (input) input.value = "";
+        });
     }
 
     var tabs = [
@@ -428,22 +887,68 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       { id: "characters", label: "角色" },
       { id: "weapons", label: "武器" },
       { id: "artifacts", label: "圣遗物" },
+      { id: "settings", label: "设置" },
     ];
 
-    var configHint = summary && summary.state && summary.state.configured === false
-      ? "还没有配置数据源：打开 设置 → 插件 → dsh-genshin-account，选择数据源并填写 GOOD 文件路径 / UID / Cookie。"
-      : "";
+    var state = summary && summary.state ? summary.state : null;
+    var configured = state ? state.configured !== false : null;
+
+    var body = null;
+    if (tab === "settings") {
+      body = h(SetupTab, {
+        draft: draft,
+        state: state || {},
+        writable: writable,
+        busy: busy,
+        message: message,
+        setField: setField,
+        setSource: function (id) { setField("source", id); },
+        setMiyousheUid: function (value) {
+          setDraft(function (previous) {
+            var next = Object.assign({}, previous);
+            next.miyousheUid = value;
+            next.miyousheServer = serverOfUid(value) || previous.miyousheServer;
+            return next;
+          });
+        },
+        onSaveAndSync: saveAndSync,
+        onSaveOnly: saveOnly,
+        onPickFile: onPickFile,
+        onFileChange: onFileChange,
+        fileInputRef: fileInputRef,
+      });
+    } else if (loading && !summary) {
+      body = h("div", { className: "dga-empty" }, "读取中…");
+    } else if (!summary) {
+      body = h("div", { className: "dga-empty" },
+        "还没有可显示的数据。" + (configured === false ? "先到「设置」里选一种数据源。" : "配置好数据源后点右上角「同步」。"));
+    } else if (tab === "overview") {
+      body = h(OverviewTab, { overview: summary.overview });
+    } else if (tab === "characters") {
+      body = h(CharactersTab, {
+        summary: summary,
+        query: query,
+        onQuery: setQuery,
+        selected: character,
+        loading: charLoading,
+        onSelect: function (name) { setCharacter(null); loadCharacter(name); },
+      });
+    } else if (tab === "weapons") {
+      body = h(WeaponsTab, { rows: weapons, loading: weaponsLoading });
+    } else {
+      body = h(ArtifactsTab, { rows: artifacts, loading: artifactsLoading });
+    }
 
     return h("div", { className: "dga-root" },
       h("div", { className: "dga-head" },
         h("div", { className: "dga-grow" },
           h("div", { className: "dga-title" }, "原神账号"),
           h("div", { className: "dga-sub" },
-            summary && summary.state
-              ? (SOURCE_LABEL[summary.state.source] || summary.state.source) +
-                (summary.state.uid ? " · UID " + summary.state.uid : "") +
-                " · 同步于 " + when(summary.state.fetchedAt)
-              : loading ? "读取中…" : "尚未同步")),
+            state
+              ? (SOURCE_LABEL[state.source] || state.source) +
+                (state.uid ? " · UID " + state.uid : "") +
+                " · 同步于 " + when(state.fetchedAt)
+              : loading ? "读取中…" : "尚未配置")),
         h("button", { className: "dga-btn dga-btn-primary", onClick: onSync, disabled: syncing }, syncing ? "同步中…" : "同步")),
       h("div", { className: "dga-tabs" }, tabs.map(function (item) {
         return h("button", {
@@ -452,27 +957,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           onClick: function () { setTab(item.id); },
         }, item.label);
       })),
-      error || configHint
-        ? h("div", { style: { padding: "12px 20px 0" } }, h(Problem, { error: error, hint: configHint }))
-        : null,
-      loading && !summary
-        ? h("div", { className: "dga-empty" }, "读取中…")
-        : !summary
-          ? h("div", { className: "dga-empty" }, "还没有可显示的数据。配置好数据源后点右上角「同步」。")
-          : tab === "overview"
-            ? h(OverviewTab, { overview: summary.overview })
-            : tab === "characters"
-              ? h(CharactersTab, {
-                  summary: summary,
-                  query: query,
-                  onQuery: setQuery,
-                  selected: character,
-                  loading: charLoading,
-                  onSelect: function (name) { setCharacter(null); loadCharacter(name); },
-                })
-              : tab === "weapons"
-                ? h(WeaponsTab, { rows: weapons, loading: weaponsLoading })
-                : h(ArtifactsTab, { rows: artifacts, loading: artifactsLoading }));
+      body);
   }
 
   // ── sidebar icon ────────────────────────────────────────────────────────
@@ -501,6 +986,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
   function apply(ctx) {
     ensureCss();
+    clientCtx = ctx;
     // `main` first: the sidebar's click validates the key against the live
     // `main` entries, so the panel must exist before the icon can be pressed.
     ctx.slots.inject("main", function () {
@@ -515,6 +1001,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   }
 
   exports.name = PKG;
+  // `configForms` is reached lazily and defensively, so it is not a hard
+  // dependency: a build without it keeps the page mounted and read-only.
   exports.inject = ["slots"];
   exports.apply = apply;
   return module.exports;

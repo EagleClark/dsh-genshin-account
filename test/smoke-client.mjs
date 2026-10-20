@@ -57,6 +57,15 @@ const requireStub = (spec) => {
 const mod = factoryCapture.factory(requireStub)
 check('exports.apply exists', typeof mod.apply === 'function')
 check('exports.inject lists slots', Array.isArray(mod.inject) && mod.inject.includes('slots'), JSON.stringify(mod.inject))
+check('configForms is optional, not a hard dependency', !mod.inject.includes('configForms'), JSON.stringify(mod.inject))
+
+// The wizard writes through the shared Config form of this bundle's entry.
+const fakeForm = {
+  getSnapshot: () => ({ value: {}, revision: 7, status: 'ready' }),
+  mutate: () => Promise.resolve(true),
+  set: () => Promise.resolve(true),
+  unset: () => Promise.resolve(true),
+}
 
 // --- fake ctx: record slot registrations ------------------------------------
 const registrations = []
@@ -68,6 +77,12 @@ const ctx = {
     register(options, component) {
       registrations.push({ options, component })
       return () => {}
+    },
+  },
+  configForms: {
+    get(entryId) {
+      check('configForms.get uses the package name as entry id', entryId === 'dsh-genshin-account', entryId)
+      return fakeForm
     },
   },
 }
@@ -102,6 +117,61 @@ try {
   fails.push('page render threw :: ' + (error && error.message))
 }
 check('page renders a root element', pageTree && pageTree.type === 'div', pageTree && String(pageTree.type))
+
+// --- the setup wizard is reachable and offers all three sources -------------
+// Components are plain functions here, so expand them before walking.
+function expand(node) {
+  if (node === null || node === undefined) return node
+  if (Array.isArray(node)) return node.map(expand)
+  if (typeof node !== 'object') return node
+  if (typeof node.type === 'function') return expand(node.type(node.props || {}))
+  return { type: node.type, props: node.props || {}, children: (node.children || []).map(expand) }
+}
+
+const rendered = expand(pageTree)
+
+function walk(node, visit) {
+  if (node === null || node === undefined || typeof node !== 'object') return
+  if (Array.isArray(node)) {
+    for (const child of node) walk(child, visit)
+    return
+  }
+  visit(node)
+  if (node.children) walk(node.children, visit)
+}
+
+function textOf(node) {
+  if (node === null || node === undefined) return ''
+  if (typeof node === 'string' || typeof node === 'number') return String(node)
+  if (Array.isArray(node)) return node.map(textOf).join('')
+  return textOf(node.children)
+}
+
+const className = (node) => (node.props && typeof node.props.className === 'string' ? node.props.className : '')
+const cards = []
+const buttons = []
+walk(rendered, (node) => {
+  if (className(node).split(' ').includes('dga-src')) cards.push(node)
+  if (node.type === 'button') buttons.push(textOf(node))
+})
+check('wizard shows one card per data source', cards.length === 3, String(cards.length))
+check('wizard card names', cards.map(textOf).join('|').includes('本地 GOOD 文件'), cards.map(textOf).join(' | ').slice(0, 160))
+check('wizard names Enka', cards.map(textOf).join('|').includes('Enka.Network'))
+check('wizard names 米游社', cards.map(textOf).join('|').includes('米游社'))
+check('wizard explains what GOOD reads', cards.map(textOf).join('|').includes('完整背包'))
+check('wizard explains Enka limits', cards.map(textOf).join('|').includes('只有展柜角色'))
+check('wizard has 保存并同步', buttons.includes('保存并同步'), buttons.join(' / '))
+check('wizard has 仅保存', buttons.includes('仅保存'), buttons.join(' / '))
+check('wizard has a file picker', buttons.some((label) => label.includes('选择 GOOD 文件')), buttons.join(' / '))
+
+// The step-by-step guide for the default source (GOOD) is rendered.
+const steps = []
+walk(rendered, (node) => {
+  if (node.type === 'li') steps.push(textOf(node))
+})
+check('wizard renders the how-to steps', steps.length >= 3, JSON.stringify(steps).slice(0, 200))
+check('the GOOD guide mentions an export tool', steps.join(' ').includes('Amenoma'), steps.join(' | ').slice(0, 160))
+check('the default tab is 设置 on a cold start', className(pageTree).includes('dga-root') && steps.length > 0)
 
 // --- field contract: what the page reads must exist in the host payload -----
 const { apply: hostApply } = await import('../lib/index.js')
