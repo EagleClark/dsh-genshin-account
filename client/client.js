@@ -68,9 +68,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     {
       id: "miyoushe-file",
       name: "米游社导出（浏览器抓取）",
-      badge: "保证可用",
+      badge: "需自备 JSON",
       reads: "和直连版一样：账号概览 + 角色详情（天赋/武器/圣遗物全部词条）",
-      limits: "需要你在浏览器里复制一次接口响应；游戏数据变化后要重新抓一次",
+      // Honest scope: the parser works, but obtaining the payload is on the user,
+      // and the official record page requires its own login first — which is not
+      // something this plugin can arrange. Do not call this "guaranteed".
+      limits: "前提：你能在一个**已登录**的米游社战绩页面上抓到 game_record 响应（那个页面本身要先登录成功）；抓不到就没法用",
       servers: "国服",
     },
   ];
