@@ -163,6 +163,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-adv summary{cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:12.5px}",
     ".dga-fileRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}",
     ".dga-path{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--dsw-alias-label-tertiary);word-break:break-all}",
+    ".dga-banner{margin:10px 20px 0;padding:8px 12px;border-radius:10px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:1.7;white-space:pre-wrap}",
+    ".dga-banner-err{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-label-primary)}",
   ].join("\n");
 
   var CSS_TAG = PKG + "/panel.css";
@@ -629,28 +631,47 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     var messageState = React.useState("");
     var message = messageState[0], setMessage = messageState[1];
+    var messageErrorState = React.useState(false);
+    var messageError = messageErrorState[0], setMessageError = messageErrorState[1];
 
     var draftState = React.useState(draftFrom(null));
     var draft = draftState[0], setDraft = draftState[1];
 
-    var writableState = React.useState(false);
-    var writable = writableState[0], setWritable = writableState[1];
+    // The Host registers a bundle's Config under the LOADER entry id, which is
+    // `include:<patch row id>` here — not the bare package name. Probe both so
+    // this keeps working whichever way the row was composed.
+    var ENTRY_ID_CANDIDATES = ["include:" + ENTRY_ID, ENTRY_ID];
+
+    var formState = React.useState(null);
+    var formSnap = formState[0], setFormSnap = formState[1];
 
     var fileInputRef = React.useRef(null);
 
     // The Config form of this bundle's own entry. Deliberately an *optional*
     // lookup (no hard `inject` on configForms): if the service is missing the
     // page still renders and read paths still work, only saving degrades.
-    function configForm() {
-      try {
-        return clientCtx && clientCtx.configForms ? clientCtx.configForms.get(ENTRY_ID) : null;
-      } catch (error) {
-        return null;
+    function resolveForm() {
+      if (!clientCtx || !clientCtx.configForms) return null;
+      var fallback = null;
+      for (var i = 0; i < ENTRY_ID_CANDIDATES.length; i++) {
+        try {
+          var candidate = clientCtx.configForms.get(ENTRY_ID_CANDIDATES[i]);
+          if (!candidate) continue;
+          if (!fallback) fallback = candidate;
+          var snap = candidate.getSnapshot();
+          if (snap && (snap.status === "ready" || snap.status === "loading")) {
+            // Reuse a memoised form: `get` is keyed by entry id and stable.
+            return candidate;
+          }
+        } catch (error) {
+          /* try the next candidate */
+        }
       }
+      return fallback;
     }
 
     function formSnapshot() {
-      var form = configForm();
+      var form = resolveForm();
       if (!form) return null;
       try {
         return form.getSnapshot();
@@ -659,11 +680,41 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       }
     }
 
+    /** Follow the form's own snapshot so `writable` appears once it is ready. */
+    React.useEffect(function () {
+      var form = resolveForm();
+      if (!form) {
+        setFormSnap(null);
+        return undefined;
+      }
+      var publish = function () {
+        try {
+          setFormSnap(form.getSnapshot());
+        } catch (error) {
+          /* ignore a torn-down form */
+        }
+      };
+      publish();
+      var off = null;
+      try {
+        off = typeof form.subscribe === "function" ? form.subscribe(publish) : null;
+      } catch (error) {
+        off = null;
+      }
+      return function () {
+        if (off) off();
+      };
+    }, []);
+
+    // The snapshot says whether the Host document accepts writes; a form that
+    // is still loading is not yet known to be read-only.
+    var writable = Boolean(formSnap && formSnap.writable === true && formSnap.status === "ready");
+
     /** Write changed fields in one revision-fenced mutation. */
     function persist(fields) {
-      var form = configForm();
+      var form = resolveForm();
       var snap = formSnapshot();
-      if (!form || !snap) return Promise.reject(new Error("配置暂不可写"));
+      if (!form || !snap) return Promise.reject(new Error("配置表单不可用（插件配置未就绪）"));
       var current = snap.value || {};
       var ops = [];
       Object.keys(fields).forEach(function (key) {
@@ -684,8 +735,25 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       });
     }
 
-    function showMessage(text) {
+    function showMessage(text, isError) {
       setMessage(text);
+      setMessageError(Boolean(isError));
+    }
+
+    /** A precise "why can't I save" instead of one catch-all sentence. */
+    function notWritableMessage() {
+      var snap = formSnapshot();
+      if (!snap) {
+        return "读不到本插件的配置表单。请改用「设置 → 插件 → dsh-genshin-account」里的配置项填写，或直接编辑 profile 的 cordis.patch.yml。";
+      }
+      if (snap.status === "loading") return "配置还在加载，等一秒再点一次。";
+      if (snap.status === "unavailable") {
+        return "当前页面读不到这份配置（可能不是从 localhost 打开的）。请改用「设置 → 插件 → dsh-genshin-account」里的配置项填写。";
+      }
+      if (snap.writable !== true) {
+        return "这个页面不允许写入配置。请改用「设置 → 插件 → dsh-genshin-account」里的配置项填写，或直接编辑 profile 的 cordis.patch.yml。";
+      }
+      return "配置暂不可写。";
     }
 
     function loadSummary(force) {
@@ -701,20 +769,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               next.miyousheCookie = previous.miyousheCookie;
               return next;
             });
-            var snapshot = formSnapshot();
-            setWritable(Boolean(configForm()) && !(snapshot && snapshot.status === "unavailable"));
             // Land on the wizard until the account actually renders.
             if (state.configured === false) setTab("settings");
           }
           if (!data || data.ok === false) {
-            if (data && data.error) showMessage(data.error);
+            if (data && data.error) showMessage(data.error, true);
             return;
           }
           setSummary(data);
           return data;
         })
         .catch(function (failure) {
-          showMessage(String(failure && failure.message ? failure.message : failure));
+          showMessage(String(failure && failure.message ? failure.message : failure), true);
         })
         .then(function () { setLoading(false); });
     }
@@ -726,7 +792,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         .then(function (data) {
           setCharacter(data && data.ok ? data.character : null);
         })
-        .catch(function (failure) { showMessage(String(failure && failure.message ? failure.message : failure)); })
+        .catch(function (failure) { showMessage(String(failure && failure.message ? failure.message : failure), true); })
         .then(function () { setCharLoading(false); });
     }
 
@@ -788,7 +854,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     /** Persist every wizard field, then read the account back. */
     function saveAndSync() {
       if (!writable) {
-        showMessage("配置暂不可写：当前页面不是从本机打开的，或插件配置未就绪。");
+        showMessage(notWritableMessage(), true);
         return;
       }
       setBusy(true);
@@ -802,7 +868,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         })
         .then(function (data) {
           if (!data || data.ok === false) {
-            showMessage((data && data.error) || "同步失败");
+            showMessage((data && data.error) || "同步失败", true);
             loadSummary(false);
             return;
           }
@@ -812,14 +878,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           if (data.state && data.state.configured) setTab("overview");
         })
         .catch(function (failure) {
-          showMessage("保存/同步失败：" + String(failure && failure.message ? failure.message : failure));
+          showMessage("保存/同步失败：" + String(failure && failure.message ? failure.message : failure), true);
         })
         .then(function () { setBusy(false); });
     }
 
     function saveOnly() {
       if (!writable) {
-        showMessage("配置暂不可写：当前页面不是从本机打开的，或插件配置未就绪。");
+        showMessage(notWritableMessage(), true);
         return;
       }
       setBusy(true);
@@ -831,7 +897,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           showMessage("已保存配置，点右上角「同步」读取账号。");
         })
         .catch(function (failure) {
-          showMessage("保存失败：" + String(failure && failure.message ? failure.message : failure));
+          showMessage("保存失败：" + String(failure && failure.message ? failure.message : failure), true);
         })
         .then(function () { setBusy(false); });
     }
@@ -864,7 +930,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         })
         .then(function (data) {
           if (!data || data.ok === false) {
-            showMessage((data && data.error) || "同步失败");
+            showMessage((data && data.error) || "同步失败", true);
             loadSummary(false);
             return;
           }
@@ -874,7 +940,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           setTab("overview");
         })
         .catch(function (failure) {
-          showMessage(String(failure && failure.message ? failure.message : failure));
+          showMessage(String(failure && failure.message ? failure.message : failure), true);
         })
         .then(function () {
           setBusy(false);
@@ -957,6 +1023,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           onClick: function () { setTab(item.id); },
         }, item.label);
       })),
+      // Feedback lives above the panel body, not inside the wizard: pressing
+      // the header's 同步 from another tab must still say what happened.
+      message
+        ? h("div", { className: "dga-banner" + (messageError ? " dga-banner-err" : "") }, message)
+        : null,
       body);
   }
 

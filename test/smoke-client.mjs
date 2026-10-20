@@ -28,7 +28,14 @@ function createElement(type, props, ...children) {
 const stubReact = {
   createElement,
   useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
-  useEffect: () => {},
+  // Effects run so the form-resolution path is exercised, not just rendering.
+  useEffect: (fn) => {
+    try {
+      fn()
+    } catch (error) {
+      /* a stubbed transport may reject; rendering is what this test checks */
+    }
+  },
   useMemo: (factory) => factory(),
   useRef: (value) => ({ current: value }),
   Fragment: "Fragment",
@@ -60,12 +67,26 @@ check('exports.inject lists slots', Array.isArray(mod.inject) && mod.inject.incl
 check('configForms is optional, not a hard dependency', !mod.inject.includes('configForms'), JSON.stringify(mod.inject))
 
 // The wizard writes through the shared Config form of this bundle's entry.
+const getCalls = []
+let subscribed = false
 const fakeForm = {
-  getSnapshot: () => ({ value: {}, revision: 7, status: 'ready' }),
+  getSnapshot: () => ({ status: 'ready', writable: true, revision: 7, value: { source: 'miyoushe' } }),
+  subscribe: () => {
+    subscribed = true
+    return () => {}
+  },
   mutate: () => Promise.resolve(true),
   set: () => Promise.resolve(true),
   unset: () => Promise.resolve(true),
 }
+
+// Keep the effects' summary fetch harmless: it resolves to a failed payload
+// (no network, no DOM), and the page falls back to the wizard.
+globalThis.fetch = () =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ ok: false, error: 'stubbed transport' }),
+  })
 
 // --- fake ctx: record slot registrations ------------------------------------
 const registrations = []
@@ -81,7 +102,7 @@ const ctx = {
   },
   configForms: {
     get(entryId) {
-      check('configForms.get uses the package name as entry id', entryId === 'dsh-genshin-account', entryId)
+      getCalls.push(entryId)
       return fakeForm
     },
   },
@@ -117,6 +138,16 @@ try {
   fails.push('page render threw :: ' + (error && error.message))
 }
 check('page renders a root element', pageTree && pageTree.type === 'div', pageTree && String(pageTree.type))
+
+// The Host registers a bundle's Config under `include:<patch row id>`; the bare
+// package name is only a fallback. Getting this wrong makes every write report
+// "配置暂不可写" while reads keep working — exactly the bug this guards.
+check(
+  'resolves the include: entry id first',
+  getCalls.length > 0 && getCalls[0] === 'include:dsh-genshin-account',
+  getCalls.join(','),
+)
+check('subscribes to the config form snapshot', subscribed === true)
 
 // --- the setup wizard is reachable and offers all three sources -------------
 // Components are plain functions here, so expand them before walking.
