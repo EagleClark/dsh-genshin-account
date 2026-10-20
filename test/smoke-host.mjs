@@ -147,8 +147,9 @@ const expected = [
   'genshin_character',
   'genshin_artifacts',
   'genshin_weapons',
+  'genshin_gacha',
 ]
-check('five tools registered', tools.size === expected.length, [...tools.keys()].join(','))
+check('six tools registered', tools.size === expected.length, [...tools.keys()].join(','))
 for (const name of expected) {
   const tool = tools.get(name)
   check(`${name} registered`, Boolean(tool))
@@ -172,6 +173,9 @@ check('character text has talents', characterResult.text.includes('天赋'), cha
 
 const missingResult = await call('genshin_character', { name: '不存在的角色' })
 check('missing character is a soft error', missingResult.value.ok === false, JSON.stringify(missingResult.value).slice(0, 120))
+
+const gachaResult = await call('genshin_gacha', {})
+check('gacha tool explains an empty store', gachaResult.value.ok === false && /祈愿/.test(gachaResult.text), gachaResult.text.slice(0, 160))
 
 const weaponsResult = await call('genshin_weapons', {})
 check('weapons ok', weaponsResult.value.ok === true, JSON.stringify(weaponsResult.value).slice(0, 160))

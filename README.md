@@ -8,16 +8,19 @@ A DeepSeek Harness plugin that reads your Genshin Impact account (characters, ta
 
 ## 数据从哪来
 
-插件有两条读取通道，自动选用，**不需要你做选择**：
+插件有四路数据，自动选用，**不需要你做选择**：
 
-| 通道 | 要不要验证 | 能读到 |
+| 数据 | 来源 | 要不要验证 |
 | --- | --- | --- |
-| **养成计算器同步**（默认，`api-takumi.mihoyo.com/.../sync/avatar/detail`） | **不需要** | 全部角色、等级、命座、三段天赋、武器名与等级、圣遗物件数与等级 |
-| **战绩接口**（`/game_record/app/genshin/api/*`） | 需要一次 geetest 滑块 | 在上面的基础上补上**圣遗物副词条**，从而能算 CV / 词条效率 |
+| 全部角色、等级、命座、三段天赋、武器名与等级、圣遗物部位与等级 | 养成计算器 `api-takumi.mihoyo.com/.../sync/avatar/detail` | **不需要** |
+| 活跃天数、成就达成、深境螺旋、幻想剧诗 | 名片 `card/wapi/getGameRecordCard` | **不需要** |
+| 幻想真境剧诗 / 幽境危战本期进度 | `hard_challenge` / `role_combat` | **不需要** |
+| 圣遗物**副词条**（进而算出 CV / 词条效率） | 战绩接口 `/game_record/app/genshin/api/*` | 需要一次 geetest 滑块 |
+| 祈愿（抽卡）记录 | `public-operation-hk4e.mihoyo.com/gacha_info/api/getGachaLog` | 不需要滑块，但 authkey 约 24 小时过期，需游戏内打开一次祈愿历史 |
 
-默认先用计算器把角色数据给你；只有当你完成过一次验证，才切到战绩接口拿副词条。
+前三条默认就会跑；第四条只有当你完成过一次验证才启用；祈愿是独立的一路。
 
-两条通道都要**登录态**：国服没有"填个 UID 就能查"的公开接口。登录由插件自己完成，扫码即可。
+所有通道都要**登录态**：国服没有"填个 UID 就能查"的公开接口。登录由插件自己完成，扫码即可。
 
 战绩接口那条链路完整长这样（只有在算圣遗物评分时才会走）：
 
@@ -25,7 +28,7 @@ A DeepSeek Harness plugin that reads your Genshin Impact account (characters, ta
 | --- | --- |
 | 1. 扫码登录 | `passport-api.miyoushe.com/account/ma-cn-passport/web/createQRLogin` → `queryQRLoginStatus`，确认后从 `Set-Cookie` 得到 `ltoken_v2` / `ltmid_v2` —— 会话归插件自己所有 |
 | 2. 申请验证任务 | `GET /game_record/app/card/wapi/createVerification?is_high=true` → geetest 的 `gt` + `challenge` |
-| 3. 拖滑块 | 页面内加载 geetest v3 控件，产出 `geetest_challenge` + `geetest_validate`；`x-rpc-challenge_path` 决定这次验证解锁哪个接口（`/index` 与 `/character/list` 分别验证） |
+| 3. 拖滑块 | 验证页加载 geetest v3 控件，产出 `geetest_challenge` + `geetest_validate`；`x-rpc-challenge_path` 决定这次验证解锁哪个接口（`/index` 与 `/character/list` 分别验证） |
 | 4. 兑换通行证 | `POST /game_record/app/card/wapi/verifyVerification` → `x-rpc-challenge` |
 | 5. 读取数据 | `GET /game_record/app/genshin/api/index`、`POST /character/detail`，带上 `x-rpc-challenge` |
 
@@ -71,38 +74,41 @@ dsh plugin --profile web add <仓库绝对路径>
 
 ## GUI 用法
 
-点侧边栏「原神账号」图标，五个页签：
+侧边栏「原神账号」共五页：
 
-- **概览** —— 昵称/冒险等级、角色/武器/圣遗物数量、元素分布、最佳圣遗物、数据来源与同步时间
-- **角色** —— 左侧可搜索角色列表，右侧看等级、命座、三段天赋、面板、武器、五件圣遗物（主词条/副词条/CV/效率/评价）与**生效中的套装效果原文**
-- **武器** —— 类型/稀有度/等级/精炼/装备角色
-- **圣遗物** —— 按暴击值排序，含主副词条、评价、所属角色
-- **设置** —— 上面的三步配置与接口诊断
+- **概览** —— 账号主卡（昵称 / UID / 冒险等级 / 区服）、角色·武器·圣遗物·五星数字块、练度最高的角色（点头像直接进角色页）、元素分布、角色构成（等级段）、活跃天数 / 成就 / 幻想真境剧诗 / 幽境危战、最佳圣遗物
+- **角色** —— 左侧列表带官方头像与元素色描边，可按元素筛选、按等级/稀有度/命座/名字排序；右侧大图、命座、三段天赋、武器（图标/等级/精炼）、圣遗物；右上角 **生成图片** 导出 760×460 PNG
+- **抽卡** —— 总抽数 / 五星 / 四星 / 平均出金 / 欧非比、各池抽数与保底进度、五星出货区间、每月抽卡量、五星记录
+- **武器** —— 卡片网格（官方图标 + 稀有度描边），按类型/星级筛选
+- **圣遗物** —— 有副词条时按 CV 评分排序；没有时说明差这一步并给验证入口
 
-右上角「同步」强制重新读取。会话或 `x-rpc-challenge` 过期时会重新要求扫码/验证，页面会直接说明。
+所有图标都来自官方 CDN（`act-webstatic.mihoyo.com`），明暗主题自适应。
 
 ---
 
+
 ## Agent 工具
 
-装好后 agent 自动获得 5 个工具，你可以直接在对话里问，例如：
+装好后 agent 自动获得 6 个工具，可以直接问：
 
 > 「我胡桃的圣遗物怎么样，哪件该换？」
 > 「我这个号有多少五星武器？」
 > 「列出所有火系角色」
-> 「圣遗物里暴击值最高的 10 件」
+> 「我最近抽卡怎么样，离保底还有多少？」
 
 | 工具 | 作用 |
 | --- | --- |
-| `genshin_account_overview` | 账号总览（数据源、数量、元素分布、最佳圣遗物）；`refresh:true` 强制同步 |
-| `genshin_characters` | 角色列表，按元素/武器类型/最低等级过滤，按等级/稀有度/名字/圣遗物 CV 排序 |
-| `genshin_character` | 单个角色完整练度（支持 中文名 / 英文名 / 别名 / 数字 id） |
+| `genshin_account_overview` | 账号总览（数量、元素分布、活跃天数、成就、剧诗/危战、最佳圣遗物） |
+| `genshin_characters` | 角色列表，按元素/武器类型/最低等级过滤与排序 |
+| `genshin_character` | 单个角色的完整练度（中文名 / 英文名 / 别名 / 数字 id） |
 | `genshin_artifacts` | 圣遗物筛选与排序（套装、部位、角色、最低 CV） |
 | `genshin_weapons` | 武器筛选（类型、最低稀有度、是否已装备） |
+| `genshin_gacha` | 祈愿分析：抽数、平均出金、欧非比、各池保底、五星记录；可按池过滤 |
 
-工具返回结构化 JSON，同时渲染成给人看的文本；数据源不可用时返回**可读的错误**而不是抛异常，agent 会转告你该怎么配。
+工具返回结构化 JSON，同时渲染成给人看的文本；数据不可用时返回**可读的错误**而不是抛异常。
 
 ---
+
 
 ## 圣遗物评分怎么算
 
@@ -145,16 +151,24 @@ node scripts/build-skill-orders.mjs
 
 ## 工作原理
 
-| 端 | 职责 |
+| 模块 | 职责 |
 | --- | --- |
-| Host (`lib/index.js`) | 定义 Config；调度 `lib/sources/miyoushe.js`；把结果统一成一份 snapshot 后**内存 + 磁盘双缓存**（`$DSH_HOME/data/dsh-genshin-account/snapshot-miyoushe.json`），刷新失败时继续用上一份好数据；注册 5 个工具；用 `webServer` 挂同源 JSON 路由（`/state` `/summary` `/character` `/artifacts` `/weapons` `/sync` `/login/qr` `/login/poll` `/verify/start` `/verify/finish` `/probe-miyoushe` `/diag`） |
-| `lib/sources/miyoushe.js` | DS2 签名、设备指纹（`x-rpc-device_fp`）、`x-rpc-challenge` 的持有与附加、`/index` + `/character/detail` 的抓取与解析 |
-| `lib/sources/miyoushe-login.js` | 扫码登录：`createQRLogin` / `queryQRLoginStatus`，从 `Set-Cookie` 抽出会话 |
-| `lib/model.js` | 解析名字/元素/部位、按 `location` 把武器与圣遗物挂回角色、排序与筛选、组装套装效果 |
-| `lib/score.js` | CV / 效率 / 评价 |
-| Client (`client/client.js`) | `window.__ModuleLoader__.load({ id, factory })` 包；`ctx.slots.inject` + 两次 `ctx.slots.register`（`main` 用 key `genshin`，`sidebar.panellist` 用同 id）——侧边栏按钮由 sidebar 自己渲染，插件只提供图标；样式全部走 `--dsw-*` 主题变量，自动跟随明暗主题 |
+| `lib/index.js` | Config、5 个数据工具 + 抽卡工具、同源 JSON 路由、快照内存 + 磁盘双缓存 |
+| `lib/sources/miyoushe-calc.js` | 养成计算器通道：枚举角色、解析装备与天赋、附加账号级数据 |
+| `lib/sources/miyoushe-extras.js` | 名片 / 幻想真境剧诗 / 幽境危战（均不受验证码管控） |
+| `lib/sources/miyoushe.js` | DS2 签名、设备指纹、`x-rpc-challenge` 持有与附加、战绩接口解析 |
+| `lib/sources/miyoushe-login.js` | 扫码登录：`createQRLogin` / `queryQRLoginStatus`，从 `Set-Cookie` 取会话 |
+| `lib/sources/miyoushe-gacha.js` | 祈愿：从游戏缓存找 authkey、增量同步、分析 |
+| `lib/qr.js` | 自带的二维码编码器（无第三方依赖，逐格对齐参考实现） |
+| `lib/model.js` / `lib/score.js` | 统一快照、查询、CV 与词条效率 |
+| `client/client.js` | `window.__ModuleLoader__.load` 包；`main` + `sidebar.panellist` 两个槽位；样式走 `--dsw-*` 主题变量 |
+
+路由：`/state` `/summary` `/character` `/artifacts` `/weapons` `/sync` `/login/qr` `/login/poll` `/verify/widget` `/verify/start` `/verify/finish` `/gacha` `/gacha/sync` `/probe-miyoushe` `/diag`，除 `/verify/widget`（验证页）与 GET 查询外都是同源 POST。
+
+**没有运行时 npm 依赖**（除 host 提供的 schemastery）：二维码由 `lib/qr.js` 生成，安装不需要拉取任何第三方包。
 
 ---
+
 
 ## 已知限制
 
@@ -169,16 +183,21 @@ node scripts/build-skill-orders.mjs
 
 ## 验证状态
 
-`npm test` 覆盖（全部通过）：
+`npm test` 覆盖 9 个测试文件，全部通过：
 
-- `test/smoke-miyoushe.mjs` —— DS2 签名格式（三段、`t` 为秒、`r` 范围、md5）、`base` 嵌套、`skill_type`→天赋、`property_map`→词条、百分比/固定值区分、套装名解析
-- `test/smoke-login.mjs` —— 扫码登录：`Set-Cookie` 解析（只留会话 cookie）、`createQr`（成功/被拒）、`pollQr` 全状态（Created / Scanned / Confirmed 带 Cookie / 无 Cookie 报错 / -3501 过期 / -3505 取消 / -3503 风控）
-- `test/smoke-verify.mjs` —— 验证链路：`createVerification` 的参数与请求头、空任务报错、`verifyVerification` 换取并持有 `x-rpc-challenge`、该 token 会附到后续 record 请求、清空后不再附带
-- `test/smoke-host.mjs` —— 5 个工具 + 12 条路由、`/state` 契约（含 Cookie 不回显）、缓存与 1034 降级、跨源 POST 拒绝、`/verify/*` 端到端（桩化 transport）
-- `test/smoke-client.mjs` —— 按 web boot 协议加载浏览器 bundle：`main` + `sidebar.panellist` 注册、图标渲染、页面渲染不抛错、`configForms.get` 用 `include:<包名>`、页面读取的字段都存在 Host 返回的 JSON 里
-- `test/render-check.mjs` / `test/mount-check.mjs` —— SSR 与 jsdom 挂载两条路径都能出界面
+- `smoke-miyoushe` —— DS2 签名、`base` 嵌套、`skill_type`→天赋、`property_map`→词条
+- `smoke-login` —— 扫码：`Set-Cookie` 解析、`createQr` 成功/被拒、`pollQr` 全状态（含 -3501/-3505/-3503）
+- `smoke-verify` —— 验证链路：申请任务、换取并持有 `x-rpc-challenge`、按接口分别持有、清空后不再附带
+- `smoke-gacha` —— 抽卡分析：池子计数、平均出金、欧非比、保底重置、出货区间、月度统计、空数据边界
+- `smoke-qr` —— 二维码：与参考实现逐格一致的基准矩阵、版本选择边界、SVG 形状
+- `smoke-host` —— 6 个工具 + 15 条路由、`/state` 契约（Cookie 不回显）、缓存与 1034 降级、`/verify/*` 与 `/gacha` 契约
+- `smoke-client` —— web boot 协议加载 bundle、槽位注册、登录面板渲染、`configForms` 用 `include:<包名>`
+- `render-check` / `mount-check` —— SSR 与 jsdom 挂载两条路径都能出界面
 
-**未覆盖**：真实账号的滑块验证需要人手动拖一次，自动化测试里以桩化 transport 代替；`x-rpc-challenge` 的有效期以实际为准。
+**未覆盖**：真实账号的滑块验证需要人手动拖一次；祈愿同步需要游戏内打开一次历史记录（authkey 约 24 小时过期）。
+
+---
+
 
 ## 许可
 
