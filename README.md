@@ -181,14 +181,19 @@ node scripts/build-skill-orders.mjs
 - `test/smoke-good.mjs` —— GOOD 解析、别名解析（中文名/GOOD key）、套装效果原文、CV/效率、筛选排序
 - `test/smoke-enka.mjs` —— Enka 响应解析：`propMap` 等级、天赋顺序（用 `SkillOrder` 而非 id 排序）、`affixMap`→精炼、`fightPropMap` 面板、`icon`→套装 id、4★ 保留
 - `test/smoke-miyoushe.mjs` —— DS2 签名格式（三段、t 为秒、r 范围、md5）、`base` 嵌套、`skill_type`→天赋、`property_map`→词条、百分比/固定值区分、套装名解析
-- `test/smoke-host.mjs` —— 插件入口注册 5 个工具 + 6 条路由、渲染文本、软错误降级、跨源 POST 拒绝、缓存
-- `test/smoke-client.mjs` —— 按 web boot 协议加载浏览器 bundle：注册 `main` + `sidebar.panellist` 且 key 一致、图标渲染 svg、页面渲染不抛错，并**逐个校验页面读取的字段都存在于 Host 返回的 JSON 里**（两半之间最容易出的契约错）
+- `test/smoke-host.mjs` —— 插件入口注册 5 个工具 + 7 条路由、渲染文本、软错误降级、跨源 POST 拒绝、缓存、`/upload-good` 的接受与拒绝路径、`/state` 契约、Cookie 不回显
+- `test/smoke-client.mjs` —— 按 web boot 协议加载浏览器 bundle：注册 `main` + `sidebar.panellist` 且 key 一致、图标渲染 svg、页面渲染不抛错，断言 `configForms.get` 用的是 `include:<包名>` 这个真实 entry id，并**逐个校验页面读取的字段都存在于 Host 返回的 JSON 里**
+- `test/render-check.mjs` —— 用**真 React**（server renderer）渲染注册的页面与图标，抓「渲染期抛错 / hook 顺序」这类会把整个外壳打白屏的问题。需要 `react`/`react-dom` 可解析，缺失时自动跳过：
+  ```sh
+  npm i --prefix /tmp/ga-react react@18 react-dom@18
+  REACT_DIR=/tmp/ga-react npm run test:render
+  ```
 
 **未能在本机验证**（如实说明）：
 
 - **Enka 真实联网**：本机访问 `enka.network` 超时，解析逻辑用合成响应验证。
 - **米游社真实联网**：没有你的 Cookie，签名与响应结构依据公开实现（`genshin.py`）与文档，用合成响应验证。
-- **GUI 真实渲染**：用桩 React + 桩 ctx 跑通了注册与渲染路径，但没在运行中的浏览器里点过；真实外观（尤其明暗主题下的排版）需要你打开页面确认。
+- **真实浏览器里的外观**：真 React 渲染能证明不会崩，但明暗主题下的实际排版、滚动、点击仍需真的打开页面看。
 
 ---
 
