@@ -60,9 +60,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     {
       id: "miyoushe",
       name: "米游社（国服·直连）",
-      badge: "",
+      badge: "实测常被风控",
       reads: "账号概览 + 全部角色列表 + 已公开角色详情的天赋/武器/圣遗物",
-      limits: "从别的设备用你的 Cookie 调接口会被要求人机验证（retcode 1034）；官方改版时签名也会失效",
+      limits: "实测：复制来的 Cookie 会被判为换设备使用登录态，一律 retcode 1034（人机验证）；补齐 UA/Referer/设备指纹后仍然如此。不是配置问题",
       servers: "国服",
     },
     {
