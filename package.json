@@ -1,7 +1,7 @@
 {
   "name": "dsh-genshin-account",
   "description": "鐠囪褰囬崢鐔侯殻鐠愶箑褰块惃鍕潡閼瑰眰鈧焦顒熼崳銊ょ瑢閸︼綁浠愰悧鈺嬬窗閺€顖涘瘮閺堫剙婀?GOOD 閺傚洣娆?/ Enka.Network / 缁櫕鐖剁粈鍙ョ瑏缁夊秵鏆熼幑顔界爱閿涘本鏁為崘?5 娑?agent 瀹搞儱鍙块獮璺烘躬 GUI 闁插本褰佹笟娑欑セ鐟欏牓銆夐棃?/ Read your Genshin Impact characters, weapons and artifacts from a GOOD export, Enka.Network or the miHoYo record API, with agent tools and a browsing page.",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",

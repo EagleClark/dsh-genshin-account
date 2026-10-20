@@ -14,7 +14,7 @@ A DeepSeek Harness plugin that reads your Genshin Impact account (characters, ta
 | --- | --- |
 | 1. 扫码登录 | `passport-api.miyoushe.com/account/ma-cn-passport/web/createQRLogin` → `queryQRLoginStatus`，确认后从 `Set-Cookie` 得到 `ltoken_v2` / `ltmid_v2` —— 会话归插件自己所有 |
 | 2. 申请验证任务 | `GET /game_record/app/card/wapi/createVerification?is_high=true` → geetest 的 `gt` + `challenge` |
-| 3. 拖一次滑块 | 页面内加载 geetest v3 控件，产出 `geetest_challenge` + `geetest_validate` |
+| 3. 拖滑块 | 页面内加载 geetest v3 控件，产出 `geetest_challenge` + `geetest_validate`；`x-rpc-challenge_path` 决定这次验证解锁哪个接口（`/index` 与 `/character/list` 分别验证） |
 | 4. 兑换通行证 | `POST /game_record/app/card/wapi/verifyVerification` → `x-rpc-challenge` |
 | 5. 读取数据 | `GET /game_record/app/genshin/api/index`、`POST /character/detail`，带上 `x-rpc-challenge` |
 
@@ -49,6 +49,8 @@ dsh plugin --profile web add <仓库绝对路径>
 1. **填国服 UID** —— 服务器按 UID 自动判断（1/2 → 天空岛 `cn_gf01`，5 → 世界树 `cn_qd01`）。
 2. **扫码登录** —— 点「生成二维码」，用**手机米游社 App** 扫码并在手机上确认。确认后插件从 `Set-Cookie` 拿到会话，不需要你复制任何 Cookie。
 3. **安全验证** —— 点「开始验证」，在弹出的 geetest 滑块上拖一次。通过后插件自动换取 `x-rpc-challenge` 并立刻读取账号，成功即跳到概览。
+
+   > 验证是**按接口**发放的：`/index`（账号概览）与 `/character/list`（角色详情）各要一次。所以可能连续弹两次滑块——第一次通过后如果角色详情仍被拦，页面会自动再弹第二次，不需要重新配置。
 
 页面上还有 **接口诊断**：用当前会话依次打 `/index`、`/character/list`、`/character/detail`，逐个报告返回码——排查时比猜有用。
 

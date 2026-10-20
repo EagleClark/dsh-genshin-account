@@ -763,7 +763,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     function offerVerification(message) {
       if (!/1034/.test(String(message || ""))) return false;
       setTab("settings");
-      if (!verifyBusy) beginVerify();
+      if (!verifyBusy) beginVerify("index");
       return true;
     }
 
@@ -1037,10 +1037,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       return gtScriptPromise;
     }
 
-    function beginVerify() {
+    function beginVerify(purpose) {
+      var want = purpose === "characters" ? "characters" : "index";
       setVerifyBusy(true);
-      setVerifyStatus("正在获取验证任务…");
-      postJson("/verify/start")
+      setVerifyStatus(want === "characters" ? "正在为「角色详情」申请验证…" : "正在获取验证任务…");
+      postJson("/verify/start", JSON.stringify({ purpose: want }))
         .then(function (data) {
           if (!data || data.ok === false) throw new Error((data && data.error) || "获取验证任务失败");
           setVerifyTask(data);
@@ -1092,9 +1093,20 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     function submitVerify(challenge, validate) {
       setVerifyStatus("验证通过，正在重新读取账号…");
-      postJson("/verify/finish", JSON.stringify({ challenge: challenge, validate: validate }))
+      postJson("/verify/finish", JSON.stringify({
+        purpose: (verifyTask && verifyTask.purpose) || "index",
+        challenge: challenge,
+        validate: validate,
+      }))
         .then(function (data) {
           if (!data || data.ok === false) throw new Error((data && data.error) || "验证后读取失败");
+          // /character/detail is verified under its own challenge path, so a
+          // pass for /index can be followed by a second prompt.
+          if (data.needNext) {
+            setVerifyStatus(data.needNext === "characters" ? "账号概览已通过，还需要为「角色详情」再验证一次" : "还需要再验证一次");
+            beginVerify(data.needNext);
+            return;
+          }
           setVerifyTask(null);
           setVerifyStatus("");
           setSummary(data);
@@ -1168,7 +1180,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         qr: qr,
         qrStatus: qrStatus,
         qrBusy: qrBusy,
-        onVerify: beginVerify,
+        onVerify: function () { beginVerify("index"); },
         verifyTask: verifyTask,
         verifyStatus: verifyStatus,
         verifyBusy: verifyBusy,
