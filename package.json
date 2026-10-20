@@ -5,6 +5,14 @@
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",
+  "homepage": "https://github.com/EagleClark/dsh-genshin-account",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EagleClark/dsh-genshin-account.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EagleClark/dsh-genshin-account/issues"
+  },
   "keywords": [
     "deepseek",
     "harness",

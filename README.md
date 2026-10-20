@@ -22,14 +22,16 @@ A DeepSeek Harness plugin that reads your Genshin Impact account (characters, ta
 
 ## 安装
 
+直接从 GitHub 安装：
+
 ```sh
-dsh plugin --profile web add <本地路径或 github:EagleClark/dsh-genshin-account>
+dsh plugin --profile web add github:EagleClark/dsh-genshin-account
 ```
 
-例如在本仓库根目录：
+本地开发时也可以装成本地 link（改动即时生效）：
 
 ```sh
-dsh plugin --profile web add D:\Code\dsh-plugin-dev\dsh-genshin-account
+dsh plugin --profile web add <仓库绝对路径>
 ```
 
 装完**重启 `dsh web`**（或重启 Desktop），刷新页面。之后侧边栏会多一个「原神账号」图标。
