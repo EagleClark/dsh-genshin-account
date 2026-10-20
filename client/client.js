@@ -419,6 +419,38 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             })))
         : null,
 
+      (o.player && (o.player.activeDays || o.player.achievements)) || o.challenges
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "活跃与挑战"),
+            h("div", { className: "dga-heroStats", style: { marginBottom: 12 } },
+              o.player && o.player.activeDays
+                ? h(StatTile, { value: o.player.activeDays, label: "活跃天数" })
+                : null,
+              o.player && o.player.achievements
+                ? h(StatTile, { value: o.player.achievements, label: "成就达成" })
+                : null,
+              o.challenges && o.challenges.hardChallenge
+                ? h(StatTile, { value: "难度 " + o.challenges.hardChallenge.difficulty, label: "幻想真境剧诗" })
+                : null,
+              o.challenges && o.challenges.roleCombat
+                ? h(StatTile, { value: o.challenges.roleCombat.medals + "/" + o.challenges.roleCombat.maxRound, label: "幽境危战奖章" })
+                : null),
+            o.challenges && o.challenges.hardChallenge
+              ? h("p", { className: "dga-hint" },
+                  "本期剧诗「" + o.challenges.hardChallenge.name + "」最高难度 " +
+                  o.challenges.hardChallenge.difficulty + "，用时 " +
+                  Math.round(o.challenges.hardChallenge.seconds / 60) + " 分 " +
+                  (o.challenges.hardChallenge.seconds % 60) + " 秒" +
+                  (o.challenges.hardChallenge.end ? "；结束于 " + new Date(o.challenges.hardChallenge.end).toLocaleDateString("zh-CN") : ""))
+              : null,
+            o.challenges && o.challenges.card
+              ? h("p", { className: "dga-hint" },
+                  "名片数据：深境螺旋 " + (o.challenges.card.abyss || "—") +
+                  " · 幻想剧诗 " + (o.challenges.card.theater || "—") +
+                  (o.challenges.card.matched === false ? "（名片里没有当前 UID 的角色，只取账号级指标）" : ""))
+              : null)
+        : null,
+
       o.bestArtifact
         ? h("div", { className: "dga-block" },
             h("div", { className: "dga-sec" }, "最佳圣遗物"),
