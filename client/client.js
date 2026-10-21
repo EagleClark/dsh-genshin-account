@@ -105,7 +105,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-table td{padding:7px 8px;border-bottom:1px solid var(--dsw-alias-border-l1);vertical-align:top}",
     ".dga-table tr:last-child td{border-bottom:none}",
     ".dga-num{font-variant-numeric:tabular-nums;white-space:nowrap}",
-    ".dga-subs{color:var(--dsw-alias-label-secondary);line-height:1.6}",
     ".dga-empty{color:var(--dsw-alias-label-tertiary);padding:32px 4px;line-height:1.8}",
     ".dga-err{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-state-error-primary);border-radius:10px;padding:12px 16px;color:var(--dsw-alias-label-primary);line-height:1.7;white-space:pre-wrap}",
     ".dga-grade{font-weight:600}",
@@ -182,6 +181,57 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-itemCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
     ".dga-itemText{min-width:0;display:flex;flex-direction:column;gap:3px}",
     ".dga-itemName{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+
+    // artifact cards
+    ".dga-artiGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;margin-bottom:6px}",
+    ".dga-artiCard{position:relative;padding:12px 13px 11px;border-radius:14px;background:linear-gradient(158deg,var(--dsw-alias-bg-layer-2),var(--dsw-alias-bg-layer-1));border:1px solid var(--dsw-alias-border-l2);overflow:hidden}",
+    ".dga-artiCard:hover{border-color:var(--dsw-alias-label-dimmed)}",
+    ".dga-artiAccent{position:absolute;inset:0 auto 0 0;width:3px}",
+    ".dga-artiHead{display:flex;align-items:center;gap:10px;margin-bottom:10px}",
+    ".dga-artiHeadText{min-width:0;display:flex;flex-direction:column;gap:2px}",
+    ".dga-artiSet{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".dga-artiSlot{font-size:11px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-artiMain{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:10px;background:var(--dsw-alias-bg-layer-3);margin-bottom:9px}",
+    ".dga-artiMainL{font-size:11px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-artiMainV{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums}",
+    ".dga-artiSubs{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;min-height:74px}",
+    ".dga-artiSub{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12px;color:var(--dsw-alias-label-secondary)}",
+    ".dga-artiSubCrit{color:#e0b552;font-weight:600}",
+    ".dga-artiSubK{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".dga-artiSubV{font-variant-numeric:tabular-nums;flex:0 0 auto}",
+    ".dga-artiFoot{display:flex;align-items:center;gap:10px;padding-top:9px;border-top:1px solid var(--dsw-alias-border-l1)}",
+    ".dga-cvBox{display:flex;flex-direction:column;line-height:1.15}",
+    ".dga-cvV{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}",
+    ".dga-cvL{font-size:10px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-meter{flex:1;height:6px;border-radius:999px;background:var(--dsw-alias-bg-layer-3);overflow:hidden}",
+    ".dga-meterFill{display:block;height:100%;border-radius:999px;transition:width .25s}",
+    ".dga-gradePill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}",
+    ".dga-showcaseTag{font-size:10px;line-height:15px;padding:0 6px;border-radius:999px;border:1px solid rgba(200,162,74,.45);background:rgba(200,162,74,.16);color:#d8b566;white-space:nowrap}",
+    ".dga-rowBadges{display:flex;align-items:center;gap:6px;flex:0 0 auto}",
+
+    // gacha guide + dashboard
+    ".dga-guide{border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-layer-1);padding:14px 16px;margin-bottom:16px}",
+    ".dga-guideStep{display:flex;gap:10px;margin:0 0 10px}",
+    ".dga-guideStep:last-child{margin-bottom:0}",
+    ".dga-guideNum{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--dsw-alias-label-secondary)}",
+    ".dga-guideText{font-size:12.5px;line-height:1.75;color:var(--dsw-alias-label-secondary)}",
+    ".dga-guideText b{color:var(--dsw-alias-label-primary);font-weight:600}",
+    ".dga-ratioBar{display:flex;height:16px;border-radius:999px;overflow:hidden;background:var(--dsw-alias-bg-layer-3)}",
+    ".dga-ratioSeg{height:100%}",
+    ".dga-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-legendDot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}",
+    ".dga-monthChart{display:flex;align-items:flex-end;gap:8px;height:132px;padding:6px 0 0}",
+    ".dga-monthCol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%}",
+    ".dga-monthVal{font-size:10.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}",
+    ".dga-monthBar{width:100%;max-width:38px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#d3ad5b,#8a6b22);min-height:3px}",
+    ".dga-monthLabel{font-size:10px;color:var(--dsw-alias-label-tertiary);white-space:nowrap}",
+    ".dga-fiveRow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);margin-bottom:6px}",
+    ".dga-fiveName{flex:1;min-width:0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".dga-fiveMeta{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap}",
+    ".dga-pityBar{width:96px;height:6px;border-radius:999px;background:var(--dsw-alias-bg-layer-3);overflow:hidden;flex:0 0 auto}",
+    ".dga-pityFill{display:block;height:100%;border-radius:999px}",
+    ".dga-pityTrack{display:flex;flex-direction:column;gap:6px}",
+    ".dga-pityLine{display:flex;align-items:center;gap:8px;font-size:12px}",
   ].join("\n");
 
   var CSS_TAG = PKG + "/panel.css";
@@ -326,6 +376,66 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
   function elementColor(element) {
     return ELEMENT_COLOR[element] || ELEMENT_COLOR.none;
+  }
+
+  /** Grade → colour, so a card's CV, accent bar and pill all agree. */
+  var GRADE_COLOR = { 极品: "#c8a24a", 优秀: "#5aa9e6", 可用: "#6ec07a" };
+  function gradeColor(grade) {
+    return GRADE_COLOR[grade] || "var(--dsw-alias-label-dimmed)";
+  }
+
+  /**
+   * One artifact as a card.
+   *
+   * The table it replaces forced the eye across five columns to answer one
+   * question ("is this piece good?"); a card answers it at a glance — set and
+   * slot on top, the main stat as the one emphasised number, then the substats
+   * with the two crit rolls highlighted, and CV plus the efficiency meter at the
+   * bottom where the eye lands last.
+   */
+  function ArtifactCard(props) {
+    var a = props.a;
+    var color = gradeColor(a.grade);
+    var isHex = /^#[0-9a-f]{6}$/i.test(color);
+    var subs = a.subStats && a.subStats.length ? a.subStats : null;
+    var efficiency = Math.max(3, Math.min(100, Number(a.efficiency) || 0));
+    return h("div", { className: "dga-artiCard" },
+      h("span", { className: "dga-artiAccent", style: { background: color } }),
+      h("div", { className: "dga-artiHead" },
+        h(Art, { src: a.icon, alt: a.setName, size: 42 }),
+        h("div", { className: "dga-artiHeadText" },
+          h("div", { className: "dga-artiSet", title: a.setName }, a.setName + " " + (a.rarity || 5) + "★"),
+          h("div", { className: "dga-artiSlot" }, a.slotZh + " · +" + (a.level == null ? "-" : a.level)))),
+      a.mainStat
+        ? h("div", { className: "dga-artiMain" },
+            h("span", { className: "dga-artiMainL" }, "主词条 · " + a.mainStat.label),
+            h("span", { className: "dga-artiMainV" }, a.mainStat.text))
+        : null,
+      h("div", { className: "dga-artiSubs" },
+        subs
+          ? subs.map(function (sub, index) {
+              var crit = sub.key === "critRate_" || sub.key === "critDMG_";
+              return h("div", { className: "dga-artiSub" + (crit ? " dga-artiSubCrit" : ""), key: index },
+                h("span", { className: "dga-artiSubK" }, sub.label),
+                h("span", { className: "dga-artiSubV" }, sub.text));
+            })
+          : (a.subs || []).map(function (text, index) {
+              return h("div", { className: "dga-artiSub", key: index }, h("span", { className: "dga-artiSubK" }, text));
+            })),
+      h("div", { className: "dga-artiFoot" },
+        h("div", { className: "dga-cvBox" },
+          h("span", { className: "dga-cvV", style: { color: color } }, String(a.cv)),
+          h("span", { className: "dga-cvL" }, "CV")),
+        h("div", { className: "dga-meter" },
+          h("span", { className: "dga-meterFill", style: { width: efficiency + "%", background: color } })),
+        h("span", {
+          className: "dga-gradePill",
+          style: {
+            color: color,
+            border: "1px solid " + color,
+            background: isHex ? color + "22" : "transparent",
+          },
+        }, (a.grade ? a.grade + " " : "") + a.efficiency + "%")));
   }
 
   /** Official art from the miHoYo CDN; degrades to a coloured placeholder. */
@@ -556,20 +666,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       scored.length
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "圣遗物（含词条评分）"),
-            h("table", { className: "dga-table" },
-              h("thead", null, h("tr", null,
-                h("th", null, "部位"), h("th", null, "套装"), h("th", null, "主词条"),
-                h("th", null, "副词条"), h("th", null, "CV"), h("th", null, "效率"))),
-              h("tbody", null, scored.map(function (a, index) {
-                return h("tr", { key: index },
-                  h("td", null, a.slotZh),
-                  h("td", null, a.setName + (a.rarity ? " " + a.rarity + "★" : "") + (a.level ? " +" + a.level : "")),
-                  h("td", { className: "dga-num" }, a.main || "—"),
-                  h("td", { className: "dga-subs" }, (a.subs || []).join(" / ") || "—"),
-                  h("td", { className: "dga-num" }, String(a.cv)),
-                  h("td", { className: "dga-num" }, a.efficiency + "% " + (a.grade || "")));
-              }))))
+            h("div", { className: "dga-sec" }, "圣遗物 · 主副词条与评分"),
+            h("div", { className: "dga-artiGrid" }, scored.map(function (a, index) {
+              return h(ArtifactCard, { key: index, a: a });
+            })),
+            h("p", { className: "dga-hint" },
+              "CV = 暴击率 × 2 + 暴击伤害（只算副词条）；效率 = 副词条相对 5★ 顶档强化的达成率，100% 表示每次强化都吃到最高档。" +
+              "金色的两条是双暴词条。"))
         : pieces.length
           ? h("div", { className: "dga-block" },
               h("div", { className: "dga-sec" }, "已装备圣遗物"),
@@ -613,11 +716,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       return String(c.name).indexOf(query) >= 0 || String(c.elementZh || "").indexOf(query) >= 0;
     });
     var sorted = filtered.slice().sort(function (a, b) {
+      // Showcase characters are the ones with artifact stats, so they always
+      // sit above the rest regardless of the chosen sort.
+      var byShowcase = (b.showcase ? 1 : 0) - (a.showcase ? 1 : 0);
+      if (byShowcase) return byShowcase;
       if (sort === "rarity") return b.rarity - a.rarity || b.level - a.level;
       if (sort === "name") return String(a.name).localeCompare(String(b.name), "zh");
       if (sort === "constellation") return b.constellation - a.constellation || b.level - a.level;
       return b.level - a.level || b.rarity - a.rarity;
     });
+    var showcaseCount = list.filter(function (c) { return c.showcase; }).length;
 
     var elements = ["pyro", "hydro", "anemo", "electro", "cryo", "geo", "dendro"];
     var chip = function (key, label, active, onClick) {
@@ -648,7 +756,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             return chip("sort-" + pair[0], pair[1], sort === pair[0], function () { setSort(pair[0]); });
           })),
         h("div", { className: "dga-sub", style: { padding: "4px 10px 6px" } },
-          sorted.length + " / " + list.length + " 个角色"),
+          sorted.length + " / " + list.length + " 个角色" +
+          (showcaseCount ? " · 展柜 " + showcaseCount + " 个（有圣遗物词条）" : "")),
         sorted.map(function (c) {
           return h("div", {
             key: c.id,
@@ -657,6 +766,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           },
             h(Art, { src: c.icon, alt: c.name, size: 36, style: { borderColor: elementColor(c.element) } }),
             h("span", { className: "dga-rowname" }, c.name),
+            h("div", { className: "dga-rowBadges" },
+              c.showcase ? h("span", { className: "dga-showcaseTag", title: "在游戏内角色展柜里，能读到圣遗物主副词条" }, "展柜") : null),
             h("span", { className: "dga-rowlv" }, "Lv." + c.level));
         })),
       h("div", { className: "dga-col-detail" },
@@ -722,64 +833,68 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   var WEAPON_ZH = { sword: "单手剑", claymore: "双手剑", polearm: "长柄武器", bow: "弓", catalyst: "法器" };
 
 
-  // ── artifacts ───────────────────────────────────────────────────────────
-  function ArtifactsTab(props) {
-    var rows = props.rows || [];
-    if (props.loading) return h("div", { className: "dga-empty" }, "读取中…");
-    if (!rows.length) {
-      return h("div", { className: "dga-scroll" },
-        h("div", { className: "dga-empty" },
-          "还没有读到圣遗物副词条——它们来自游戏内的「角色展柜」。"),
-        h("p", { className: "dga-hint", style: { textAlign: "center" } },
-          "在游戏里打开 资料 → 角色展柜，放上想评分的角色（最多 8 个）并点开「显示详情」，" +
-            "等 5 分钟后到设置页点「重新同步」，这里就会出现套装、主副词条、CV 和词条效率。"));
-    }
-    return h("div", { className: "dga-scroll" },
-      h("table", { className: "dga-table" },
-        h("thead", null, h("tr", null,
-          h("th", null, "部位"), h("th", null, "套装"), h("th", null, "主词条"),
-          h("th", null, "副词条"), h("th", null, "CV"), h("th", null, "评价"), h("th", null, "角色"))),
-        h("tbody", null, rows.map(function (a, index) {
-          return h("tr", { key: index },
-            h("td", null, a.slotZh),
-            h("td", null, a.setName + " " + a.rarity + "★ +" + a.level),
-            h("td", { className: "dga-num" }, a.main || "—"),
-            h("td", { className: "dga-subs" }, (a.subs || []).join(" / ")),
-            h("td", { className: "dga-num" }, String(a.cv)),
-            h("td", null, h("span", { className: "dga-grade" }, a.grade || ""), " " + a.efficiency + "%"),
-            h("td", null, a.owner || h("span", { className: "dga-muted" }, "—")));
-        }))));
+  // ── wish history ────────────────────────────────────────────────────────
+﻿  /** One numbered instruction line for the wish-history guide. */
+  function GuideStep(props) {
+    return h("div", { className: "dga-guideStep" },
+      h("span", { className: "dga-guideNum" }, String(props.n)),
+      h("div", { className: "dga-guideText" }, props.children));
   }
 
-  // ── wish history ────────────────────────────────────────────────────────
+  /** Coloured dot + label pair used by the rarity distribution legend. */
+  function LegendItem(props) {
+    return h("span", null,
+      h("span", { className: "dga-legendDot", style: { background: props.color } }),
+      props.label);
+  }
+
   function GachaTab(props) {
     var a = props.analysis;
     var busy = props.busy;
+    var manual = h("details", { className: "dga-adv" },
+      h("summary", null, "找不到链接？手动粘贴祈愿历史地址"),
+      h("div", { style: { marginTop: 10 } },
+        h("p", { className: "dga-hint", style: { marginTop: 0 } },
+          "在游戏里打开「祈愿 → 历史记录」后，那个网页的地址栏里有一整段很长的链接，" +
+          "把整段复制过来（重点是 authkey= 后面那一长串）。authkey 约 24 小时过期，过期就再打开一次历史记录。"),
+        h("textarea", {
+          className: "dga-input dga-textarea",
+          placeholder: "https://webstatic.mihoyo.com/hk4e/event/e20190909gacha-.../index.html?...&authkey=...#/log",
+          value: props.url,
+          onChange: function (event) { props.onUrl(event.target.value); },
+        }),
+        h("div", { className: "dga-fileRow", style: { marginTop: 8 } },
+          h("button", { className: "dga-btn", onClick: props.onSyncManual, disabled: busy || !String(props.url || "").trim() },
+            "用这段链接同步"))));
+
+    var guide = h("div", { className: "dga-guide" },
+      h("div", { className: "dga-sec" }, "怎么拿到祈愿记录"),
+      h(GuideStep, { n: 1 }, h("span", null,
+        "打开游戏 → ", h("b", null, "祈愿"), " → ", h("b", null, "历史记录"),
+        "，随便翻一页。这一步会让游戏把一条带 authkey 的链接写进本地缓存，插件就是从那里读的。")),
+      h(GuideStep, { n: 2 }, h("span", null,
+        "回到这里点 ", h("b", null, "同步抽卡"), "。插件会自动在游戏安装目录的 webCaches 里找最新那条链接，不需要你复制任何东西。")),
+      h(GuideStep, { n: 3 }, h("span", null,
+        "如果提示找不到链接，就展开下面的「手动粘贴」，从游戏里打开的祈愿历史页地址栏整段复制过来。")),
+      h("p", { className: "dga-hint" }, "authkey 约 24 小时过期；过期后重新打开一次历史记录再同步即可。插件不会上传你的记录。"));
 
     if (!a || !a.total) {
       return h("div", { className: "dga-scroll" },
+        h("div", { className: "dga-block" }, guide),
         h("div", { className: "dga-block" },
-          h("div", { className: "dga-sec" }, "还没有抽卡记录"),
-          h("p", { className: "dga-hint" },
-            "插件的祈愿数据来自游戏自己的祈愿历史：先在游戏里打开一次「祈愿 → 历史记录」" +
-            "（这一步会让游戏把带 authkey 的链接写进本地缓存），然后回到这里点「同步抽卡」。"),
           h("div", { className: "dga-fileRow" },
             h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSync, disabled: busy },
               busy ? "同步中…" : "同步抽卡")),
           h("p", { className: "dga-hint" }, props.status || ""),
-          h("details", { className: "dga-adv" },
-            h("summary", null, "同步失败？手动粘贴祈愿链接"),
-            h("div", { style: { marginTop: 10 } },
-              h("textarea", {
-                className: "dga-input dga-textarea",
-                placeholder: "https://public-operation-hk4e.mihoyo.com/gacha_info/api/getGachaLog?...authkey=...",
-                value: props.url,
-                onChange: function (event) { props.onUrl(event.target.value); },
-              }),
-              h("div", { className: "dga-fileRow", style: { marginTop: 8 } },
-                h("button", { className: "dga-btn", onClick: props.onSyncManual, disabled: busy || !String(props.url || "").trim() },
-                  "用这段链接同步"))))));
+          manual));
     }
+
+    var three = Math.max(0, a.total - a.five - a.four);
+    var pct = function (n) { return a.total ? (n / a.total) * 100 : 0; };
+    var maxMonth = Math.max.apply(null, a.monthly.map(function (m) { return m.pulls; }).concat([1]));
+    var maxBucket = Math.max.apply(null, a.pityBuckets.map(function (b) { return b.count; }).concat([1]));
+    var avg = a.averageFive == null ? null : a.averageFive;
+    var luckColor = a.luck == null ? "var(--dsw-alias-label-secondary)" : (a.luck >= 1 ? "#6ec07a" : "#d98a8a");
 
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-hero" },
@@ -787,83 +902,96 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h("div", { className: "dga-heroName" }, "祈愿记录"),
           h("div", { className: "dga-heroMeta" },
             "共 " + a.total + " 抽 · " +
+            (a.uid ? "UID " + a.uid + " · " : "") +
             (a.lastPullAt ? "最近一抽 " + a.lastPullAt : "") +
-            (a.updatedAt ? " · 更新于 " + when(a.updatedAt) : " · 尚未同步"))),
+            (a.updatedAt ? " · 更新于 " + when(a.updatedAt) : ""))),
         h("div", { className: "dga-heroStats" },
           h(StatTile, { value: String(a.total), label: "总抽数" }),
           h(StatTile, { value: String(a.five), label: "五星" }),
           h(StatTile, { value: String(a.four), label: "四星" }),
-          h(StatTile, { value: a.averageFive == null ? "—" : String(a.averageFive), label: "平均出金" }),
+          h(StatTile, { value: avg == null ? "—" : String(avg), label: "平均出金" }),
           h(StatTile, { value: a.luck == null ? "—" : "×" + a.luck, label: "欧非比" }))),
 
       h("div", { className: "dga-block" },
         h("div", { className: "dga-fileRow" },
           h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSync, disabled: busy },
             busy ? "同步中…" : "同步抽卡"),
-          h("span", { className: "dga-hint" }, props.status || ""))),
+          h("span", { className: "dga-hint" }, props.status || "")),
+        manual),
 
       h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, "各祈愿池"),
-        h("table", { className: "dga-table" },
-          h("thead", null, h("tr", null,
-            h("th", null, "祈愿"), h("th", null, "抽数"), h("th", null, "五星"),
-            h("th", null, "四星"), h("th", null, "距离上次五星"))),
-          h("tbody", null, a.banners.map(function (bucket) {
-            return h("tr", { key: bucket.type },
-              h("td", null, bucket.label),
-              h("td", { className: "dga-num" }, String(bucket.pulls)),
-              h("td", { className: "dga-num" }, String(bucket.five)),
-              h("td", { className: "dga-num" }, String(bucket.four)),
-              h("td", { className: "dga-num" }, String(bucket.sinceFive)));
-          })))),
+        h("div", { className: "dga-sec" }, "星级分布"),
+        h("div", { className: "dga-ratioBar" },
+          h("span", { className: "dga-ratioSeg", style: { width: pct(a.five) + "%", background: "#c8a24a" } }),
+          h("span", { className: "dga-ratioSeg", style: { width: pct(a.four) + "%", background: "#8a7fd0" } }),
+          h("span", { className: "dga-ratioSeg", style: { width: pct(three) + "%", background: "var(--dsw-alias-bg-layer-3)" } })),
+        h("div", { className: "dga-legend" },
+          h(LegendItem, { color: "#c8a24a", label: "五星 " + a.five + "（" + (a.total ? (pct(a.five)).toFixed(1) : "0") + "%）" }),
+          h(LegendItem, { color: "#8a7fd0", label: "四星 " + a.four + "（" + (a.total ? (pct(a.four)).toFixed(1) : "0") + "%）" }),
+          h(LegendItem, { color: "var(--dsw-alias-label-dimmed)", label: "三星 " + three }))),
+
+      h("div", { className: "dga-block" },
+        h("div", { className: "dga-sec" }, "各祈愿池 · 保底进度"),
+        h("div", { className: "dga-pityTrack" }, a.banners.map(function (bucket) {
+          var progress = Math.min(100, (bucket.sinceFive / 90) * 100);
+          return h("div", { className: "dga-pityLine", key: bucket.type },
+            h("span", { style: { width: 76, flex: "0 0 auto" } }, bucket.label),
+            h("span", { className: "dga-num", style: { width: 62, flex: "0 0 auto", color: "var(--dsw-alias-label-tertiary)", fontSize: 11 } },
+              bucket.pulls + " 抽 · " + bucket.five + " 金"),
+            h("span", { className: "dga-pityBar" },
+              h("span", {
+                className: "dga-pityFill",
+                style: { width: Math.max(2, progress) + "%", background: progress >= 80 ? "#d98a8a" : "#c8a24a" },
+              })),
+            h("span", { className: "dga-num", style: { width: 64, textAlign: "right", color: "var(--dsw-alias-label-secondary)" } },
+              bucket.sinceFive + " / 90"));
+        })),
+        h("p", { className: "dga-hint" }, "右侧是该池子距离上次五星已经抽了多少次；90 抽为硬保底。")),
+
+      a.monthly.length
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "每月抽卡量"),
+            h("div", { className: "dga-monthChart" }, a.monthly.map(function (row) {
+              return h("div", { className: "dga-monthCol", key: row.month },
+                h("span", { className: "dga-monthVal" }, String(row.pulls)),
+                h("span", { className: "dga-monthBar", style: { height: Math.max(3, Math.round((row.pulls / maxMonth) * 100)) + "%" } }),
+                h("span", { className: "dga-monthLabel" }, row.month.slice(2)));
+            })))
+        : null,
 
       a.fiveStars.length
         ? h("div", { className: "dga-block" },
             h("div", { className: "dga-sec" }, "五星记录（最新在前）"),
-            h("table", { className: "dga-table" },
-              h("thead", null, h("tr", null,
-                h("th", null, "名称"), h("th", null, "祈愿"), h("th", null, "第几抽"), h("th", null, "时间"))),
-              h("tbody", null, a.fiveStars.slice(0, 50).map(function (item, index) {
-                return h("tr", { key: item.id || index },
-                  h("td", null, item.name),
-                  h("td", null, item.banner || item.gacha_type),
-                  h("td", { className: "dga-num" }, String(item.pity)),
-                  h("td", { className: "dga-num" }, item.time));
-              }))))
-        : null,
-
-      a.monthly && a.monthly.length
-        ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "每月抽卡量"),
-            h("div", { className: "dga-bars" }, a.monthly.map(function (row) {
-              var max = Math.max.apply(null, a.monthly.map(function (m) { return m.pulls; })) || 1;
-              return h("div", { className: "dga-barRow", key: row.month },
-                h("span", { className: "dga-barLabel", style: { width: 56 } }, row.month.slice(2)),
-                h("span", { className: "dga-barTrack" },
+            a.fiveStars.slice(0, 40).map(function (item, index) {
+              var pity = Number(item.pity) || 0;
+              var early = pity > 0 && pity <= 40;
+              return h("div", { className: "dga-fiveRow", key: item.id || index },
+                h("span", { className: "dga-fiveName" }, item.name),
+                h("span", { className: "dga-fiveMeta" }, item.banner || ""),
+                h("span", { className: "dga-pityBar" },
                   h("span", {
-                    className: "dga-barFill",
-                    style: { width: Math.max(4, Math.round((row.pulls / max) * 100)) + "%", background: "#c8a24a" },
+                    className: "dga-pityFill",
+                    style: { width: Math.max(2, Math.min(100, (pity / 90) * 100)) + "%", background: early ? "#6ec07a" : "#c8a24a" },
                   })),
-                h("span", { className: "dga-barValue" }, String(row.pulls)));
-            })))
+                h("span", { className: "dga-num", style: { width: 46, textAlign: "right", color: early ? "#6ec07a" : "var(--dsw-alias-label-secondary)" } }, pity + " 抽"),
+                h("span", { className: "dga-fiveMeta", style: { width: 96, textAlign: "right" } }, String(item.time || "").slice(0, 10)));
+            }),
+            h("p", { className: "dga-hint" }, "绿色 = 40 抽内出金（比较欧）。"))
         : null,
 
       a.pityBuckets && a.five
         ? h("div", { className: "dga-block" },
             h("div", { className: "dga-sec" }, "五星出货区间"),
-            h("table", { className: "dga-table" },
-              h("thead", null, h("tr", null, h("th", null, "第几抽"), h("th", null, "次数"))),
-              h("tbody", null, a.pityBuckets.map(function (bucket) {
-                return h("tr", { key: bucket.label },
-                  h("td", null, bucket.label),
-                  h("td", { className: "dga-num" }, String(bucket.count)));
-              }))),
+            h("div", { className: "dga-pityTrack" }, a.pityBuckets.map(function (bucket) {
+              return h("div", { className: "dga-pityLine", key: bucket.label },
+                h("span", { style: { width: 64, flex: "0 0 auto", color: "var(--dsw-alias-label-secondary)" } }, bucket.label),
+                h("span", { className: "dga-pityBar", style: { flex: 1, width: "auto" } },
+                  h("span", { className: "dga-pityFill", style: { width: Math.max(2, Math.round((bucket.count / maxBucket) * 100)) + "%", background: "#c8a24a" } })),
+                h("span", { className: "dga-num", style: { width: 26, textAlign: "right", color: "var(--dsw-alias-label-tertiary)" } }, String(bucket.count)));
+            })),
             h("p", { className: "dga-hint" },
-              "基础出率 1.6%，折算约 " + a.expectedAverage + " 抽一个五星；「欧非比」>1 表示比基础出率更欧。"))
-        : null,
-
-      h("p", { className: "dga-hint" },
-        "「距离上次五星」= 该池子自上一个五星之后又抽了多少次，用来判断保底进度。"));
+              "基础出率 1.6%，折算约 " + a.expectedAverage + " 抽一个五星；欧非比 >1 表示比基础出率更欧。"))
+        : null);
   }
 
   // ── shareable character image ───────────────────────────────────────────
@@ -1054,10 +1182,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var weaponsLoadingState = React.useState(false);
     var weaponsLoading = weaponsLoadingState[0], setWeaponsLoading = weaponsLoadingState[1];
 
-    var artifactsState = React.useState([]);
-    var artifacts = artifactsState[0], setArtifacts = artifactsState[1];
-    var artifactsLoadingState = React.useState(false);
-    var artifactsLoading = artifactsLoadingState[0], setArtifactsLoading = artifactsLoadingState[1];
 
     var syncingState = React.useState(false);
     var syncing = syncingState[0], setSyncing = syncingState[1];
@@ -1355,15 +1479,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     }, [tab]);
 
     React.useEffect(function () {
-      if (tab !== "artifacts" || artifacts.length) return;
-      setArtifactsLoading(true);
-      getJson("/artifacts?limit=60")
-        .then(function (data) { if (data && data.ok) setArtifacts(data.artifacts || []); })
-        .catch(function () {})
-        .then(function () { setArtifactsLoading(false); });
-    }, [tab]);
-
-    React.useEffect(function () {
       if (!summary || !summary.characters || !summary.characters.length) return;
       if (character) return;
       loadCharacter(summary.characters[0].name);
@@ -1373,7 +1488,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       setSyncing(true);
       loadSummary(true).then(function () {
         setWeapons([]);
-        setArtifacts([]);
         if (character) loadCharacter(character.name);
         setSyncing(false);
       });
@@ -1725,7 +1839,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       { id: "characters", label: "角色" },
       { id: "gacha", label: "抽卡" },
       { id: "weapons", label: "武器" },
-      { id: "artifacts", label: "圣遗物" },
       { id: "settings", label: "设置" },
     ];
 
@@ -1814,10 +1927,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         onSync: function () { runGachaSync(); },
         onSyncManual: function () { runGachaSync(gachaUrl); },
       });
-    } else if (tab === "weapons") {
-      body = h(WeaponsTab, { rows: weapons, loading: weaponsLoading });
     } else {
-      body = h(ArtifactsTab, { rows: artifacts, loading: artifactsLoading });
+      body = h(WeaponsTab, { rows: weapons, loading: weaponsLoading });
     }
 
     return h("div", { className: "dga-root" },
@@ -2020,5 +2131,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   // without it.
   exports.inject = ["slots", "configForms"];
   exports.apply = apply;
+  // Exposed so the real-React render check can render the tabs that need data
+  // (the page always mounts on the settings pane, so effects never fill them in
+  // a server render). Not used by the host.
+  exports.__components = {
+    ArtifactCard: ArtifactCard,
+    CharacterDetail: CharacterDetail,
+    CharactersTab: CharactersTab,
+    GachaTab: GachaTab,
+  };
   return module.exports;
 }});

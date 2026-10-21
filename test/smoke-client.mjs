@@ -25,9 +25,14 @@ const check = (name, condition, detail) => {
 function createElement(type, props, ...children) {
   return { type, props: props || {}, children: children.flat() }
 }
+const TAB_OVERRIDE = process.env.DSH_TEST_TAB || ''
 const stubReact = {
   createElement,
-  useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
+  useState: (initial) => {
+    const value = typeof initial === 'function' ? initial() : initial
+    if (TAB_OVERRIDE && value === 'overview') return [TAB_OVERRIDE, () => {}]
+    return [value, () => {}]
+  },
   // Effects run so the form-resolution path is exercised, not just rendering.
   useEffect: (fn) => {
     try {
@@ -402,11 +407,13 @@ check('character.sets fields', Array.isArray(character.sets) && character.sets.e
 check('character.setEffects', Array.isArray(character.setEffects))
 const artifact = character.artifacts[0]
 check(
-  'artifact fields the table reads',
-  ['slotZh', 'setName', 'rarity', 'level', 'main', 'subs', 'cv', 'efficiency', 'grade'].every((key) => key in artifact),
+  'artifact fields the cards read',
+  ['slotZh', 'setName', 'rarity', 'level', 'main', 'subs', 'cv', 'efficiency', 'grade', 'icon', 'mainStat', 'subStats'].every((key) => key in artifact),
   JSON.stringify(Object.keys(artifact)),
 )
 check('artifact subs is an array', Array.isArray(artifact.subs))
+check('mainStat carries label + value', artifact.mainStat && typeof artifact.mainStat.label === 'string' && 'value' in artifact.mainStat, JSON.stringify(artifact.mainStat))
+check('subStats carry key + value for colouring', Array.isArray(artifact.subStats) && artifact.subStats.every((sub) => 'key' in sub && 'value' in sub), JSON.stringify(artifact.subStats).slice(0, 160))
 
 const artifacts = await fetchRoute('/artifacts?limit=5')
 check('artifacts route shape', artifacts.ok === true && Array.isArray(artifacts.artifacts), JSON.stringify(artifacts).slice(0, 120))
@@ -446,6 +453,18 @@ check('renders when configForms access throws', hostileThrown === null, hostileT
 check('wizard still renders without configForms', hostileText.includes('扫码登录'), hostileText.slice(0, 120))
 check('read-only hint is shown instead of a crash', hostileText.includes('无法写入配置'), hostileText.slice(-200))
 
+// --- tab structure: what the panel is supposed to look like ----------------
+// The tabs are assembled inside the page component, so these are structural
+// checks against the bundle rather than render assertions.
+const clientSource = readFileSync(new URL('../client/client.js', import.meta.url), 'utf8')
+check('圣遗物 tab is gone', !clientSource.includes('id: "artifacts"'), 'an artifacts tab is still declared')
+check('artifact cards replace the table', clientSource.includes('dga-artiGrid') && !clientSource.includes('dga-subs'), 'card grid missing or the old table cell style is still there')
+check('cards colour the crit rolls', clientSource.includes('dga-artiSubCrit'), 'no crit highlight')
+check('showcase characters sort first', clientSource.includes('byShowcase'), 'no showcase priority in the sort')
+check('showcase rows carry a badge', clientSource.includes('dga-showcaseTag'), 'no showcase badge')
+check('wish history explains how to get the link', clientSource.includes('怎么拿到祈愿记录') && clientSource.includes('authkey'), 'guide missing')
+check('wish history breaks down rarities', clientSource.includes('星级分布') && clientSource.includes('dga-ratioBar'), 'rarity bar missing')
+check('wish history charts months and pity', clientSource.includes('dga-monthChart') && clientSource.includes('保底进度'), 'charts missing')
 console.log('registrations:', registrations.map((entry) => entry.options.name + '(' + (entry.options.key || entry.options.id) + ')').join(', '))
 console.log('page root:', pageTree && pageTree.type, 'children:', pageTree && (pageTree.children || []).length)
 console.log('contract checked against', artifact.setName, artifact.main)
