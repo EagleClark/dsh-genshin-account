@@ -287,25 +287,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           (draft.hasCookie ? " 当前状态：已登录。" : " 当前状态：未登录。"))),
 
       h("div", { className: "dga-field" },
-        h("label", { className: "dga-label" }, "圣遗物副词条（可选）"),
-        h("div", { className: "dga-fileRow" },
-          h("button", { className: "dga-btn dga-btn-primary", onClick: props.onVerifyInline },
-            props.verifyInline ? "收起验证" : "在页面内验证"),
-          h("button", { className: "dga-btn", onClick: props.onVerifyWindow }, "在新窗口验证"),
-          h("button", { className: "dga-btn", onClick: props.onRefresh }, "已完成，刷新数据")),
-        props.verifyInline
-          ? h("iframe", {
-              className: "dga-verifyFrame",
-              src: API + "/verify/widget?purpose=index",
-              title: "米游社安全验证",
-              onLoad: props.onFrameLoad,
-              onError: props.onFrameError,
-            })
-          : null,
-        props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null,
+        h("label", { className: "dga-label" }, "圣遗物副词条"),
         h("p", { className: "dga-hint" },
-          "角色、等级、命座、天赋、武器、圣遗物部位/等级都不需要验证。只有圣遗物的副词条（CV / 词条效率）" +
-            "来自需要人机验证的接口：点上面按钮拖一次滑块，通过后立刻能算评分。")));
+          "副词条（CV / 词条效率）来自米游社一个需要人机验证的接口。该验证在本机环境里始终被拒" +
+            "（retcode 10306）：已实测四种字段组合、is_high 开关、http 与 https 两种页面来源，全部被拒；" +
+            "滑块本身能正常拖动。因此这里不再提供入口。" +
+            "角色、等级、命座、天赋、武器、圣遗物部位与名称、账号总览、抽卡都不受影响。")));
 
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-wizard" },
@@ -590,7 +577,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                   h("div", { className: "dga-sub" }, SLOT_ZH[piece.slot] + " · +" + (piece.level == null ? "-" : piece.level)));
               })),
               h("p", { className: "dga-hint" },
-                "这里只显示部位与等级：米游社把圣遗物副词条放在需要人机验证的接口后面。完成一次「打开验证页面」后，这里会换成带 CV / 词条效率的评分表。"))
+                "这里只显示部位与等级：米游社把圣遗物副词条放在需要人机验证的接口后面，而该验证在本机环境里始终被拒（retcode 10306，已实测六种组合与 http/https 两种来源），所以评分表无法启用。"))
           : h("div", { className: "dga-empty" }, "这个角色没有可显示的圣遗物。"),
 
       c.setEffects && c.setEffects.length
@@ -740,7 +727,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("div", { className: "dga-empty" },
           "圣遗物评分需要读取圣遗物副词条，而这部分受米游社风控限制。"),
         h("p", { className: "dga-hint", style: { textAlign: "center" } },
-          "到「设置」点「打开验证页面」拖一次滑块，之后这里会按 CV 从高到低列出全部圣遗物。"));
+          "该验证在本机环境里始终返回 10306（滑块能拖，但结果被拒），因此评分排序不可用；详见设置页说明。"));
     }
     return h("div", { className: "dga-scroll" },
       h("table", { className: "dga-table" },
