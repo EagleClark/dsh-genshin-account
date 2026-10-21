@@ -286,10 +286,26 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           "用手机米游社 App 扫码并在手机上确认。会话由这次扫码签发、只存在本机：插件不接触你的密码，也不需要你复制 Cookie。" +
           (draft.hasCookie ? " 当前状态：已登录。" : " 当前状态：未登录。"))),
 
-      h("p", { className: "dga-hint" },
-        "圣遗物副词条（CV / 词条效率）来自米游社一个需要人机验证的接口。" +
-          "实测验证控件在本机环境（DSHDesktop / Chrome 150）里无法渲染——连离线模式都画不出控件，" +
-          "所以插件不提供这条路，也不会再让你反复点。角色、武器、天赋、账号总览、抽卡都不受影响。"));
+      h("div", { className: "dga-field" },
+        h("label", { className: "dga-label" }, "圣遗物副词条（可选）"),
+        h("div", { className: "dga-fileRow" },
+          h("button", { className: "dga-btn dga-btn-primary", onClick: props.onVerifyInline },
+            props.verifyInline ? "收起验证" : "在页面内验证"),
+          h("button", { className: "dga-btn", onClick: props.onVerifyWindow }, "在新窗口验证"),
+          h("button", { className: "dga-btn", onClick: props.onRefresh }, "已完成，刷新数据")),
+        props.verifyInline
+          ? h("iframe", {
+              className: "dga-verifyFrame",
+              src: API + "/verify/widget?purpose=index",
+              title: "米游社安全验证",
+              onLoad: props.onFrameLoad,
+              onError: props.onFrameError,
+            })
+          : null,
+        props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null,
+        h("p", { className: "dga-hint" },
+          "角色、等级、命座、天赋、武器、圣遗物部位/等级都不需要验证。只有圣遗物的副词条（CV / 词条效率）" +
+            "来自需要人机验证的接口：点上面按钮拖一次滑块，通过后立刻能算评分。")));
 
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-wizard" },

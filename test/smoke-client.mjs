@@ -257,13 +257,14 @@ const pageText = textOf(pageTree)
 check('settings pane has the UID field', inputs.length >= 1, String(inputs.length))
 check('settings pane explains the UID', pageText.includes('UID'), pageText.slice(0, 200))
 check('settings pane has the QR button', buttons.some((label) => label.includes('生成二维码')), buttons.join(' / '))
-// The captcha widget cannot render in this environment (proved by the lab page),
-// so the pane must NOT offer verification buttons any more.
-check('settings pane no longer offers verification', !buttons.some((label) => label.includes('验证')), buttons.join(' / '))
+// The slider does render (bind + appendTo), so the entry must stay reachable.
+check('settings pane offers inline verification', buttons.some((label) => label.includes('在页面内验证')), buttons.join(' / '))
+check('settings pane offers a popup fallback', buttons.some((label) => label.includes('在新窗口验证')), buttons.join(' / '))
+check('settings pane offers a manual refresh', buttons.some((label) => label.includes('已完成，刷新数据')), buttons.join(' / '))
 check('settings pane keeps save buttons', buttons.includes('保存并同步') && buttons.includes('仅保存'), buttons.join(' / '))
 check('settings pane no longer offers diagnostics', !buttons.some((label) => label.includes('诊断')), buttons.join(' / '))
 check('settings pane explains the session stays local', pageText.includes('只存在本机'), pageText.slice(0, 240))
-check('settings pane states the sub-stat limitation', pageText.includes('无法渲染'), pageText.slice(0, 260))
+check('settings pane explains what needs verification', pageText.includes('只有圣遗物的副词条'), pageText.slice(0, 260))
 check('the default tab is the login pane on a cold start', className(pageTree).includes('dga-root') && pageText.includes('扫码登录'), pageText.slice(0, 120))
 
 // --- field contract: what the page reads must exist in the host payload -----
