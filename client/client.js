@@ -1192,18 +1192,39 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     /** Write changed fields in one revision-fenced mutation. */
     function persist(fields) {
       var form = resolveForm();
-      var snap = formSnapshot();
-      if (!form || !snap) return Promise.reject(new Error("配置表单不可用（插件配置未就绪）"));
-      var current = snap.value || {};
-      var ops = [];
-      Object.keys(fields).forEach(function (key) {
-        var next = fields[key];
-        var prev = current[key];
-        if (next === prev) return;
-        ops.push({ op: "set", path: [key], value: next });
+      if (!form) return Promise.reject(new Error("配置表单不可用（插件配置未就绪）"));
+
+      /** Build the set-ops that actually change something, for one snapshot. */
+      function opsFor(snapshot) {
+        var current = (snapshot && snapshot.value) || {};
+        var ops = [];
+        Object.keys(fields).forEach(function (key) {
+          // Only touch keys the live schema exposes: one unknown path makes
+          // the whole atomic write fail.
+          if (!Object.prototype.hasOwnProperty.call(current, key)) {
+            if (key !== "miyousheCookie") return;
+          }
+          var next = fields[key];
+          var prev = current[key];
+          if (next === prev) return;
+          ops.push({ op: "set", path: [key], value: next });
+        });
+        return ops;
+      }
+
+      function writeOnce() {
+        var snap = formSnapshot();
+        if (!snap) return Promise.resolve(false);
+        var ops = opsFor(snap);
+        if (!ops.length) return Promise.resolve(true);
+        return Promise.resolve(form.mutate(ops, snap.revision));
+      }
+
+      // A refused write is usually a revision collision; re-read and retry once.
+      return writeOnce().then(function (accepted) {
+        if (accepted !== false) return accepted;
+        return writeOnce();
       });
-      if (!ops.length) return Promise.resolve(true);
-      return form.mutate(ops, snap.revision);
     }
 
     function setField(key, value) {
@@ -1494,9 +1515,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     function finishQrLogin(cookie) {
       setBusy(true);
-      persist({ source: "miyoushe", miyousheCookie: cookie })
+      persist({ miyousheCookie: cookie })
         .then(function (accepted) {
-          if (accepted === false) throw new Error("部署未接受登录得到的 Cookie");
+          if (accepted === false) {
+            throw new Error(
+              "配置写入被拒绝（可能是 revision 冲突或字段校验失败）。请再点一次「生成二维码」重试；" +
+                "仍不行就到「设置 → 插件 → dsh-genshin-account」里手动粘贴 Cookie。",
+            );
+          }
           setField("miyousheCookie", "");
           setField("hasCookie", true);
           return postJson("/sync");
