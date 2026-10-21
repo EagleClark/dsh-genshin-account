@@ -12,6 +12,7 @@
  */
 import { createServer } from 'node:http'
 import { renderVerifyPage } from '../lib/verify-page.js'
+import { renderLabPage } from '../lib/verify-lab.js'
 
 const PORT = Number(process.argv[2]) || 43190
 const UPSTREAM = 'http://127.0.0.1:43129'
@@ -19,6 +20,12 @@ const PROXY_PATHS = new Set(['/dsh-genshin-account/verify/start', '/dsh-genshin-
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`)
+
+  if (req.method === 'GET' && url.pathname === '/lab') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+    res.end(renderLabPage())
+    return
+  }
 
   if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/verify')) {
     const html = renderVerifyPage(url.searchParams.get('purpose') || 'index')
@@ -53,5 +60,6 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`验证页（独立）: http://127.0.0.1:${PORT}/`)
+  console.log(`诊断页: http://127.0.0.1:${PORT}/lab`)
   console.log(`代理到运行中的插件: ${UPSTREAM}`)
 })
