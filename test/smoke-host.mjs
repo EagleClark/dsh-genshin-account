@@ -164,7 +164,7 @@ const overviewResult = await call('genshin_account_overview', {})
 check('overview ok', overviewResult.value.ok === true, JSON.stringify(overviewResult.value).slice(0, 160))
 check('overview names the source', overviewResult.text.includes('米游社'), overviewResult.text.slice(0, 80))
 check('overview counts characters', /角色 2/.test(overviewResult.text), overviewResult.text)
-check('overview says sub-stats need verification', /安全验证/.test(overviewResult.text), overviewResult.text)
+check('overview says sub-stats come from the showcase', /角色展柜/.test(overviewResult.text), overviewResult.text)
 
 const characterResult = await call('genshin_character', { name: '胡桃' })
 check('character ok', characterResult.value.ok === true, JSON.stringify(characterResult.value).slice(0, 160))
@@ -272,7 +272,7 @@ check('verify/finish needs both values', JSON.parse(verifyMissing.body).ok === f
 indexRetcode = 1034
 const blocked = await call('genshin_account_overview', { refresh: true })
 check('a gated record API still yields data', blocked.value.ok === true, JSON.stringify(blocked.value).slice(0, 140))
-check('the fallback explains what is missing', /安全验证/.test(blocked.text), blocked.text.slice(0, 220))
+check('the fallback explains where artifact stats come from', /角色展柜/.test(blocked.text), blocked.text.slice(0, 220))
 
 // A cold instance with a fresh DSH_HOME has nothing cached; the calculator path
 // must still produce a roster rather than an error.

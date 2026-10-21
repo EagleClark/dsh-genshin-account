@@ -15,24 +15,23 @@ A DeepSeek Harness plugin that reads your Genshin Impact account (characters, ta
 | 全部角色、等级、命座、三段天赋、武器名与等级、圣遗物部位与等级 | 养成计算器 `api-takumi.mihoyo.com/.../sync/avatar/detail` | **不需要** |
 | 活跃天数、成就达成、深境螺旋、幻想剧诗 | 名片 `card/wapi/getGameRecordCard` | **不需要** |
 | 幻想真境剧诗 / 幽境危战本期进度 | `hard_challenge` / `role_combat` | **不需要** |
-| 圣遗物**副词条**（进而算出 CV / 词条效率） | 战绩接口 `/game_record/app/genshin/api/*` | 需要一次 geetest 滑块 |
+| 圣遗物**主副词条**（进而算出 CV / 词条效率） | 游戏内「角色展柜」→ `profile.microgg.cn/api/uid/<uid>` | **不需要**（只要展柜里放了角色并开了「显示详情」） |
 | 祈愿（抽卡）记录 | `public-operation-hk4e.mihoyo.com/gacha_info/api/getGachaLog` | 不需要滑块，但 authkey 约 24 小时过期，需游戏内打开一次祈愿历史 |
 
-前三条默认就会跑；第四条只有当你完成过一次验证才启用；祈愿是独立的一路。
+前三条默认就会跑；第四条会自动补上展柜里那些角色的副词条；祈愿是独立的一路。
 
-所有通道都要**登录态**：国服没有"填个 UID 就能查"的公开接口。登录由插件自己完成，扫码即可。
+角色与武器要**登录态**（扫码即可，插件自己完成登录）；**展柜不需要登录**——它按 UID 公开可见，这也是圣遗物副词条唯一能拿到的通路。
 
-战绩接口那条链路完整长这样（只有在算圣遗物评分时才会走）：
+圣遗物副词条的链路现在是这样的：
 
-| 步骤 | 接口 / 机制 |
+| 步骤 | 做什么 |
 | --- | --- |
-| 1. 扫码登录 | `passport-api.miyoushe.com/account/ma-cn-passport/web/createQRLogin` → `queryQRLoginStatus`，确认后从 `Set-Cookie` 得到 `ltoken_v2` / `ltmid_v2` —— 会话归插件自己所有 |
-| 2. 申请验证任务 | `GET /game_record/app/card/wapi/createVerification?is_high=true` → geetest 的 `gt` + `challenge` |
-| 3. 拖滑块 | 验证页加载 geetest v3 控件，产出 `geetest_challenge` + `geetest_validate`；`x-rpc-challenge_path` 决定这次验证解锁哪个接口（`/index` 与 `/character/list` 分别验证） |
-| 4. 兑换通行证 | `POST /game_record/app/card/wapi/verifyVerification` → `x-rpc-challenge` |
-| 5. 读取数据 | `GET /game_record/app/genshin/api/index`、`POST /character/detail`，带上 `x-rpc-challenge` |
+| 1. 游戏内设置 | 资料 → 角色展柜，放上想看的角色（最多 8 个），点开「显示详情」 |
+| 2. 等 5 分钟 | 服务器把展柜数据写好 |
+| 3. 插件读取 | `GET http://profile.microgg.cn/api/uid/<uid>`（国服镜像，国际服回落到 `enka.network`），返回的就是 Enka 结构：`equipList[].flat.reliquaryMainstat` / `reliquarySubstats` |
+| 4. 合并 | 计算器给的全账号 + 展柜给的 5 件圣遗物，按角色 id 合并成一份快照，CV 与词条效率随之算出 |
 
-> 这套流程与 Snap.Hutao 的 `CardClient` + `GeetestService` 一致（它的 `RetryIf1034Async` 就是"遇 1034 → 验证 → 带 `x-rpc-challenge` 重发"）。人机验证是官方要求，插件只把这一步搬到自己界面上，不绕过任何风控。
+> 为什么不用米游社战绩接口：它对本插件的每一个请求都返回 `retcode 1034`，要求一次 geetest 滑块；滑块在本机拖出来的结果被服务端判为 `10306`（验证无效）。实测记录见文末。展柜是官方公开数据，按 UID 可读，不需要任何验证。
 
 ---
 
@@ -170,38 +169,39 @@ node scripts/build-skill-orders.mjs
 ---
 
 
-## 圣遗物副词条为什么拿不到（完整实测记录）
+## 圣遗物副词条：为什么走展柜，以及米游社那条路为什么不通
 
-圣遗物**副词条**（CV / 词条效率的输入）只在米游社一个需要人机验证的接口里。这条链路我们逐项验证过，结论是**在本机环境里无法通过**。
+**能用的是展柜。** 国服玩家把角色放进游戏内「角色展柜」并开启「显示详情」后，这份数据就按 UID 公开可读，
+插件读 `profile.microgg.cn/api/uid/<uid>`（国际服回落到 `enka.network`）即可拿到主副词条，
+不需要登录、不需要任何验证。代价是**只覆盖展柜里的角色（最多 8 个）**。
+
+**不通的是米游社战绩接口。** 它对本插件返回 `retcode 1034`（要求人机验证），而滑块的结果被服务端判为 `10306`。
+这一层我们逐项排除过：
 
 | 检查项 | 结果 | 证据 |
 | --- | --- | --- |
 | 滑块能否渲染 | ✅ | `bind` 产品 + `appendTo`，页面里 26 个节点 |
 | 拖动能否完成 | ✅ | `onSuccess` 触发，validate 32 位、带 seccode |
-| challenge 是否配对 | ✅ | `sameChallenge = true`（geetest 返回的与申请到的完全一致） |
-| 字段组合 ×4 | ❌ | challenge 来源 × 是否带 seccode，四种都 `retcode 10306` |
+| challenge 是否配对 | ✅ | `sameChallenge = true` |
+| 字段组合 ×4 | ❌ | challenge 来源 × 是否带 seccode，四种都 `10306` |
 | `is_high` 开关 | ❌ | true / false 都 `10306` |
-| 页面来源 http vs **https**（自签证书） | ❌ | 两种都 `10306` |
-| 请求头 / Cookie 是否符合 UIGF 规范 | ✅ | 对照 [鉴权文档](https://uigf.org/zh/mihoyo-api-collection/other/authentication.html) |
-| 养成计算器是否有副词条 | ❌ | 原始对象只有 `id/name/icon/reliquary_cat_id/reliquary_level/level_current/max_level` |
-| 官方圣遗物字典 `reliquary/list` 是否有套装字段 | ❌ | 614 条，每条只有散件名，没有套装名/套装 id |
-| 第三方库 `@genshin-kit/core`（用户建议） | ❌ | 实跑 `getAllCharacters` 得到 `{ code: 1034 }`：它只是包了一层同样的接口、同样 `client_type=5`，没有任何验证处理 |
-| 客户端类型 × 盐：`client_type` 5+ X4 / 4+X4 / 6+X6 / 2+K2 | ❌ | 四种都 `1034`：风控与客户端类型、盐无关 |
-| 提交验证时不带 Cookie（照抄参考实现） | ❌ | `retcode -1`（参数错误）——说明 Cookie 是必需的 |
-| 把验证结果放请求头（`x-rpc-challenge` / `x-rpc-validate` / `x-rpc-seccode`） | ❌ | `10306` |
+| 页面来源 http vs https（自签证书） | ❌ | 两种都 `10306` |
+| 请求头 / Cookie 是否符合 UIGF 规范 | ✅ | 对照[鉴权文档](https://uigf.org/zh/mihoyo-api-collection/other/authentication.html) |
+| 客户端类型 × 盐：5+X4 / 4+X4 / 6+X6 / 2+K2 | ❌ | 四种都 `1034`，风控与客户端类型、盐无关 |
+| 提交验证时不带 Cookie | ❌ | `-1`（参数错误），说明 Cookie 必需 |
+| 验证结果放请求头 | ❌ | `10306` |
+| `@genshin-kit/core` | ❌ | 同一接口同一封装，`1034` |
+| 对齐 Yunzai-Bot 极简请求头 | ❌ | 它的 `/character` 已 `-1` 下线，`/index` 仍 `1034`；仓库停在 2023-07 |
+| **真实 Edge + 已登录 + 官方域名内发请求** | ❌ | 带全部 `.miyoushe.com` cookie 后 `api-takumi.miyoushe.com` 仍 `1034` |
+| 网页版战绩入口 | ❌ | 注入 cookie 后 `#app` 为空，入口已停用 |
 
-`10306` 不在 UIGF 的[公共错误码](https://uigf.org/zh/mihoyo-api-collection/other/error_code.html)表里（那里只列了 -10001 / 10001 / 1034 等）。
-能读到国服副词条的工具（如胡桃工具箱）是在 WebView2 里跑验证，并要求与 App 一致的设备/签名环境；本插件是本地 Node + 浏览器页面，无法复现。
-
-因此插件**不提供**这条入口：界面如实说明，不再引导用户反复拖滑块。
-角色、等级、命座、天赋、武器、圣遗物部位与散件名、账号总览、抽卡都不受影响。
-
----
+结论：`1034` 是服务端闸门，与客户端指纹无关；`10306` 说明本机的滑块结果不被接受。
+所以插件**不再引导用户拖滑块**，改为提示去游戏里设置展柜——那条路一次设置、长期可用。
 
 ## 已知限制
-- **需要登录态**：不带 Cookie 一律 `retcode 10001`，不存在按 UID 的匿名查询。
-- **需要一次人机验证**：未通过时所有读取接口返回 `retcode 1034`；通过后 `x-rpc-challenge` 会持有到过期，届时再拖一次滑块即可。
-- **只覆盖「角色详情已公开」的角色**：没公开的角色只有基础信息，读不到圣遗物词条。
+- **角色与武器需要登录态**：不带 Cookie 一律 `retcode 10001`；展柜是例外，按 UID 公开可读。
+- **圣遗物只覆盖展柜角色**：只有放进「角色展柜」并开启「显示详情」的角色才有主副词条，其余角色只有部位、散件名和等级。
+- **展柜有 5 分钟延迟**：游戏内改动后要等服务器写好，再同步才看得到。
 - **接口是逆向接口**：签名盐与 `app_version` 会随官方改版失效（`-10001`），此时在高级设置里更新；频繁查询会被限流（`-110`/`1028`/`10101`）。
 - CV / 效率是**通用质量指标**，不等于角色收益，更不是伤害计算。
 - 4★ 圣遗物的强化位数按 7 位估算，与游戏内实际可能差一位。
@@ -210,13 +210,14 @@ node scripts/build-skill-orders.mjs
 
 ## 验证状态
 
-`npm test` 覆盖 9 个测试文件，全部通过：
+`npm test` 覆盖 10 个测试文件，全部通过：
 
 - `smoke-miyoushe` —— DS2 签名、`base` 嵌套、`skill_type`→天赋、`property_map`→词条
 - `smoke-login` —— 扫码：`Set-Cookie` 解析、`createQr` 成功/被拒、`pollQr` 全状态（含 -3501/-3505/-3503）
 - `smoke-verify` —— 验证链路：申请任务、换取并持有 `x-rpc-challenge`、按接口分别持有、清空后不再附带
 - `smoke-gacha` —— 抽卡分析：池子计数、平均出金、欧非比、保底重置、出货区间、月度统计、空数据边界
 - `smoke-qr` —— 二维码：与参考实现逐格一致的基准矩阵、版本选择边界、SVG 形状
+- `smoke-microgg` —— 展柜：`setId`→套装名、`equipType`→部位、主副词条数值、CV 按暴击率×2 计、合并后角色/计数/标注正确、空展柜是正常状态
 - `smoke-host` —— 6 个工具 + 15 条路由、`/state` 契约（Cookie 不回显）、缓存与 1034 降级、`/verify/*` 与 `/gacha` 契约
 - `smoke-client` —— web boot 协议加载 bundle、槽位注册、登录面板渲染、`configForms` 用 `include:<包名>`
 - `render-check` / `mount-check` —— SSR 与 jsdom 挂载两条路径都能出界面

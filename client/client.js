@@ -289,12 +289,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-field" },
         h("label", { className: "dga-label" }, "圣遗物副词条"),
         h("p", { className: "dga-hint" },
-          "副词条（CV / 词条效率）来自米游社一个需要人机验证的接口。滑块能拖，但结果是 " +
-            "retcode 10306（验证无效）：已实测四种字段组合、is_high 开关、http / https 两种来源，全部被拒。" +
-            "如果你在米游社 App 里（我的 → 我的角色）触发过一次真实验证，或重新扫码登录过，可以再点一次重试。"),
+          "副词条（CV / 词条效率）来自游戏内的「角色展柜」，不需要任何验证，也不需要额外登录：" +
+            "在游戏里打开 资料 → 角色展柜，放上想看的角色（最多 8 个）并点开「显示详情」，" +
+            "等 5 分钟后点下面的「重新同步」，这些角色的圣遗物主副词条就会补全。" +
+            "米游社自己的战绩接口对副词条始终返回 retcode 1034（要求人机验证），那一层目前走不通，所以展柜是唯一来源。"),
         h("div", { className: "dga-fileRow" },
-          h("button", { className: "dga-btn", onClick: props.onVerifyWindow }, "打开验证页（重试）"),
-          h("button", { className: "dga-btn", onClick: props.onRefresh }, "已完成，刷新数据")),
+          h("button", { className: "dga-btn", onClick: props.onRefresh }, "重新同步（读展柜）")),
         props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null));
 
     return h("div", { className: "dga-scroll" },
@@ -580,7 +580,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                   h("div", { className: "dga-sub" }, SLOT_ZH[piece.slot] + " · +" + (piece.level == null ? "-" : piece.level)));
               })),
               h("p", { className: "dga-hint" },
-                "这里只显示部位与等级：米游社把圣遗物副词条放在需要人机验证的接口后面，而该验证在本机环境里始终被拒（retcode 10306，已实测六种组合与 http/https 两种来源），所以评分表无法启用。"))
+                "这个角色只显示部位与等级：副词条来自游戏内的「角色展柜」，把这个角色放进 资料 → 角色展柜 并开启「显示详情」，" +
+                  "等 5 分钟重新同步，就能看到主副词条、CV 和词条效率。"))
           : h("div", { className: "dga-empty" }, "这个角色没有可显示的圣遗物。"),
 
       c.setEffects && c.setEffects.length
@@ -728,9 +729,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     if (!rows.length) {
       return h("div", { className: "dga-scroll" },
         h("div", { className: "dga-empty" },
-          "圣遗物评分需要读取圣遗物副词条，而这部分受米游社风控限制。"),
+          "还没有读到圣遗物副词条——它们来自游戏内的「角色展柜」。"),
         h("p", { className: "dga-hint", style: { textAlign: "center" } },
-          "该验证在本机环境里始终返回 10306（滑块能拖，但结果被拒），因此评分排序不可用；详见设置页说明。"));
+          "在游戏里打开 资料 → 角色展柜，放上想评分的角色（最多 8 个）并点开「显示详情」，" +
+            "等 5 分钟后到设置页点「重新同步」，这里就会出现套装、主副词条、CV 和词条效率。"));
     }
     return h("div", { className: "dga-scroll" },
       h("table", { className: "dga-table" },
