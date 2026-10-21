@@ -298,6 +298,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               className: "dga-verifyFrame",
               src: API + "/verify/widget?purpose=index",
               title: "米游社安全验证",
+              onLoad: props.onFrameLoad,
+              onError: props.onFrameError,
             })
           : null,
         props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null,
@@ -1614,6 +1616,17 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
      * on a plain same-origin page instead of inside the DSH shell (where a
      * content-security policy can stop the geetest script from loading).
      */
+    /** The embedded verification page finished loading. */
+    function onFrameLoad() {
+      setVerifyStatus("验证页已加载；如果框里看不到滑块，点「在新窗口验证」。");
+      report({ instance: "client", event: "verify-frame-load", detail: { inline: true } });
+    }
+
+    function onFrameError() {
+      setVerifyStatus("验证页加载失败，请点「在新窗口验证」。");
+      report({ instance: "client", event: "verify-frame-error", detail: { inline: true } });
+    }
+
     function verifyInWindow(purpose) {
       var want = purpose === "characters" ? "characters" : "index";
       var url = API + "/verify/widget?purpose=" + want;
@@ -1731,10 +1744,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         qrStatus: qrStatus,
         qrBusy: qrBusy,
         onVerify: function () { beginVerify("index"); },
-        onVerifyWindow: function () { verifyInWindow("index"); },
-        onVerifyInline: function () { setVerifyInline(!verifyInline); },
+        onVerifyWindow: function () {
+          report({ instance: "client", event: "verify-open-window", detail: { popup: true } });
+          verifyInWindow("index");
+        },
+        onVerifyInline: function () {
+          report({ instance: "client", event: "verify-open-inline", detail: { inline: !verifyInline } });
+          setVerifyInline(!verifyInline);
+        },
         onRefresh: function () { loadSummary(true); },
         verifyInline: verifyInline,
+        onFrameLoad: onFrameLoad,
+        onFrameError: onFrameError,
         verifyTask: verifyTask,
         verifyStatus: verifyStatus,
         verifyBusy: verifyBusy,

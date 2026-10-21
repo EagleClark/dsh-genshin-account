@@ -252,7 +252,10 @@ await routes.get('/dsh-genshin-account/verify/widget')({ url: '/dsh-genshin-acco
 check('verify/widget serves html', widgetRes.status === 200 && /<html/i.test(widgetRes.body), widgetRes.body.slice(0, 80))
 check('verify/widget loads the geetest script', widgetRes.body.includes('static.geetest.com/static/tools/gt.js'))
 check('verify/widget embeds the purpose', /var purpose = "characters";/.test(widgetRes.body), widgetRes.body.slice(0, 120))
-check('verify/widget sets a csp', Boolean(widgetRes.headers && widgetRes.headers['content-security-policy']), JSON.stringify(widgetRes.headers))
+// Deliberately no CSP on the widget page: a strict policy can break the
+// third-party geetest script silently. Assert the choice, not a policy string.
+check('verify/widget serves without a csp', widgetRes.headers && widgetRes.headers['content-security-policy'] === undefined, JSON.stringify(widgetRes.headers))
+check('verify/widget sets nosniff', Boolean(widgetRes.headers && widgetRes.headers['x-content-type-options'] === 'nosniff'), JSON.stringify(widgetRes.headers))
 check('verify/widget never echoes raw input', !widgetRes.body.includes('<script>alert'))
 
 const widgetInject = fakeRes()
