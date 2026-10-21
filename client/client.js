@@ -289,10 +289,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-field" },
         h("label", { className: "dga-label" }, "圣遗物副词条"),
         h("p", { className: "dga-hint" },
-          "副词条（CV / 词条效率）来自米游社一个需要人机验证的接口。该验证在本机环境里始终被拒" +
-            "（retcode 10306）：已实测四种字段组合、is_high 开关、http 与 https 两种页面来源，全部被拒；" +
-            "滑块本身能正常拖动。因此这里不再提供入口。" +
-            "角色、等级、命座、天赋、武器、圣遗物部位与名称、账号总览、抽卡都不受影响。")));
+          "副词条（CV / 词条效率）来自米游社一个需要人机验证的接口。滑块能拖，但结果是 " +
+            "retcode 10306（验证无效）：已实测四种字段组合、is_high 开关、http / https 两种来源，全部被拒。" +
+            "如果你在米游社 App 里（我的 → 我的角色）触发过一次真实验证，或重新扫码登录过，可以再点一次重试。"),
+        h("div", { className: "dga-fileRow" },
+          h("button", { className: "dga-btn", onClick: props.onVerifyWindow }, "打开验证页（重试）"),
+          h("button", { className: "dga-btn", onClick: props.onRefresh }, "已完成，刷新数据")),
+        props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null));
 
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-wizard" },

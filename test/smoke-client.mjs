@@ -261,11 +261,14 @@ check('settings pane has the QR button', buttons.some((label) => label.includes(
 // The verification entry was removed after six payload/flag combinations and
 // both http and https were rejected with 10306; offering the button would be a
 // promise the plugin cannot keep.
-check('settings pane no longer offers verification', !buttons.some((label) => label.includes('验证')), buttons.join(' / '))
+// One manual retry entry stays, because a fresh App-side verification may
+// change the outcome; it must not be an automatic loop.
+check('settings pane offers a single manual retry', buttons.filter((label) => label.includes('验证')).length === 1, buttons.join(' / '))
+check('settings pane offers a refresh after verifying', buttons.some((label) => label.includes('已完成，刷新数据')), buttons.join(' / '))
 check('settings pane keeps save buttons', buttons.includes('保存并同步') && buttons.includes('仅保存'), buttons.join(' / '))
 check('settings pane no longer offers diagnostics', !buttons.some((label) => label.includes('诊断')), buttons.join(' / '))
 check('settings pane explains the session stays local', pageText.includes('只存在本机'), pageText.slice(0, 240))
-check('settings pane states the sub-stat dead end with evidence', pageText.includes('10306') && pageText.includes('https'), pageText.slice(0, 300))
+check('settings pane states the sub-stat evidence', pageText.includes('10306') && pageText.includes('https'), pageText.slice(0, 300))
 check('the default tab is the login pane on a cold start', className(pageTree).includes('dga-root') && pageText.includes('扫码登录'), pageText.slice(0, 120))
 
 // --- field contract: what the page reads must exist in the host payload -----
