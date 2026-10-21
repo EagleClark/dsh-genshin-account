@@ -136,6 +136,16 @@ dsh plugin --profile web add <仓库绝对路径>
 
 **为什么需要 `skill-orders.json`**：技能 id **不是**按 普攻→战技→爆发 递增的（神里绫华的普攻 id 比爆发 id 大），按 id 排序会把天赋等级张冠李戴。
 
+界面预览（需要 `react` + `react-dom` 与 Edge，仅开发时）：
+
+```sh
+REACT_DIR=%TEMP%\ga-react node scripts/ui-preview.mjs        # 用运行中宿主的数据
+PREVIEW_LOCAL=1 REACT_DIR=%TEMP%\ga-react node scripts/ui-preview.mjs   # 用仓库代码现算快照
+```
+
+它会把四个 Tab 分别渲染成 PNG 并打印目录。面板要等 effect 填数据才有内容，
+所以不能只靠静态渲染检查——这是唯一能看到真实排版的途径。
+
 重新生成（需要网络，仅开发时）：
 
 ```sh

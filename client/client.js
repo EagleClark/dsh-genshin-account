@@ -441,7 +441,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   /** Official art from the miHoYo CDN; degrades to a coloured placeholder. */
   function Art(props) {
     var style = Object.assign({ width: props.size, height: props.size }, props.style || {});
-    if (!props.src) {
+    // A broken URL (a dead CDN, a stale hash) must degrade to the same letter
+    // placeholder as a missing one instead of leaving an empty square.
+    var brokenState = React.useState(false);
+    var broken = brokenState[0], setBroken = brokenState[1];
+    if (!props.src || broken) {
       return h("span", {
         className: "dga-art dga-art-ph" + (props.className ? " " + props.className : ""),
         style: style,
@@ -455,6 +459,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       title: props.alt || "",
       loading: "lazy",
       style: style,
+      onError: function () { setBroken(true); },
     });
   }
 
@@ -624,7 +629,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var weapon = c.equippedWeapon || c.weapon || null;
     var pieces = c.equippedPieces || [];
     var scored = c.artifacts || [];
-    var color = elementColor(c.element);
+    var color = elementColor(c.elementId || c.element);
 
     return h("div", { className: "dga-detail" },
       h("div", { className: "dga-charHead" },
@@ -1029,7 +1034,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     canvas.width = W;
     canvas.height = H;
     var ctx = canvas.getContext("2d");
-    var accent = elementColor(c.element);
+    var accent = elementColor(c.elementId || c.element);
 
     var bg = ctx.createLinearGradient(0, 0, W, H);
     bg.addColorStop(0, "#171b23");
@@ -1919,7 +1924,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       });
     } else if (tab === "gacha") {
       body = h(GachaTab, {
-        analysis: gacha ? gacha.analysis : null,
+        // `gacha` already holds the analysis object (`setGacha(data.analysis)`),
+        // so reading `gacha.analysis` here silently blanked the whole tab.
+        analysis: gacha || null,
         busy: gachaBusy,
         status: gachaStatus,
         url: gachaUrl,

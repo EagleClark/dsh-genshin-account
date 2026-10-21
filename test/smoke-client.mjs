@@ -465,6 +465,9 @@ check('showcase rows carry a badge', clientSource.includes('dga-showcaseTag'), '
 check('wish history explains how to get the link', clientSource.includes('怎么拿到祈愿记录') && clientSource.includes('authkey'), 'guide missing')
 check('wish history breaks down rarities', clientSource.includes('星级分布') && clientSource.includes('dga-ratioBar'), 'rarity bar missing')
 check('wish history charts months and pity', clientSource.includes('dga-monthChart') && clientSource.includes('保底进度'), 'charts missing')
+// The gacha state holds the analysis object itself; reading `.analysis` off it
+// once blanked the whole tab, so pin the binding down.
+check('gacha tab receives the analysis object', /analysis: gacha \|\| null/.test(clientSource), 'analysis binding changed')
 console.log('registrations:', registrations.map((entry) => entry.options.name + '(' + (entry.options.key || entry.options.id) + ')').join(', '))
 console.log('page root:', pageTree && pageTree.type, 'children:', pageTree && (pageTree.children || []).length)
 console.log('contract checked against', artifact.setName, artifact.main)

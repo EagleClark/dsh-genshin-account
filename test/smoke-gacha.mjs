@@ -27,7 +27,7 @@ function build({ type, pulls, pity, startMonth }) {
 }
 
 check('banner labels', bannerLabel('301') === '角色活动祈愿', bannerLabel('999'))
-check('five banners known', BANNERS.length === 5, String(BANNERS.length))
+check('six banner ids known', BANNERS.length === 6, String(BANNERS.length))
 
 const records = {
   uid: '1',
