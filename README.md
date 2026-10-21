@@ -186,6 +186,9 @@ node scripts/build-skill-orders.mjs
 | 养成计算器是否有副词条 | ❌ | 原始对象只有 `id/name/icon/reliquary_cat_id/reliquary_level/level_current/max_level` |
 | 官方圣遗物字典 `reliquary/list` 是否有套装字段 | ❌ | 614 条，每条只有散件名，没有套装名/套装 id |
 | 第三方库 `@genshin-kit/core`（用户建议） | ❌ | 实跑 `getAllCharacters` 得到 `{ code: 1034 }`：它只是包了一层同样的接口、同样 `client_type=5`，没有任何验证处理 |
+| 客户端类型 × 盐：`client_type` 5+ X4 / 4+X4 / 6+X6 / 2+K2 | ❌ | 四种都 `1034`：风控与客户端类型、盐无关 |
+| 提交验证时不带 Cookie（照抄参考实现） | ❌ | `retcode -1`（参数错误）——说明 Cookie 是必需的 |
+| 把验证结果放请求头（`x-rpc-challenge` / `x-rpc-validate` / `x-rpc-seccode`） | ❌ | `10306` |
 
 `10306` 不在 UIGF 的[公共错误码](https://uigf.org/zh/mihoyo-api-collection/other/error_code.html)表里（那里只列了 -10001 / 10001 / 1034 等）。
 能读到国服副词条的工具（如胡桃工具箱）是在 WebView2 里跑验证，并要求与 App 一致的设备/签名环境；本插件是本地 Node + 浏览器页面，无法复现。
