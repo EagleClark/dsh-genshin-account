@@ -843,7 +843,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             })),
             h("p", { className: "dga-hint" },
               "CV = 暴击率 × 2 + 暴击伤害（只算副词条）；效率 = 副词条相对 5★ 顶档强化的达成率，100% 表示每次强化都吃到最高档。" +
-              "金色的两条是双暴词条。"))
+              "评级：CV ≥ 40 或效率 ≥ 85 为极品，≥ 30 / ≥ 70 为优秀，≥ 20 / ≥ 55 为可用，其余为一般。金色的两条是双暴词条。"))
         : pieces.length
           ? h("div", { className: "dga-block" },
               h("div", { className: "dga-sec" }, "已装备圣遗物"),
