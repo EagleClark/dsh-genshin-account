@@ -1386,6 +1386,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   function GenshinPage(props) {
     var tabState = React.useState("settings");
     var tab = tabState[0], setTab = tabState[1];
+    // The panel opens on the form so a first-time user sees the login steps; once
+    // the account loads it moves to 概览 unless the user already clicked a tab.
+    var tabTouched = React.useRef(false);
 
     var summaryState = React.useState(null);
     var summary = summaryState[0], setSummary = summaryState[1];
@@ -1655,8 +1658,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               next.miyousheCookie = previous.miyousheCookie;
               return next;
             });
-            // Land on the wizard until the account actually renders.
+            // Land on the wizard until the account actually renders, then show
+            // the account itself: opening on 设置 made the panel look stuck on
+            // the login form even when everything was configured.
             if (state.configured === false) setTab("settings");
+            else if (!tabTouched.current) setTab("overview");
           }
           if (!data || data.ok === false) {
             var reason = (data && data.error) || "";
@@ -2106,7 +2112,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           report({ instance: "client", event: "verify-open-inline", detail: { inline: !verifyInline } });
           setVerifyInline(!verifyInline);
         },
-        onRefresh: function () { loadSummary(true); },
+        onRefresh: onSync,
         verifyInline: verifyInline,
         onFrameLoad: onFrameLoad,
         onFrameError: onFrameError,
@@ -2172,7 +2178,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         return h("button", {
           key: item.id,
           className: "dga-tab" + (tab === item.id ? " dga-tab-on" : ""),
-          onClick: function () { setTab(item.id); },
+          onClick: function () { tabTouched.current = true; setTab(item.id); },
         }, item.label);
       })),
       // Feedback lives above the panel body, not inside the wizard: pressing
