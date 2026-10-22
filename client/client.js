@@ -34,11 +34,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   // than through slot props (which carry only the framework shares).
   var clientCtx = null;
 
-  var ELEMENT_COLOR = {
-    pyro: "#ef7938", hydro: "#4cc2f1", anemo: "#74c2a8", electro: "#af8ec1",
-    dendro: "#a5c83b", cryo: "#9fd6e3", geo: "#fab632", none: "#9aa0a6",
-  };
-
   var SOURCE_LABEL = { miyoushe: "米游社（扫码登录）" };
 
   /** The plugin has exactly one data source now: the miHoYo record API. */
@@ -65,6 +60,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
   // ── stylesheet ───────────────────────────────────────────────────────────
   var CSS = [
+    // Plugin-scoped palette. Light values on :root, dark overrides on the shell's
+    // dark marker, so every accent below works in both themes.
+    ":root{--dga-gold:#a8752a;--dga-gold-soft:#f6ecd8;--dga-blue:#2f6fbf;--dga-green:#2c8a55;--dga-red:#bd4b47;--dga-purple:#6a5cb5;--dga-bar:#8aa4c8;--dga-track:rgba(15,17,21,.08);--dga-el-pyro:#c8551f;--dga-el-hydro:#1a7ab8;--dga-el-anemo:#2f9578;--dga-el-electro:#7d4fa3;--dga-el-cryo:#3f93b8;--dga-el-geo:#b07d10;--dga-el-dendro:#5c8a1e;--dga-el-none:#6b7280}",
+    "body[data-ds-dark-theme]{--dga-gold:#d8b566;--dga-gold-soft:#3a3020;--dga-blue:#6aa8f0;--dga-green:#5ec27f;--dga-red:#e08585;--dga-purple:#9a8ede;--dga-bar:#6f8cb8;--dga-track:rgba(255,255,255,.10);--dga-el-pyro:#ef7938;--dga-el-hydro:#4cc2f1;--dga-el-anemo:#74c2a8;--dga-el-electro:#af8ec1;--dga-el-cryo:#9fd6e3;--dga-el-geo:#fab72e;--dga-el-dendro:#a5c83b;--dga-el-none:#8b93a5}",
     ".dga-root{height:100%;display:flex;flex-direction:column;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px}",
     ".dga-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:0 0 auto}",
     ".dga-title{font-size:15px;font-weight:600;margin:0}",
@@ -184,10 +183,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     // artifact cards
     ".dga-artiGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;margin-bottom:6px}",
-    ".dga-artiCard{position:relative;padding:12px 13px 11px;border-radius:14px;background:linear-gradient(158deg,var(--dsw-alias-bg-layer-2),var(--dsw-alias-bg-layer-1));border:1px solid var(--dsw-alias-border-l2);overflow:hidden}",
+    ".dga-artiCard{position:relative;padding:12px 13px 11px;border-radius:14px;background:linear-gradient(158deg, var(--dsw-alias-bg-layer-2), var(--dsw-alias-bg-layer-1));border:1px solid var(--dsw-alias-border-l2);overflow:hidden}",
     ".dga-artiCard:hover{border-color:var(--dsw-alias-label-dimmed)}",
     ".dga-artiAccent{position:absolute;inset:0 auto 0 0;width:3px}",
     ".dga-artiHead{display:flex;align-items:center;gap:10px;margin-bottom:10px}",
+    ".dga-artiIcon{background:var(--dga-gold-soft);border-color:transparent;border-radius:12px}",
     ".dga-artiHeadText{min-width:0;display:flex;flex-direction:column;gap:2px}",
     ".dga-artiSet{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
     ".dga-artiSlot{font-size:11px;color:var(--dsw-alias-label-tertiary)}",
@@ -196,7 +196,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-artiMainV{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums}",
     ".dga-artiSubs{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;min-height:74px}",
     ".dga-artiSub{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12px;color:var(--dsw-alias-label-secondary)}",
-    ".dga-artiSubCrit{color:#e0b552;font-weight:600}",
+    ".dga-artiSubCrit{color:var(--dga-gold);font-weight:600}",
     ".dga-artiSubK{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
     ".dga-artiSubV{font-variant-numeric:tabular-nums;flex:0 0 auto}",
     ".dga-artiFoot{display:flex;align-items:center;gap:10px;padding-top:9px;border-top:1px solid var(--dsw-alias-border-l1)}",
@@ -206,7 +206,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-meter{flex:1;height:6px;border-radius:999px;background:var(--dsw-alias-bg-layer-3);overflow:hidden}",
     ".dga-meterFill{display:block;height:100%;border-radius:999px;transition:width .25s}",
     ".dga-gradePill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}",
-    ".dga-showcaseTag{font-size:10px;line-height:15px;padding:0 6px;border-radius:999px;border:1px solid rgba(200,162,74,.45);background:rgba(200,162,74,.16);color:#d8b566;white-space:nowrap}",
+    ".dga-showcaseTag{font-size:10px;line-height:15px;padding:0 6px;border-radius:999px;border:1px solid color-mix(in srgb, var(--dga-gold) 45%, transparent);background:color-mix(in srgb, var(--dga-gold) 16%, transparent);color:#d8b566;white-space:nowrap}",
     ".dga-rowBadges{display:flex;align-items:center;gap:6px;flex:0 0 auto}",
 
     // gacha guide + dashboard
@@ -223,7 +223,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-monthChart{display:flex;align-items:flex-end;gap:8px;height:132px;padding:6px 0 0}",
     ".dga-monthCol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%}",
     ".dga-monthVal{font-size:10.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}",
-    ".dga-monthBar{width:100%;max-width:38px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#d3ad5b,#8a6b22);min-height:3px}",
+    ".dga-monthBar{width:100%;max-width:38px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg, var(--dga-gold), color-mix(in srgb, var(--dga-gold) 55%, transparent));min-height:3px}",
     ".dga-monthLabel{font-size:10px;color:var(--dsw-alias-label-tertiary);white-space:nowrap}",
     ".dga-fiveRow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);margin-bottom:6px}",
     ".dga-fiveName{flex:1;min-width:0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
@@ -232,6 +232,38 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-pityFill{display:block;height:100%;border-radius:999px}",
     ".dga-pityTrack{display:flex;flex-direction:column;gap:6px}",
     ".dga-pityLine{display:flex;align-items:center;gap:8px;font-size:12px}",
+
+    // element glyphs + overview polish
+    ".dga-elemRow{display:flex;align-items:center;gap:10px;font-size:12.5px}",
+    ".dga-elemIcon{width:20px;height:20px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}",
+    ".dga-elemName{width:32px;flex:0 0 auto;color:var(--dsw-alias-label-secondary)}",
+    ".dga-elemCount{width:30px;text-align:right;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}",
+    ".dga-progressGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}",
+    ".dga-progressCard{padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
+    ".dga-progressK{font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-progressV{font-size:17px;font-weight:650;margin-top:3px;font-variant-numeric:tabular-nums}",
+    ".dga-progressS{font-size:11px;color:var(--dsw-alias-label-tertiary);margin-top:2px}",
+    ".dga-serverTag{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary)}",
+
+    // weapon hover card
+    ".dga-wCardRel{position:relative}",
+    ".dga-wCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
+    ".dga-wPop{position:absolute;left:0;top:calc(100% + 6px);z-index:20;width:250px;padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-3));border:1px solid var(--dsw-alias-border-l2);box-shadow:0 12px 32px rgba(0,0,0,.22);font-size:12px;line-height:1.7}",
+    ".dga-wPopRow{display:flex;justify-content:space-between;gap:12px}",
+    ".dga-wPopK{color:var(--dsw-alias-label-tertiary)}",
+    ".dga-wPopV{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}",
+
+    // build score block
+    ".dga-build{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);margin-bottom:14px}",
+    ".dga-buildGrade{font-size:22px;font-weight:750;line-height:1}",
+    ".dga-buildLabel{font-size:11.5px;color:var(--dsw-alias-label-tertiary);margin-top:3px}",
+    ".dga-buildStats{display:flex;gap:18px;flex-wrap:wrap;flex:1}",
+    ".dga-buildStat{font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-buildStat b{display:block;font-size:15px;color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}",
+
+    // gacha tiers
+    ".dga-tier{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid}",
+    ".dga-pityNow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);margin-bottom:6px}",
   ].join("\n");
 
   var CSS_TAG = PKG + "/panel.css";
@@ -339,10 +371,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-field" },
         h("label", { className: "dga-label" }, "圣遗物副词条"),
         h("p", { className: "dga-hint" },
-          "副词条（CV / 词条效率）来自游戏内的「角色展柜」，不需要任何验证，也不需要额外登录：" +
-            "在游戏里打开 资料 → 角色展柜，放上想看的角色（最多 8 个）并点开「显示详情」，" +
-            "等 5 分钟后点下面的「重新同步」，这些角色的圣遗物主副词条就会补全。" +
-            "米游社自己的战绩接口对副词条始终返回 retcode 1034（要求人机验证），那一层目前走不通，所以展柜是唯一来源。"),
+          "圣遗物副词条只从游戏内「角色展柜」读取：放上角色并开启「显示详情」，5 分钟后点「重新同步」即可。"),
         h("div", { className: "dga-fileRow" },
           h("button", { className: "dga-btn", onClick: props.onRefresh }, "重新同步（读展柜）")),
         props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null));
@@ -367,21 +396,73 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
   // ── data tabs ───────────────────────────────────────────────────────────
   // ── visual helpers ──────────────────────────────────────────────────────
-  /** Element accent colours, tuned to stay readable on the dark shell. */
+  /** Element accents; the actual values live in the CSS tokens. */
   var ELEMENT_COLOR = {
-    pyro: "#ef7938", hydro: "#4cc2f1", anemo: "#74c2a8", electro: "#af8ec1",
-    cryo: "#9fd6e3", geo: "#fab72e", dendro: "#a5c83b", none: "#8b93a5",
+    pyro: "var(--dga-el-pyro)",
+    hydro: "var(--dga-el-hydro)",
+    anemo: "var(--dga-el-anemo)",
+    electro: "var(--dga-el-electro)",
+    cryo: "var(--dga-el-cryo)",
+    geo: "var(--dga-el-geo)",
+    dendro: "var(--dga-el-dendro)",
+    none: "var(--dga-el-none)",
   };
-  var RARITY_COLOR = { 5: "#c8a24a", 4: "#9c7bb8", 3: "#5f8fc0", 2: "#5c9c6a", 1: "#8b93a5" };
+  var RARITY_COLOR = { 5: "var(--dga-gold)", 4: "#9c7bb8", 3: "#5f8fc0", 2: "#5c9c6a", 1: "#8b93a5" };
 
   function elementColor(element) {
     return ELEMENT_COLOR[element] || ELEMENT_COLOR.none;
   }
 
   /** Grade → colour, so a card's CV, accent bar and pill all agree. */
-  var GRADE_COLOR = { 极品: "#c8a24a", 优秀: "#5aa9e6", 可用: "#6ec07a" };
+  var GRADE_COLOR = {
+    极品: "var(--dga-gold)",
+    优秀: "var(--dga-blue)",
+    可用: "var(--dga-green)",
+    S: "var(--dga-gold)",
+    A: "var(--dga-blue)",
+    B: "var(--dga-green)",
+    C: "var(--dsw-alias-label-dimmed)",
+  };
   function gradeColor(grade) {
     return GRADE_COLOR[grade] || "var(--dsw-alias-label-dimmed)";
+  }
+
+  /**
+   * Slot mark for an artifact, used when the artwork is unavailable.
+   *
+   * Newer sets have no icon on the record CDN yet (it answers with a placeholder),
+   * so drawing the slot keeps the card honest instead of showing a broken image.
+   */
+  function SlotGlyph(props) {
+    var color = props.color || "var(--dga-gold)";
+    var slot = props.slot || "flower";
+    var size = props.size || 42;
+    var shapes = {
+      flower: [
+        h("circle", { key: "c", cx: 12, cy: 12, r: 2.7, fill: color }),
+        h("circle", { key: "n", cx: 12, cy: 6.6, r: 2.5, fill: "none", stroke: color, strokeWidth: 1.4 }),
+        h("circle", { key: "e", cx: 17.4, cy: 12, r: 2.5, fill: "none", stroke: color, strokeWidth: 1.4 }),
+        h("circle", { key: "s", cx: 12, cy: 17.4, r: 2.5, fill: "none", stroke: color, strokeWidth: 1.4 }),
+        h("circle", { key: "w", cx: 6.6, cy: 12, r: 2.5, fill: "none", stroke: color, strokeWidth: 1.4 }),
+      ],
+      plume: [
+        h("path", { key: "p", d: "M8 20c6.5-1.6 9.4-6 9.4-13 0 0-7.4 1-8.6 6.2-.6 2.6 0 5.4-.8 6.8Z", fill: "none", stroke: color, strokeWidth: 1.5, strokeLinejoin: "round" }),
+        h("path", { key: "l", d: "M8 20 15 9", fill: "none", stroke: color, strokeWidth: 1.3, strokeLinecap: "round" }),
+      ],
+      sands: [
+        h("path", { key: "h", d: "M6.5 4h11l-5.5 8 5.5 8h-11l5.5-8-5.5-8Z", fill: "none", stroke: color, strokeWidth: 1.4, strokeLinejoin: "round" }),
+        h("path", { key: "t", d: "M6.5 4h11M6.5 20h11", fill: "none", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
+      ],
+      goblet: [
+        h("path", { key: "c", d: "M7 4h10l-1 6.2a4 4 0 0 1-8 0L7 4Z", fill: "none", stroke: color, strokeWidth: 1.4, strokeLinejoin: "round" }),
+        h("path", { key: "s", d: "M12 14.4V19M8.6 20h6.8", fill: "none", stroke: color, strokeWidth: 1.5, strokeLinecap: "round" }),
+      ],
+      circlet: [
+        h("path", { key: "c", d: "M5 17l2.2-8.6L11 13l1-6.6 1 6.6 3.8-4.6L19 17Z", fill: "none", stroke: color, strokeWidth: 1.4, strokeLinejoin: "round" }),
+        h("path", { key: "b", d: "M5 19.4h14", fill: "none", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
+      ],
+    };
+    return h("svg", { width: size, height: size, viewBox: "0 0 24 24", "aria-hidden": "true" }, shapes[slot] || shapes.flower);
   }
 
   /**
@@ -402,7 +483,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     return h("div", { className: "dga-artiCard" },
       h("span", { className: "dga-artiAccent", style: { background: color } }),
       h("div", { className: "dga-artiHead" },
-        h(Art, { src: a.icon, alt: a.setName, size: 42 }),
+        h(Art, {
+          src: a.icon,
+          alt: a.setName,
+          size: 42,
+          className: "dga-artiIcon",
+          fallback: h(SlotGlyph, { slot: a.slot, size: 26, color: color }),
+        }),
         h("div", { className: "dga-artiHeadText" },
           h("div", { className: "dga-artiSet", title: a.setName }, a.setName + " " + (a.rarity || 5) + "★"),
           h("div", { className: "dga-artiSlot" }, a.slotZh + " · +" + (a.level == null ? "-" : a.level)))),
@@ -433,7 +520,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           style: {
             color: color,
             border: "1px solid " + color,
-            background: isHex ? color + "22" : "transparent",
+            background: "var(--dsw-alias-bg-layer-3)",
           },
         }, (a.grade ? a.grade + " " : "") + a.efficiency + "%")));
   }
@@ -445,12 +532,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     // placeholder as a missing one instead of leaving an empty square.
     var brokenState = React.useState(false);
     var broken = brokenState[0], setBroken = brokenState[1];
+    var fallbackNode = props.fallback
+      ? props.fallback
+      : (props.alt || "?").slice(0, 1);
     if (!props.src || broken) {
       return h("span", {
         className: "dga-art dga-art-ph" + (props.className ? " " + props.className : ""),
         style: style,
         title: props.alt || "",
-      }, (props.alt || "?").slice(0, 1));
+      }, fallbackNode);
     }
     return h("img", {
       className: "dga-art" + (props.className ? " " + props.className : ""),
@@ -460,6 +550,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       loading: "lazy",
       style: style,
       onError: function () { setBroken(true); },
+      // The artwork CDN answers 200 with a 1200x1200 placeholder for icons it does
+      // not have (new artifact sets), so `onError` alone would never fire.
+      onLoad: function (event) {
+        var img = event && event.currentTarget;
+        if (img && img.naturalWidth >= 512) setBroken(true);
+      },
     });
   }
 
@@ -470,13 +566,98 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   }
 
   // ── account overview ────────────────────────────────────────────────────
+  var SERVER_LABEL = { cn_gf01: "天空岛", cn_qd01: "世界树" };
+
+  /**
+   * One element mark. Drawn inline instead of shipped as images: the seven
+   * glyphs are a few paths each, they inherit the element colour, and they stay
+   * crisp in both themes without a sprite sheet.
+   */
+  function ElementGlyph(props) {
+    var key = props.element || "none";
+    var color = elementColor(key);
+    var size = props.size || 18;
+    var paths = {
+      pyro: "M12 3c2.6 3.2 4 5.4 4 7.4a4 4 0 0 1-8 0C8 8.4 9.4 6.2 12 3Z",
+      hydro: "M12 3.4c3.2 3.8 5.2 6.3 5.2 8.8a5.2 5.2 0 0 1-10.4 0c0-2.5 2-5 5.2-8.8Z",
+      anemo: "M4 9.2h9.4a2.6 2.6 0 1 0-2.6-2.6M4 14.6h12a2.6 2.6 0 1 1-2.6 2.6",
+      electro: "M13.4 2.4 6.2 13.4h4.4l-1.2 8.2 8-11.6h-4.6l.6-7.6Z",
+      cryo: "M12 3.2v17.6M4.4 7.6l15.2 8.8M19.6 7.6 4.4 16.4",
+      geo: "M12 3.2 19.6 12 12 20.8 4.4 12Z",
+      dendro: "M12 20.6V9.4M12 9.4c0-3.1 2.2-5.2 6.2-5.2 0 4.1-2.2 6.3-6.2 6.3ZM12 13.2c0-3.1-2.2-5.2-6.2-5.2 0 4.1 2.2 6.3 6.2 6.3Z",
+      none: "M12 4.6a7.4 7.4 0 1 0 0 14.8 7.4 7.4 0 0 0 0-14.8Z",
+    };
+    var filled = key === "pyro" || key === "hydro" || key === "electro" || key === "geo";
+    return h("svg", {
+      className: "dga-elemIcon",
+      width: size,
+      height: size,
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true",
+    },
+      h("path", {
+        d: paths[key] || paths.none,
+        fill: filled ? color : "none",
+        stroke: color,
+        strokeWidth: filled ? 1 : 1.7,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+      }));
+  }
+
   function OverviewTab(props) {
     var o = props.overview;
     var player = o.player || {};
     var counts = o.counts || {};
-    var elements = Object.keys(o.elements || {});
-    var total = elements.reduce(function (sum, key) { return sum + o.elements[key]; }, 0) || 1;
+    var progress = o.progress || {};
+    var list = o.elementList || [];
+    var total = list.reduce(function (sum, entry) { return sum + entry.count; }, 0) || 1;
     var top = (props.topCharacters || []).slice(0, 8);
+    var all = props.allCharacters || [];
+    var five = all.filter(function (c) { return c.rarity === 5; }).length;
+    var four = all.filter(function (c) { return c.rarity === 4; }).length;
+    var showcase = counts.showcase || 0;
+
+    // "cn_gf01" on its own means nothing to a player; the Chinese server name is
+    // what they know, the code is what the API uses. Show both.
+    var serverZh = SERVER_LABEL[player.region] || "";
+    var serverText = player.region
+      ? (serverZh ? serverZh + "（" + player.region + "）" : player.region)
+      : "";
+
+    var abyss = progress.abyss;
+    var theater = progress.theater;
+    var stygian = progress.stygian;
+    var cards = [];
+    if (abyss && abyss.text) {
+      cards.push({ key: "abyss", label: "深境螺旋", value: abyss.text, sub: abyss.stars ? abyss.stars + " 星" : "" });
+    }
+    if (theater && (theater.act || theater.stars)) {
+      cards.push({
+        key: "theater",
+        label: "幻想真境剧诗",
+        value: theater.act ? "第 " + theater.act + " 幕" : "—",
+        sub: theater.stars ? theater.stars + " 星" : "",
+      });
+    }
+    if (stygian && stygian.difficulty) {
+      var secs = Number(stygian.seconds) || 0;
+      cards.push({
+        key: "stygian",
+        label: "幽境危战" + (stygian.name ? " · " + stygian.name : ""),
+        value: "难度 " + stygian.difficulty,
+        sub: secs ? Math.floor(secs / 60) + " 分 " + (secs % 60) + " 秒" : "",
+      });
+    }
+    if (progress.achievements) {
+      cards.push({ key: "achievements", label: "成就达成", value: String(progress.achievements), sub: "" });
+    }
+    if (progress.activeDays) {
+      cards.push({ key: "activeDays", label: "活跃天数", value: String(progress.activeDays), sub: "" });
+    }
+    if (progress.fetterCount) {
+      cards.push({ key: "fetter", label: "好感角色", value: String(progress.fetterCount), sub: "" });
+    }
 
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-hero" },
@@ -487,13 +668,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               o.uid ? "UID " + o.uid : "",
               player.level ? "冒险等级 " + player.level : "",
               player.worldLevel ? "世界等级 " + player.worldLevel : "",
-              player.region || "",
-            ].filter(Boolean).join(" · "))),
+            ].filter(Boolean).join(" · ")),
+          serverText
+            ? h("div", { className: "dga-heroMeta", style: { marginTop: 4 } },
+                h("span", { className: "dga-serverTag", title: "游戏服务器：1/2 开头为天空岛，5 开头为世界树" }, "服务器 " + serverText))
+            : null),
         h("div", { className: "dga-heroStats" },
           h(StatTile, { value: String(counts.characters || 0), label: "角色" }),
-          h(StatTile, { value: String(counts.weapons || 0), label: "武器" }),
-          h(StatTile, { value: String(counts.artifacts || 0), label: "圣遗物" }),
-          h(StatTile, { value: String(counts.fiveStarArtifacts || 0), label: "五星圣遗物" }))),
+          h(StatTile, { value: String(five), label: "五星" }),
+          h(StatTile, { value: String(four), label: "四星" }),
+          h(StatTile, { value: String(showcase), label: "展柜" }))),
 
       top.length
         ? h("div", { className: "dga-block" },
@@ -510,33 +694,40 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             })))
         : null,
 
-      elements.length
+      list.length
         ? h("div", { className: "dga-block" },
             h("div", { className: "dga-sec" }, "元素分布"),
-            h("div", { className: "dga-bars" }, elements.map(function (zh) {
-              var count = o.elements[zh];
-              var key = Object.keys(ELEMENT_COLOR).find(function (k) {
-                return ELEMENT_ZH_KEY[k] === zh;
-              });
-              return h("div", { className: "dga-barRow", key: zh },
-                h("span", { className: "dga-barLabel" }, zh),
+            h("div", { className: "dga-bars" }, list.map(function (entry) {
+              return h("div", { className: "dga-elemRow", key: entry.key },
+                h(ElementGlyph, { element: entry.key }),
+                h("span", { className: "dga-elemName" }, entry.key === "none" ? "其他" : entry.zh),
                 h("span", { className: "dga-barTrack" },
                   h("span", {
                     className: "dga-barFill",
-                    style: { width: Math.max(6, Math.round((count / total) * 100)) + "%", background: elementColor(key) },
+                    style: { width: Math.max(6, Math.round((entry.count / total) * 100)) + "%", background: elementColor(entry.key) },
                   })),
-                h("span", { className: "dga-barValue" }, String(count)));
+                h("span", { className: "dga-elemCount" }, String(entry.count)));
+            })),
+            list.some(function (e) { return e.key === "none"; })
+              ? h("p", { className: "dga-hint" }, "「其他」是元素随形态变化的旅行者与「奇偶」这类没有固定元素的角色。")
+              : null)
+        : null,
+
+      cards.length
+        ? h("div", { className: "dga-block" },
+            h("div", { className: "dga-sec" }, "进度"),
+            h("div", { className: "dga-progressGrid" }, cards.map(function (card) {
+              return h("div", { className: "dga-progressCard", key: card.key },
+                h("div", { className: "dga-progressK" }, card.label),
+                h("div", { className: "dga-progressV" }, card.value),
+                card.sub ? h("div", { className: "dga-progressS" }, card.sub) : null);
             })))
         : null,
 
       (function () {
-        var all = props.allCharacters || [];
         if (!all.length) return null;
-        var rarity = { 5: 0, 4: 0 };
         var bands = { "90": 0, "80-89": 0, "70-79": 0, "1-69": 0 };
         all.forEach(function (c) {
-          if (c.rarity === 5) rarity[5] += 1;
-          else if (c.rarity === 4) rarity[4] += 1;
           if (c.level >= 90) bands["90"] += 1;
           else if (c.level >= 80) bands["80-89"] += 1;
           else if (c.level >= 70) bands["70-79"] += 1;
@@ -544,71 +735,24 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         });
         var maxBand = Math.max.apply(null, Object.keys(bands).map(function (k) { return bands[k]; })) || 1;
         return h("div", { className: "dga-block" },
-          h("div", { className: "dga-sec" }, "角色构成"),
-          h("div", { className: "dga-heroStats", style: { marginBottom: 12 } },
-            h(StatTile, { value: String(rarity[5]), label: "五星角色" }),
-            h(StatTile, { value: String(rarity[4]), label: "四星角色" }),
-            h(StatTile, { value: String(bands["90"]), label: "满级 Lv.90" })),
+          h("div", { className: "dga-sec" }, "等级分布"),
           h("div", { className: "dga-bars" }, ["90", "80-89", "70-79", "1-69"].map(function (band) {
             return h("div", { className: "dga-barRow", key: band },
               h("span", { className: "dga-barLabel", style: { width: 56 } }, band === "90" ? "Lv.90" : band),
               h("span", { className: "dga-barTrack" },
                 h("span", {
                   className: "dga-barFill",
-                  style: { width: Math.max(3, Math.round((bands[band] / maxBand) * 100)) + "%", background: "#7d9bd1" },
+                  style: { width: Math.max(3, Math.round((bands[band] / maxBand) * 100)) + "%", background: "var(--dga-bar)" },
                 })),
               h("span", { className: "dga-barValue" }, String(bands[band])));
           })));
       })(),
 
-      (o.player && (o.player.activeDays || o.player.achievements)) || o.challenges
-        ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "活跃与挑战"),
-            h("div", { className: "dga-heroStats", style: { marginBottom: 12 } },
-              o.player && o.player.activeDays
-                ? h(StatTile, { value: o.player.activeDays, label: "活跃天数" })
-                : null,
-              o.player && o.player.achievements
-                ? h(StatTile, { value: o.player.achievements, label: "成就达成" })
-                : null,
-              o.challenges && o.challenges.hardChallenge
-                ? h(StatTile, { value: "难度 " + o.challenges.hardChallenge.difficulty, label: "幻想真境剧诗" })
-                : null,
-              o.challenges && o.challenges.roleCombat
-                ? h(StatTile, { value: o.challenges.roleCombat.medals + "/" + o.challenges.roleCombat.maxRound, label: "幽境危战奖章" })
-                : null),
-            o.challenges && o.challenges.hardChallenge
-              ? h("p", { className: "dga-hint" },
-                  "本期剧诗「" + o.challenges.hardChallenge.name + "」最高难度 " +
-                  o.challenges.hardChallenge.difficulty + "，用时 " +
-                  Math.round(o.challenges.hardChallenge.seconds / 60) + " 分 " +
-                  (o.challenges.hardChallenge.seconds % 60) + " 秒" +
-                  (o.challenges.hardChallenge.end ? "；结束于 " + new Date(o.challenges.hardChallenge.end).toLocaleDateString("zh-CN") : ""))
-              : null,
-            o.challenges && o.challenges.card
-              ? h("p", { className: "dga-hint" },
-                  "名片数据：深境螺旋 " + (o.challenges.card.abyss || "—") +
-                  " · 幻想剧诗 " + (o.challenges.card.theater || "—") +
-                  (o.challenges.card.matched === false ? "（名片里没有当前 UID 的角色，只取账号级指标）" : ""))
-              : null)
-        : null,
-
-      o.bestArtifact
-        ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "最佳圣遗物"),
-            h("div", { className: "dga-inline" },
-              h(Art, { src: o.bestArtifact.icon, alt: o.bestArtifact.setName, size: 44 }),
-              h("div", null,
-                h("div", null, o.bestArtifact.setName + " · " + o.bestArtifact.slotZh),
-                h("div", { className: "dga-sub" },
-                  "CV " + o.bestArtifact.cv + " · 效率 " + o.bestArtifact.efficiency + "%" +
-                  (o.bestArtifact.owner ? " · " + o.bestArtifact.owner : "")))))
-        : null,
-
       h("div", { className: "dga-block" },
         h("div", { className: "dga-sec" }, "数据状态"),
-        h("div", { className: "dga-sub" }, (SOURCE_LABEL[o.source] || o.source) + (o.note ? " · " + o.note : "")),
-        h("div", { className: "dga-sub" }, "同步时间：" + when(o.fetchedAt))));
+        h("div", { className: "dga-sub" },
+          (SOURCE_LABEL[o.source] || o.source) + " · 同步于 " + when(o.fetchedAt)),
+        h("div", { className: "dga-sub" }, o.noteShort || "")));
   }
 
   /** Chinese element name → key, for colour lookup. */
@@ -650,6 +794,28 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             h("div", { className: "dga-talent" }, h("span", { className: "dga-talentLv" }, String(c.talents.burst == null ? "-" : c.talents.burst)), h("span", null, "元素爆发")))
         : null,
 
+      c.buildScore
+        ? h("div", { className: "dga-build" },
+            h("div", null,
+              h("div", { className: "dga-buildGrade", style: { color: gradeColor(c.buildScore.grade) } }, c.buildScore.grade),
+              h("div", { className: "dga-buildLabel" }, c.buildScore.label)),
+            h("div", { className: "dga-buildStats" },
+              h("div", { className: "dga-buildStat" }, h("b", null, String(c.buildScore.cv)), "CV 合计"),
+              h("div", { className: "dga-buildStat" }, h("b", null, c.buildScore.efficiency + "%"), "平均效率"),
+              h("div", { className: "dga-buildStat" }, h("b", null, String(c.buildScore.averageCv)), "平均 CV"),
+              h("div", { className: "dga-buildStat" }, h("b", null, c.buildScore.count + " 件"), "已读到")),
+            h("details", { className: "dga-adv", style: { margin: 0, flex: "0 0 auto", border: "none", padding: 0 } },
+              h("summary", null, "评分怎么算"),
+              h("div", { className: "dga-hint", style: { width: 260, marginTop: 8 } },
+                "CV（暴击值）= 暴击率 × 2 + 暴击伤害，只统计副词条，是社区通用的暴击贡献口径。" ,
+                h("br"),
+                "效率 = 所有副词条相对 5★ 顶档强化的达成率，覆盖暴击、攻击、充能、精通等全部词条。" ,
+                h("br"),
+                "评级取两者中较高的一档：S 顶级 / A 优秀 / B 可用 / C 待提升。" ,
+                h("br"),
+                "注意：CV 只反映暴击，一件堆满暴击但对角色无用的圣遗物也会得高分；配装还要看套装效果与角色的真实需求。")))
+        : null,
+
       statDefs.length
         ? h("div", { className: "dga-statline" }, statDefs.map(function (pair) {
             return h(Stat, { label: pair[0], value: String(pair[1]), key: pair[0] });
@@ -688,9 +854,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                   h("div", { className: "dga-sub" }, SLOT_ZH[piece.slot] + " · +" + (piece.level == null ? "-" : piece.level)));
               })),
               h("p", { className: "dga-hint" },
-                "这个角色只显示部位与等级：副词条来自游戏内的「角色展柜」，把这个角色放进 资料 → 角色展柜 并开启「显示详情」，" +
-                  "等 5 分钟重新同步，就能看到主副词条、CV 和词条效率。"))
-          : h("div", { className: "dga-empty" }, "这个角色没有可显示的圣遗物。"),
+                "TA 不在游戏的「角色展柜」里，所以只能看到部位与等级。" +
+                  "圣遗物详情只对展柜角色开放：把 TA 放进 资料 → 角色展柜 并开启「显示详情」，5 分钟后重新同步即可。"))
+          : h("div", { className: "dga-empty" },
+              h("div", null, "这个角色还没有可显示的圣遗物。"),
+              h("p", { className: "dga-hint" },
+                "圣遗物词条只对游戏内「角色展柜」中的角色开放——把 TA 放进展柜并开启「显示详情」，重新同步后就能看到完整的五件套。")),
 
       c.setEffects && c.setEffects.length
         ? h("div", { className: "dga-block" },
@@ -824,15 +993,37 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-sub", style: { padding: "0 2px 8px" } },
         filtered.length + " / " + rows.length + " 把武器"),
       h("div", { className: "dga-cardGrid" }, filtered.map(function (w, index) {
-        return h("div", { className: "dga-itemCard", key: index },
-          h(Art, { src: w.icon, alt: w.name, size: 56, style: { borderColor: RARITY_COLOR[w.rarity] || "#8b93a5" } }),
-          h("div", { className: "dga-itemText" },
-            h("div", { className: "dga-itemName" }, w.name),
-            h("div", { className: "dga-sub" },
-              w.rarity + "★ · " + w.typeZh + " · Lv." + w.level +
-              (w.refinement ? " · 精" + w.refinement : "")),
-            h("div", { className: "dga-sub" }, w.owner ? "装备于 " + w.owner : "未装备")));
+        return h(WeaponCard, { key: index, w: w });
       })));
+  }
+
+  /** One weapon card; hovering reveals the fields the grid has no room for. */
+  function WeaponCard(props) {
+    var w = props.w;
+    var hoverState = React.useState(false);
+    var hover = hoverState[0], setHover = hoverState[1];
+    return h("div", {
+      className: "dga-wCardRel",
+      onMouseEnter: function () { setHover(true); },
+      onMouseLeave: function () { setHover(false); },
+    },
+      h("div", { className: "dga-wCard" },
+        h(Art, { src: w.icon, alt: w.name, size: 56, style: { borderColor: RARITY_COLOR[w.rarity] || "var(--dga-el-none)" } }),
+        h("div", { className: "dga-itemText" },
+          h("div", { className: "dga-itemName" }, w.name),
+          h("div", { className: "dga-sub" },
+            w.rarity + "★ · " + w.typeZh + " · Lv." + w.level +
+            (w.refinement ? " · 精" + w.refinement : "")),
+          h("div", { className: "dga-sub" }, w.owner ? "装备于 " + w.owner : "未装备"))),
+      hover
+        ? h("div", { className: "dga-wPop" },
+            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "名称"), h("span", { className: "dga-wPopV" }, w.name)),
+            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "类型"), h("span", { className: "dga-wPopV" }, w.typeZh)),
+            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "稀有度"), h("span", { className: "dga-wPopV" }, w.rarity + "★")),
+            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "等级"), h("span", { className: "dga-wPopV" }, "Lv." + w.level)),
+            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "精炼"), h("span", { className: "dga-wPopV" }, w.refinement ? "精炼 " + w.refinement + " 阶" : "—")),
+            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "装备者"), h("span", { className: "dga-wPopV" }, w.owner || "未装备")))
+        : null);
   }
 
   var WEAPON_ZH = { sword: "单手剑", claymore: "双手剑", polearm: "长柄武器", bow: "弓", catalyst: "法器" };
@@ -844,6 +1035,20 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     return h("div", { className: "dga-guideStep" },
       h("span", { className: "dga-guideNum" }, String(props.n)),
       h("div", { className: "dga-guideText" }, props.children));
+  }
+
+  /**
+   * 欧非等级. `luck` is expected/average pulls, so >1 means luckier than the
+   * published base rate. The bands are round numbers rather than a claim about
+   * the real distribution.
+   */
+  function luckTier(luck) {
+    if (luck == null || !isFinite(luck)) return null;
+    if (luck >= 1.35) return { label: "欧皇", color: "var(--dga-gold)" };
+    if (luck >= 1.15) return { label: "小欧", color: "var(--dga-green)" };
+    if (luck >= 0.9) return { label: "正常", color: "var(--dga-blue)" };
+    if (luck >= 0.7) return { label: "有点非", color: "var(--dga-red)" };
+    return { label: "非酋", color: "var(--dga-red)" };
   }
 
   /** Coloured dot + label pair used by the rarity distribution legend. */
@@ -872,8 +1077,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h("button", { className: "dga-btn", onClick: props.onSyncManual, disabled: busy || !String(props.url || "").trim() },
             "用这段链接同步"))));
 
-    var guide = h("div", { className: "dga-guide" },
-      h("div", { className: "dga-sec" }, "怎么拿到祈愿记录"),
+    var guideOpen = !a || !a.total;
+    var guide = h("details", { className: "dga-guide", open: guideOpen },
+      h("summary", { className: "dga-guideSummary" }, "怎么拿到祈愿记录"),
       h(GuideStep, { n: 1 }, h("span", null,
         "打开游戏 → ", h("b", null, "祈愿"), " → ", h("b", null, "历史记录"),
         "，随便翻一页。这一步会让游戏把一条带 authkey 的链接写进本地缓存，插件就是从那里读的。")),
@@ -881,7 +1087,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         "回到这里点 ", h("b", null, "同步抽卡"), "。插件会自动在游戏安装目录的 webCaches 里找最新那条链接，不需要你复制任何东西。")),
       h(GuideStep, { n: 3 }, h("span", null,
         "如果提示找不到链接，就展开下面的「手动粘贴」，从游戏里打开的祈愿历史页地址栏整段复制过来。")),
-      h("p", { className: "dga-hint" }, "authkey 约 24 小时过期；过期后重新打开一次历史记录再同步即可。插件不会上传你的记录。"));
+      h("p", { className: "dga-hint" },
+        "authkey 约 24 小时过期；过期后重新打开一次历史记录再同步即可。记录只存在本机，插件不会上传。" +
+          "如果提示「没有新记录」但你知道刚抽过卡，请确认打开的是当前账号的祈愿历史。"));
 
     if (!a || !a.total) {
       return h("div", { className: "dga-scroll" },
@@ -899,7 +1107,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var maxMonth = Math.max.apply(null, a.monthly.map(function (m) { return m.pulls; }).concat([1]));
     var maxBucket = Math.max.apply(null, a.pityBuckets.map(function (b) { return b.count; }).concat([1]));
     var avg = a.averageFive == null ? null : a.averageFive;
-    var luckColor = a.luck == null ? "var(--dsw-alias-label-secondary)" : (a.luck >= 1 ? "#6ec07a" : "#d98a8a");
+    var tier = luckTier(a.luck);
 
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-hero" },
@@ -915,43 +1123,54 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h(StatTile, { value: String(a.five), label: "五星" }),
           h(StatTile, { value: String(a.four), label: "四星" }),
           h(StatTile, { value: avg == null ? "—" : String(avg), label: "平均出金" }),
-          h(StatTile, { value: a.luck == null ? "—" : "×" + a.luck, label: "欧非比" }))),
+          h(StatTile, { value: a.luck == null ? "—" : "×" + a.luck, label: "欧非比" }),
+          tier
+            ? h("div", { className: "dga-tile" },
+                h("span", { className: "dga-tier", style: { color: tier.color, borderColor: tier.color } }, tier.label),
+                h("div", { className: "dga-tileLabel" }, "欧非等级"))
+            : null)),
 
       h("div", { className: "dga-block" },
         h("div", { className: "dga-fileRow" },
           h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSync, disabled: busy },
             busy ? "同步中…" : "同步抽卡"),
           h("span", { className: "dga-hint" }, props.status || "")),
+        guide,
         manual),
 
       h("div", { className: "dga-block" },
         h("div", { className: "dga-sec" }, "星级分布"),
         h("div", { className: "dga-ratioBar" },
-          h("span", { className: "dga-ratioSeg", style: { width: pct(a.five) + "%", background: "#c8a24a" } }),
-          h("span", { className: "dga-ratioSeg", style: { width: pct(a.four) + "%", background: "#8a7fd0" } }),
+          h("span", { className: "dga-ratioSeg", style: { width: pct(a.five) + "%", background: "var(--dga-gold)" } }),
+          h("span", { className: "dga-ratioSeg", style: { width: pct(a.four) + "%", background: "var(--dga-purple)" } }),
           h("span", { className: "dga-ratioSeg", style: { width: pct(three) + "%", background: "var(--dsw-alias-bg-layer-3)" } })),
         h("div", { className: "dga-legend" },
-          h(LegendItem, { color: "#c8a24a", label: "五星 " + a.five + "（" + (a.total ? (pct(a.five)).toFixed(1) : "0") + "%）" }),
-          h(LegendItem, { color: "#8a7fd0", label: "四星 " + a.four + "（" + (a.total ? (pct(a.four)).toFixed(1) : "0") + "%）" }),
+          h(LegendItem, { color: "var(--dga-gold)", label: "五星 " + a.five + "（" + (a.total ? (pct(a.five)).toFixed(1) : "0") + "%）" }),
+          h(LegendItem, { color: "var(--dga-purple)", label: "四星 " + a.four + "（" + (a.total ? (pct(a.four)).toFixed(1) : "0") + "%）" }),
           h(LegendItem, { color: "var(--dsw-alias-label-dimmed)", label: "三星 " + three }))),
 
       h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, "各祈愿池 · 保底进度"),
+        h("div", { className: "dga-sec" }, "各祈愿池 · 垫了多少"),
         h("div", { className: "dga-pityTrack" }, a.banners.map(function (bucket) {
           var progress = Math.min(100, (bucket.sinceFive / 90) * 100);
-          return h("div", { className: "dga-pityLine", key: bucket.type },
-            h("span", { style: { width: 76, flex: "0 0 auto" } }, bucket.label),
-            h("span", { className: "dga-num", style: { width: 62, flex: "0 0 auto", color: "var(--dsw-alias-label-tertiary)", fontSize: 11 } },
-              bucket.pulls + " 抽 · " + bucket.five + " 金"),
-            h("span", { className: "dga-pityBar" },
-              h("span", {
-                className: "dga-pityFill",
-                style: { width: Math.max(2, progress) + "%", background: progress >= 80 ? "#d98a8a" : "#c8a24a" },
-              })),
-            h("span", { className: "dga-num", style: { width: 64, textAlign: "right", color: "var(--dsw-alias-label-secondary)" } },
-              bucket.sinceFive + " / 90"));
+          var left = Math.max(0, 90 - bucket.sinceFive);
+          var soft = bucket.sinceFive >= 74;
+          return h("div", { className: "dga-pityNow", key: bucket.type },
+            h("div", { style: { flex: 1, minWidth: 0 } },
+              h("div", { style: { fontSize: 12.5, fontWeight: 600 } }, bucket.label),
+              h("div", { className: "dga-sub" },
+                "已垫 " + bucket.sinceFive + " 抽 · 距硬保底 " + left + " 抽 · 累计 " + bucket.pulls + " 抽 " + bucket.five + " 金" +
+                  (soft ? " · 已进软保底" : "")),
+              h("div", { className: "dga-pityBar", style: { width: "100%", marginTop: 6 } },
+                h("span", {
+                  className: "dga-pityFill",
+                  style: { width: Math.max(2, progress) + "%", background: soft ? "var(--dga-red)" : "var(--dga-gold)" },
+                }))),
+            h("span", { className: "dga-num", style: { color: soft ? "var(--dga-red)" : "var(--dsw-alias-label-secondary)", fontSize: 15, fontWeight: 650 } },
+              String(bucket.sinceFive)));
         })),
-        h("p", { className: "dga-hint" }, "右侧是该池子距离上次五星已经抽了多少次；90 抽为硬保底。")),
+        h("p", { className: "dga-hint" },
+          "「已垫」= 这个池子自上一个五星之后又抽了多少次。90 抽为硬保底，74 抽之后进入软保底（概率明显提高）。")),
 
       a.monthly.length
         ? h("div", { className: "dga-block" },
@@ -976,9 +1195,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 h("span", { className: "dga-pityBar" },
                   h("span", {
                     className: "dga-pityFill",
-                    style: { width: Math.max(2, Math.min(100, (pity / 90) * 100)) + "%", background: early ? "#6ec07a" : "#c8a24a" },
+                    style: { width: Math.max(2, Math.min(100, (pity / 90) * 100)) + "%", background: early ? "var(--dga-green)" : "var(--dga-gold)" },
                   })),
-                h("span", { className: "dga-num", style: { width: 46, textAlign: "right", color: early ? "#6ec07a" : "var(--dsw-alias-label-secondary)" } }, pity + " 抽"),
+                h("span", { className: "dga-num", style: { width: 46, textAlign: "right", color: early ? "var(--dga-green)" : "var(--dsw-alias-label-secondary)" } }, pity + " 抽"),
                 h("span", { className: "dga-fiveMeta", style: { width: 96, textAlign: "right" } }, String(item.time || "").slice(0, 10)));
             }),
             h("p", { className: "dga-hint" }, "绿色 = 40 抽内出金（比较欧）。"))
@@ -991,7 +1210,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               return h("div", { className: "dga-pityLine", key: bucket.label },
                 h("span", { style: { width: 64, flex: "0 0 auto", color: "var(--dsw-alias-label-secondary)" } }, bucket.label),
                 h("span", { className: "dga-pityBar", style: { flex: 1, width: "auto" } },
-                  h("span", { className: "dga-pityFill", style: { width: Math.max(2, Math.round((bucket.count / maxBucket) * 100)) + "%", background: "#c8a24a" } })),
+                  h("span", { className: "dga-pityFill", style: { width: Math.max(2, Math.round((bucket.count / maxBucket) * 100)) + "%", background: "var(--dga-gold)" } })),
                 h("span", { className: "dga-num", style: { width: 26, textAlign: "right", color: "var(--dsw-alias-label-tertiary)" } }, String(bucket.count)));
             })),
             h("p", { className: "dga-hint" },

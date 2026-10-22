@@ -13,8 +13,8 @@ A DeepSeek Harness plugin that reads your Genshin Impact account (characters, ta
 | 数据 | 来源 | 要不要验证 |
 | --- | --- | --- |
 | 全部角色、等级、命座、三段天赋、武器名与等级、圣遗物部位与等级 | 养成计算器 `api-takumi.mihoyo.com/.../sync/avatar/detail` | **不需要** |
-| 活跃天数、成就达成、深境螺旋、幻想剧诗 | 名片 `card/wapi/getGameRecordCard` | **不需要** |
-| 幻想真境剧诗 / 幽境危战本期进度 | `hard_challenge` / `role_combat` | **不需要** |
+| 成就达成、深境螺旋、幻想真境剧诗、幽境危战、好感角色 | 展柜 payload 的 `playerInfo`（名片只在不匹配时被忽略） | **不需要** |
+| 剧诗/危战的期次与难度明细 | `role_combat`（剧诗）/ `hard_challenge`（危战） | **不需要** |
 | 圣遗物**主副词条**（进而算出 CV / 词条效率） | 游戏内「角色展柜」→ `profile.microgg.cn/api/uid/<uid>` | **不需要**（只要展柜里放了角色并开了「显示详情」） |
 | 祈愿（抽卡）记录 | `public-operation-hk4e.mihoyo.com/gacha_info/api/getGachaLog` | 不需要滑块，但 authkey 约 24 小时过期，需游戏内打开一次祈愿历史 |
 

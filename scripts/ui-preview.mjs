@@ -140,16 +140,34 @@ const TABS = [
   { index: 4, name: 'settings' },
 ]
 
-function page(tabIndex) {
-  return `<!doctype html><html><head><meta charset="utf-8">
-<style>
-  /* The DSH dark palette, so the preview is judged with the same surfaces and
-     contrasts the shell gives the panel. Values come from the desktop theme. */
-  :root{
+const THEME = process.env.PREVIEW_THEME === 'light' ? 'light' : 'dark'
+
+// Token values copied from the desktop shell. Light mode paints every layer
+// white, which is exactly why the panel must not rely on background contrast.
+const TOKENS = THEME === 'light'
+  ? `
+    --dsw-alias-bg-base:#ffffff;
+    --dsw-alias-bg-layer-1:#ffffff;
+    --dsw-alias-bg-layer-2:#ffffff;
+    --dsw-alias-bg-layer-3:#f5f6f7;
+    --dsw-alias-bg-overlay:#f5f6f7;
+    --dsw-alias-bg-module-platform:#f5f6f7;
+    --dsw-alias-border-l1:rgba(0,0,0,.04);
+    --dsw-alias-border-l2:rgba(0,0,0,.10);
+    --dsw-alias-label-primary:#0f1115;
+    --dsw-alias-label-secondary:#61666b;
+    --dsw-alias-label-tertiary:#81858c;
+    --dsw-alias-label-dimmed:#c7ccd6;
+    --dsw-alias-brand-primary:#0f1115;
+    --dsw-alias-interactive-bg-hover:rgba(38,49,72,.06);
+    --dsw-alias-state-success-primary:#22c55e;
+    --dsw-alias-state-error-primary:#d92c2c;`
+  : `
     --dsw-alias-bg-base:#151517;
     --dsw-alias-bg-layer-1:#1b1b1c;
     --dsw-alias-bg-layer-2:#232325;
     --dsw-alias-bg-layer-3:#2c2c2f;
+    --dsw-alias-bg-overlay:#2c2c2f;
     --dsw-alias-bg-module-platform:#232325;
     --dsw-alias-border-l1:#ffffff14;
     --dsw-alias-border-l2:#ffffff26;
@@ -160,12 +178,17 @@ function page(tabIndex) {
     --dsw-alias-brand-primary:#4d93f8;
     --dsw-alias-interactive-bg-hover:#ffffff12;
     --dsw-alias-state-success-primary:#22c55e;
-    --dsw-alias-state-error-primary:#ec1313;
+    --dsw-alias-state-error-primary:#ec1313;`
+
+function page(tabIndex) {
+  return `<!doctype html><html><head><meta charset="utf-8">
+<style>
+  :root{${TOKENS}
   }
-  html,body{margin:0;height:100%;background:#151517;color:#f5f6f7}
-  #root{height:100vh;width:1180px;margin:0 auto;border-left:1px solid #ffffff14;border-right:1px solid #ffffff14}
+  html,body{margin:0;height:100%;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}
+  #root{height:100vh;width:1180px;margin:0 auto;border-left:1px solid var(--dsw-alias-border-l1);border-right:1px solid var(--dsw-alias-border-l1)}
 </style>
-</head><body><div id="root"></div>
+</head><body${THEME === 'dark' ? ' data-ds-dark-theme' : ''}><div id="root"></div>
 <script>const fixtures = ${JSON.stringify(fixtures)}</script>
 <script>${pick('react/umd/react.production.min.js')}</script>
 <script>${pick('react-dom/umd/react-dom.production.min.js')}</script>
@@ -267,7 +290,7 @@ const shots = []
 for (const file of htmlFiles) {
   await send('Page.navigate', { url: 'file:///' + file.replace(/\\/g, '/') })
   await new Promise((resolve) => setTimeout(resolve, 4200))
-  const name = 'ui-' + file.split('tab-')[1].replace('.html', '') + '.png'
+  const name = 'ui-' + THEME + '-' + file.split('tab-')[1].replace('.html', '') + '.png'
   const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true })
   if (shot.result && shot.result.data) {
     writeFileSync(join(outDir, name), Buffer.from(shot.result.data, 'base64'))

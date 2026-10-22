@@ -383,7 +383,11 @@ check('overview.player', summary.overview.player && typeof summary.overview.play
 check('overview.counts', summary.overview.counts && typeof summary.overview.counts.characters === 'number')
 check('overview.fiveStarArtifacts', typeof summary.overview.counts.fiveStarArtifacts === 'number')
 check('overview.elements', summary.overview.elements && typeof summary.overview.elements === 'object')
-check('overview.bestArtifact is null or complete', summary.overview.bestArtifact === null || ('setName' in summary.overview.bestArtifact && 'cv' in summary.overview.bestArtifact), JSON.stringify(summary.overview.bestArtifact))
+check('overview.elementList carries ids for the glyphs', Array.isArray(summary.overview.elementList) && summary.overview.elementList.every((e) => 'key' in e && 'count' in e), JSON.stringify(summary.overview.elementList).slice(0, 160))
+check('overview.progress block', summary.overview.progress && typeof summary.overview.progress === 'object', JSON.stringify(summary.overview.progress).slice(0, 160))
+check('overview.counts.showcase', typeof summary.overview.counts.showcase === 'number')
+check('overview.noteShort is one line', typeof summary.overview.noteShort === 'string' && summary.overview.noteShort.length < 60, summary.overview.noteShort)
+check('overview no longer carries a best artifact', !('bestArtifact' in summary.overview), JSON.stringify(Object.keys(summary.overview)))
 check('overview.note', typeof summary.overview.note === 'string')
 const listItem = summary.characters[0]
 check('character list item fields', ['id', 'name', 'level', 'element', 'elementZh', 'rarity', 'constellation'].every((key) => key in listItem), JSON.stringify(listItem))
@@ -464,7 +468,7 @@ check('showcase characters sort first', clientSource.includes('byShowcase'), 'no
 check('showcase rows carry a badge', clientSource.includes('dga-showcaseTag'), 'no showcase badge')
 check('wish history explains how to get the link', clientSource.includes('怎么拿到祈愿记录') && clientSource.includes('authkey'), 'guide missing')
 check('wish history breaks down rarities', clientSource.includes('星级分布') && clientSource.includes('dga-ratioBar'), 'rarity bar missing')
-check('wish history charts months and pity', clientSource.includes('dga-monthChart') && clientSource.includes('保底进度'), 'charts missing')
+check('wish history charts months and pity', clientSource.includes('dga-monthChart') && clientSource.includes('垫了多少'), 'charts missing')
 // The gacha state holds the analysis object itself; reading `.analysis` off it
 // once blanked the whole tab, so pin the binding down.
 check('gacha tab receives the analysis object', /analysis: gacha \|\| null/.test(clientSource), 'analysis binding changed')
