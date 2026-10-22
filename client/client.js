@@ -276,6 +276,42 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     // gacha tiers
     ".dga-tier{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid}",
     ".dga-pityNow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);margin-bottom:6px}",
+
+    // ── Genshin-flavoured theme layer ─────────────────────────────────────
+    // Appended last so these win over the neutral rules above. The idea comes
+    // from the in-game character panel: deep ink-teal surfaces, a thin gold
+    // hairline, one warm accent, and a soft glow instead of hard borders.
+    ":root{--dga-surface:#fdfaf3;--dga-surface-2:#ffffff;--dga-line:rgba(139,108,48,.22);--dga-line-strong:rgba(139,108,48,.38);--dga-glow:rgba(181,139,60,.16);--dga-ink:#1b2430;--dga-ink-soft:#5c6570;--dga-panel:linear-gradient(180deg,#fbf7ee,#ffffff 46%)}",
+    "body[data-ds-dark-theme]{--dga-surface:#0f2429;--dga-surface-2:#132b31;--dga-line:rgba(217,180,90,.20);--dga-line-strong:rgba(217,180,90,.38);--dga-glow:rgba(217,180,90,.14);--dga-ink:#e9f1ef;--dga-ink-soft:#9db0ad;--dga-panel:linear-gradient(180deg,#0c2026,#091a1f 55%,#0a171b)}",
+    ".dga-root{background:var(--dga-panel);color:var(--dga-ink)}",
+    ".dga-head{border-bottom:1px solid var(--dga-line);background:transparent}",
+    ".dga-title{letter-spacing:.04em}",
+    ".dga-tabs{border-bottom:1px solid var(--dga-line)}",
+    ".dga-tab-on{color:var(--dga-ink);border-bottom-color:var(--dga-gold)}",
+    ".dga-btn{border-color:var(--dga-line);color:var(--dga-ink-soft)}",
+    ".dga-btn:hover:not(:disabled){color:var(--dga-ink);border-color:var(--dga-line-strong)}",
+    ".dga-btn-primary{background:linear-gradient(180deg,var(--dga-gold),color-mix(in srgb,var(--dga-gold) 78%, #000));color:#1a1206;border-color:transparent;font-weight:600}",
+    ".dga-btn-primary:hover:not(:disabled){color:#1a1206;filter:brightness(1.06)}",
+    ".dga-hero{position:relative;overflow:hidden;border:1px solid var(--dga-line);background:linear-gradient(135deg,var(--dga-surface-2),var(--dga-surface));box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}",
+    ".dga-hero::after{content:'';position:absolute;right:-60px;top:-90px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,var(--dga-glow),transparent 68%);pointer-events:none}",
+    ".dga-heroName{letter-spacing:.02em}",
+    ".dga-heroMeta{color:var(--dga-ink-soft)}",
+    ".dga-sec{display:flex;align-items:center;gap:8px;color:var(--dga-ink);letter-spacing:.03em}",
+    ".dga-sec::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--dga-gold);flex:0 0 auto}",
+    ".dga-card,.dga-artiCard,.dga-wCard,.dga-progressCard,.dga-tile,.dga-build,.dga-guide,.dga-banner{border-color:var(--dga-line);background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 60%),var(--dga-surface);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}",
+    ".dga-artiCard,.dga-wCard{box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 1px 2px rgba(0,0,0,.12)}",
+    ".dga-artiMain{background:color-mix(in srgb,var(--dga-gold) 8%,var(--dga-surface-2));border:1px solid var(--dga-line)}",
+    ".dga-row-on{background:linear-gradient(90deg,color-mix(in srgb,var(--dga-gold) 12%,transparent),transparent 70%);border-color:var(--dga-line-strong)}",
+    ".dga-row:hover{background:color-mix(in srgb,var(--dga-gold) 7%,transparent)}",
+    ".dga-serverTag{border-color:var(--dga-line);color:var(--dga-ink-soft)}",
+    ".dga-showcaseTag{border-color:var(--dga-line-strong);background:color-mix(in srgb,var(--dga-gold) 14%,transparent);color:var(--dga-gold)}",
+    ".dga-guideNum{border-color:var(--dga-line);color:var(--dga-ink)}",
+    ".dga-adv{border-color:var(--dga-line)}",
+    ".dga-skel{background:color-mix(in srgb,var(--dga-gold) 12%,var(--dga-surface-2))}",
+    ".dga-barTrack,.dga-meter,.dga-pityBar,.dga-ratioBar{background:color-mix(in srgb,var(--dga-gold) 10%,transparent)}",
+    ".dga-wPop{background:var(--dga-surface-2);border-color:var(--dga-line-strong)}",
+    ".dga-empty,.dga-hint,.dga-sub{color:var(--dga-ink-soft)}",
+    ".dga-cvL,.dga-artiSlot,.dga-progressK,.dga-progressS,.dga-tileLabel{color:var(--dga-ink-soft)}",
   ].join("\n");
 
   var CSS_TAG = PKG + "/panel.css";
@@ -1293,105 +1329,408 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
    * Everything is local: images come from the official CDN, text from the
    * snapshot, and the canvas never leaves the page.
    */
+  // Canvas needs literal colours: the CSS tokens above are variables and would
+  // draw nothing inside a 2D context.
+  var ELEMENT_HEX = {
+    pyro: "#ef7938", hydro: "#4cc2f1", anemo: "#74c2a8", electro: "#af8ec1",
+    cryo: "#9fd6e3", geo: "#fab72e", dendro: "#a5c83b", none: "#8b93a5",
+  };
+  var RARITY_HEX = { 5: "#d8b56a", 4: "#a884c9", 3: "#6f95c4", 2: "#6fa87f", 1: "#8b93a5" };
+  var accountUid = "";
+  var POSTER = {
+    ink: "#08222a",
+    ink2: "#0c3038",
+    card: "#0f2c34",
+    card2: "#123841",
+    line: "rgba(216,181,106,0.28)",
+    gold: "#dcbb6f",
+    goldSoft: "#f0dcae",
+    text: "#eaf3f1",
+    soft: "#9db4b1",
+    dim: "#6f8a88",
+  };
+
+  function hexA(hex, alpha) {
+    var value = String(hex).replace("#", "");
+    if (value.length === 3) value = value.split("").map(function (ch) { return ch + ch; }).join("");
+    var num = parseInt(value, 16);
+    var r = (num >> 16) & 255;
+    var g = (num >> 8) & 255;
+    var b = num & 255;
+    return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+  }
+
+  function fillRound(ctx, x, y, w, h, r, fill) {
+    ctx.beginPath();
+    roundRect(ctx, x, y, w, h, r);
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+
+  function strokeRound(ctx, x, y, w, h, r, stroke, width) {
+    ctx.beginPath();
+    roundRect(ctx, x, y, w, h, r);
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = width || 1;
+    ctx.stroke();
+  }
+
+  /** Card surface used across the poster: subtle gradient + gold hairline. */
+  function panel(ctx, x, y, w, h, radius, accent) {
+    var grad = ctx.createLinearGradient(x, y, x, y + h);
+    grad.addColorStop(0, POSTER.card2);
+    grad.addColorStop(1, POSTER.card);
+    fillRound(ctx, x, y, w, h, radius, grad);
+    strokeRound(ctx, x, y, w, h, radius, POSTER.line, 1);
+    if (accent) {
+      ctx.save();
+      ctx.beginPath();
+      roundRect(ctx, x, y, w, h, radius);
+      ctx.clip();
+      ctx.fillStyle = hexA(accent, 0.16);
+      ctx.fillRect(x, y, 4, h);
+      ctx.restore();
+    }
+  }
+
+  function text(ctx, value, x, y, options) {
+    var opts = options || {};
+    ctx.font = (opts.weight ? opts.weight + " " : "") + (opts.size || 14) +
+      "px system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif";
+    ctx.fillStyle = opts.color || POSTER.text;
+    ctx.textAlign = opts.align || "left";
+    ctx.textBaseline = opts.baseline || "alphabetic";
+    ctx.fillText(String(value == null ? "" : value), x, y);
+  }
+
+  /** Truncate with an ellipsis to a pixel width. */
+  function clipText(ctx, value, maxWidth, size, weight) {
+    ctx.font = (weight ? weight + " " : "") + (size || 14) +
+      "px system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif";
+    var str = String(value == null ? "" : value);
+    if (ctx.measureText(str).width <= maxWidth) return str;
+    var cut = str;
+    while (cut.length > 1 && ctx.measureText(cut + "…").width > maxWidth) cut = cut.slice(0, -1);
+    return cut + "…";
+  }
+
+  /** Slot mark drawn on canvas, mirroring the SVG fallback used in the panel. */
+  function drawSlotGlyph(ctx, slot, cx, cy, size, color) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = Math.max(1.2, size / 16);
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    var r = size / 2;
+    if (slot === "flower") {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.26, 0, Math.PI * 2);
+      ctx.fill();
+      for (var i = 0; i < 4; i += 1) {
+        var angle = (Math.PI / 2) * i;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(angle) * r * 0.52, cy + Math.sin(angle) * r * 0.52, r * 0.26, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else if (slot === "plume") {
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.5, cy + r * 0.6);
+      ctx.quadraticCurveTo(cx + r * 0.7, cy + r * 0.2, cx + r * 0.45, cy - r * 0.7);
+      ctx.quadraticCurveTo(cx - r * 0.2, cy - r * 0.2, cx - r * 0.5, cy + r * 0.6);
+      ctx.stroke();
+    } else if (slot === "sands") {
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.55, cy - r * 0.7);
+      ctx.lineTo(cx + r * 0.55, cy - r * 0.7);
+      ctx.lineTo(cx - r * 0.55, cy + r * 0.7);
+      ctx.lineTo(cx + r * 0.55, cy + r * 0.7);
+      ctx.closePath();
+      ctx.stroke();
+    } else if (slot === "goblet") {
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.55, cy - r * 0.65);
+      ctx.lineTo(cx + r * 0.55, cy - r * 0.65);
+      ctx.quadraticCurveTo(cx + r * 0.4, cy + r * 0.15, cx, cy + r * 0.2);
+      ctx.quadraticCurveTo(cx - r * 0.4, cy + r * 0.15, cx - r * 0.55, cy - r * 0.65);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + r * 0.2);
+      ctx.lineTo(cx, cy + r * 0.62);
+      ctx.moveTo(cx - r * 0.32, cy + r * 0.7);
+      ctx.lineTo(cx + r * 0.32, cy + r * 0.7);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.6, cy + r * 0.55);
+      ctx.lineTo(cx - r * 0.35, cy - r * 0.55);
+      ctx.lineTo(cx - r * 0.05, cy + r * 0.1);
+      ctx.lineTo(cx + r * 0.2, cy - r * 0.65);
+      ctx.lineTo(cx + r * 0.6, cy + r * 0.55);
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /**
+   * The shareable character poster.
+   *
+   * Modelled on the in-game character panel people screenshot: ink-teal surface,
+   * one gold hairline, the build score as the headline number, and the five
+   * artifacts as cards that keep their main stat and every substat. Everything is
+   * drawn locally from the snapshot; nothing is uploaded.
+   */
   function exportCharacterImage(c) {
-    var W = 760;
-    var H = 460;
+    var W = 1000;
+    var PAD = 48;
+    var accent = ELEMENT_HEX[c.elementId || c.element] || ELEMENT_HEX.none;
+    var artifacts = (c.artifacts || []).slice(0, 5);
+    var pieces = (c.equippedPieces || []).slice(0, 5);
+    var effects = (c.setEffects || []).slice(0, 4);
+    var weapon = c.equippedWeapon || c.weapon || null;
+    var build = c.buildScore || null;
+
+    var cardW = (W - PAD * 2 - 32) / 3;
+    var cardH = 232;
+    var rows = Math.ceil(Math.max(1, artifacts.length || pieces.length) / 3);
+    var H = 470 + rows * (cardH + 16) + (effects.length ? 56 + effects.length * 22 : 0) + 80;
+
     var canvas = document.createElement("canvas");
     canvas.width = W;
     canvas.height = H;
     var ctx = canvas.getContext("2d");
-    var accent = elementColor(c.elementId || c.element);
 
-    var bg = ctx.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, "#171b23");
-    bg.addColorStop(1, "#0f1218");
+    var bg = ctx.createLinearGradient(0, 0, W * 0.6, H);
+    bg.addColorStop(0, POSTER.ink2);
+    bg.addColorStop(0.55, POSTER.ink);
+    bg.addColorStop(1, "#061a20");
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = accent;
-    ctx.globalAlpha = 0.16;
-    ctx.fillRect(0, 0, W, 6);
-    ctx.globalAlpha = 1;
 
-    var images = [loadArt(c.icon), loadArt(c.equippedWeapon && c.equippedWeapon.icon)];
-    var pieces = (c.equippedPieces || []).slice(0, 5);
-    pieces.forEach(function (piece) { images.push(loadArt(piece.icon)); });
+    var bloom = ctx.createRadialGradient(W * 0.16, 60, 20, W * 0.16, 60, 520);
+    bloom.addColorStop(0, hexA(accent, 0.3));
+    bloom.addColorStop(1, hexA(accent, 0));
+    ctx.fillStyle = bloom;
+    ctx.fillRect(0, 0, W, 520);
+
+    ctx.save();
+    ctx.globalAlpha = 0.04;
+    ctx.strokeStyle = POSTER.goldSoft;
+    for (var hx = -H; hx < W; hx += 26) {
+      ctx.beginPath();
+      ctx.moveTo(hx, H);
+      ctx.lineTo(hx + H, 0);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    strokeRound(ctx, 16, 16, W - 32, H - 32, 18, POSTER.line, 1);
+
+    var iconSize = 150;
+    var images = [loadArt(c.icon), loadArt(weapon && weapon.icon)];
+    artifacts.forEach(function (a) { images.push(loadArt(a.icon)); });
+    pieces.forEach(function (p) { images.push(loadArt(p.icon)); });
 
     Promise.all(images).then(function (loaded) {
       var avatar = loaded[0];
       var weaponIcon = loaded[1];
+
+      fillRound(ctx, PAD, 52, iconSize, iconSize, 18, hexA(accent, 0.16));
       if (avatar) {
         ctx.save();
-        roundRect(ctx, 36, 40, 148, 148, 18);
+        ctx.beginPath();
+        roundRect(ctx, PAD, 52, iconSize, iconSize, 18);
         ctx.clip();
-        ctx.drawImage(avatar, 36, 40, 148, 148);
+        ctx.drawImage(avatar, PAD, 52, iconSize, iconSize);
         ctx.restore();
-        ctx.strokeStyle = accent;
-        ctx.lineWidth = 3;
-        roundRect(ctx, 36, 40, 148, 148, 18);
-        ctx.stroke();
+      } else {
+        text(ctx, (c.name || "?").slice(0, 1), PAD + iconSize / 2, 52 + iconSize / 2 + 18, {
+          size: 56, weight: "600", color: POSTER.gold, align: "center",
+        });
       }
+      strokeRound(ctx, PAD, 52, iconSize, iconSize, 18, hexA(accent, 0.7), 2);
 
-      ctx.fillStyle = "#f2f4f8";
-      ctx.font = "600 34px system-ui, -apple-system, 'Segoe UI', sans-serif";
-      ctx.fillText(c.name || "", 208, 84);
+      var nameX = PAD + iconSize + 28;
+      text(ctx, c.name || "", nameX, 108, { size: 44, weight: "700", color: POSTER.text });
+      text(ctx, "Lv." + (c.level || 0), nameX, 146, { size: 18, weight: "600", color: POSTER.gold });
 
-      ctx.fillStyle = "#a9b1c1";
-      ctx.font = "16px system-ui, -apple-system, 'Segoe UI', sans-serif";
-      ctx.fillText(
-        "Lv." + c.level + " · " + (c.rarity || 0) + "★ · " + (c.elementZh || c.element || "") +
-        " · " + (c.weaponTypeZh || c.weaponType || ""),
-        208, 114,
-      );
-      ctx.fillText("命之座 " + (c.constellation || 0), 208, 140);
-      if (c.talents) {
-        ctx.fillText(
-          "天赋 " + [c.talents.auto, c.talents.skill, c.talents.burst]
-            .map(function (v) { return v == null ? "-" : v; }).join(" / "),
-          208, 166,
-        );
-      }
-
-      // weapon line
-      var y = 206;
-      if (weaponIcon) ctx.drawImage(weaponIcon, 36, y - 22, 44, 44);
-      ctx.fillStyle = "#e6e8ee";
-      ctx.font = "600 18px system-ui, -apple-system, 'Segoe UI', sans-serif";
-      var weapon = c.equippedWeapon;
-      ctx.fillText(weapon ? weapon.name : "未装备武器", 92, y);
-      if (weapon) {
-        ctx.fillStyle = "#a9b1c1";
-        ctx.font = "15px system-ui, -apple-system, 'Segoe UI', sans-serif";
-        ctx.fillText(
-          "Lv." + weapon.level + (weapon.refinement ? " · 精" + weapon.refinement : "") + " · " + weapon.rarity + "★",
-          92, y + 24,
-        );
-      }
-
-      // artifact pieces
-      ctx.fillStyle = "#a9b1c1";
-      ctx.font = "15px system-ui, -apple-system, 'Segoe UI', sans-serif";
-      ctx.fillText("已装备圣遗物", 36, 296);
-      pieces.forEach(function (piece, index) {
-        var x = 36 + index * 140;
-        var icon = loaded[2 + index];
-        if (icon) ctx.drawImage(icon, x, 312, 56, 56);
-        ctx.fillStyle = "#e6e8ee";
-        ctx.font = "14px system-ui, -apple-system, 'Segoe UI', sans-serif";
-        ctx.fillText((SLOT_ZH[piece.slot] || ""), x, 390);
-        ctx.fillStyle = "#a9b1c1";
-        ctx.font = "13px system-ui, -apple-system, 'Segoe UI', sans-serif";
-        ctx.fillText("+" + (piece.level == null ? "-" : piece.level), x, 410);
+      var pillX = nameX + 84;
+      var pills = [
+        "命之座 " + (c.constellation || 0),
+        (c.elementZh || c.element || "") + "元素",
+        c.weaponTypeZh || c.weaponType || "",
+        (c.rarity || 0) + "★",
+      ];
+      pills.forEach(function (label) {
+        ctx.font = "500 13px system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif";
+        var w = ctx.measureText(label).width + 20;
+        fillRound(ctx, pillX, 130, w, 24, 12, "rgba(255,255,255,0.05)");
+        strokeRound(ctx, pillX, 130, w, 24, 12, POSTER.line, 1);
+        text(ctx, label, pillX + w / 2, 146, { size: 13, color: POSTER.soft, align: "center" });
+        pillX += w + 8;
       });
 
-      if (!pieces.length) {
-        ctx.fillStyle = "#6f7787";
-        ctx.font = "14px system-ui, -apple-system, 'Segoe UI', sans-serif";
-        ctx.fillText("（没有圣遗物数据）", 36, 330);
+      var uidText = c.uid || accountUid;
+      if (uidText) {
+        text(ctx, "UID " + uidText, W - PAD, 100, { size: 16, color: POSTER.soft, align: "right" });
+      }
+      text(ctx, "由 dsh-genshin-account 生成", W - PAD, 124, { size: 12, color: POSTER.dim, align: "right" });
+
+      var y = 232;
+      var talentDefs = [
+        ["普通攻击", c.talents && c.talents.auto],
+        ["元素战技", c.talents && c.talents.skill],
+        ["元素爆发", c.talents && c.talents.burst],
+      ];
+      var boxW = 96;
+      talentDefs.forEach(function (def, index) {
+        var x = PAD + index * (boxW + 10);
+        panel(ctx, x, y, boxW, 74, 12);
+        text(ctx, def[1] == null ? "-" : String(def[1]), x + boxW / 2, y + 40, {
+          size: 26, weight: "700", color: POSTER.text, align: "center",
+        });
+        text(ctx, def[0], x + boxW / 2, y + 60, { size: 11, color: POSTER.dim, align: "center" });
+      });
+
+      var scoreX = PAD + 3 * (boxW + 10) + 12;
+      var scoreW = W - PAD - scoreX;
+      panel(ctx, scoreX, y, scoreW, 74, 12, build ? POSTER.gold : null);
+      if (build) {
+        text(ctx, build.grade, scoreX + 22, y + 50, {
+          size: 34, weight: "800", color: build.grade === "C" ? POSTER.dim : POSTER.gold,
+        });
+        text(ctx, build.label, scoreX + 22, y + 66, { size: 11, color: POSTER.soft });
+        var metrics = [
+          ["CV 合计", String(build.cv)],
+          ["平均效率", build.efficiency + "%"],
+          ["平均 CV", String(build.averageCv)],
+          ["已读到", build.count + " 件"],
+        ];
+        metrics.forEach(function (pair, index) {
+          var mx = scoreX + 104 + index * ((scoreW - 120) / 4);
+          text(ctx, pair[1], mx, y + 44, { size: 19, weight: "700", color: POSTER.text });
+          text(ctx, pair[0], mx, y + 62, { size: 11, color: POSTER.dim });
+        });
+      } else {
+        text(ctx, "圣遗物详情只对游戏内「角色展柜」中的角色开放", scoreX + 22, y + 44, {
+          size: 13, color: POSTER.soft,
+        });
       }
 
-      ctx.fillStyle = "#6f7787";
-      ctx.font = "13px system-ui, -apple-system, 'Segoe UI', sans-serif";
-      ctx.fillText("dsh-genshin-account · " + new Date().toLocaleDateString("zh-CN"), 36, H - 20);
+      y = 330;
+      panel(ctx, PAD, y, W - PAD * 2, 96, 14, weapon ? RARITY_HEX[weapon.rarity] || POSTER.gold : null);
+      if (weaponIcon) {
+        ctx.save();
+        ctx.beginPath();
+        roundRect(ctx, PAD + 16, y + 18, 60, 60, 10);
+        ctx.clip();
+        ctx.drawImage(weaponIcon, PAD + 16, y + 18, 60, 60);
+        ctx.restore();
+      } else {
+        drawSlotGlyph(ctx, "plume", PAD + 46, y + 48, 34, POSTER.gold);
+      }
+      text(ctx, weapon ? weapon.name : "未装备武器", PAD + 92, y + 44, { size: 19, weight: "600" });
+      text(
+        ctx,
+        weapon
+          ? "Lv." + weapon.level + (weapon.refinement ? " · 精炼 " + weapon.refinement : "") + " · " + weapon.rarity + "★"
+          : "—",
+        PAD + 92, y + 70, { size: 13, color: POSTER.soft },
+      );
+      if (c.sets && c.sets.length) {
+        var setLine = c.sets.map(function (set) { return set.setName + " ×" + set.count; }).join("   ");
+        text(ctx, clipText(ctx, setLine, W - PAD * 2 - 380, 13), W - PAD - 20, y + 44, {
+          size: 13, color: POSTER.goldSoft, align: "right",
+        });
+        text(ctx, "套装件数", W - PAD - 20, y + 70, { size: 11, color: POSTER.dim, align: "right" });
+      }
+
+      y = 452;
+      text(ctx, "圣遗物", PAD, y, { size: 16, weight: "600", color: POSTER.text });
+      text(ctx, artifacts.length ? artifacts.length + " 件 · 主副词条与评分" : "暂无词条数据", W - PAD, y, {
+        size: 12, color: POSTER.dim, align: "right",
+      });
+      y += 16;
+
+      var list = artifacts.length ? artifacts : pieces;
+      list.forEach(function (item, index) {
+        var col = index % 3;
+        var row = Math.floor(index / 3);
+        var x = PAD + col * (cardW + 16);
+        var cy = y + row * (cardH + 16);
+        var grade = item.grade || "";
+        var gradeColor = grade === "极品" ? POSTER.gold : grade === "优秀" ? "#7fb2e5" : grade === "可用" ? "#7fc9a0" : POSTER.dim;
+        panel(ctx, x, cy, cardW, cardH, 14, RARITY_HEX[item.rarity] || POSTER.gold);
+
+        var icon = loaded[2 + index];
+        var iconY = cy + 14;
+        if (icon && icon.naturalWidth && icon.naturalWidth < 512) {
+          ctx.save();
+          ctx.beginPath();
+          roundRect(ctx, x + 14, iconY, 40, 40, 10);
+          ctx.clip();
+          ctx.drawImage(icon, x + 14, iconY, 40, 40);
+          ctx.restore();
+        } else {
+          drawSlotGlyph(ctx, item.slot, x + 34, iconY + 20, 26, gradeColor);
+        }
+        text(ctx, clipText(ctx, item.setName, cardW - 84, 13, "600"), x + 62, cy + 30, { size: 13, weight: "600" });
+        text(ctx, item.slotZh + " · +" + (item.level == null ? "-" : item.level), x + 62, cy + 47, {
+          size: 11, color: POSTER.dim,
+        });
+
+        var mainY = cy + 66;
+        fillRound(ctx, x + 14, mainY, cardW - 28, 34, 9, "rgba(255,255,255,0.04)");
+        text(ctx, item.mainStat ? item.mainStat.label : "主词条", x + 24, mainY + 22, { size: 11, color: POSTER.dim });
+        text(ctx, item.mainStat ? item.mainStat.text : "—", x + cardW - 24, mainY + 23, {
+          size: 16, weight: "700", align: "right",
+        });
+
+        var subs = item.subStats || [];
+        subs.slice(0, 4).forEach(function (sub, subIndex) {
+          var sy = mainY + 56 + subIndex * 21;
+          var crit = sub.key === "critRate_" || sub.key === "critDMG_";
+          text(ctx, sub.label, x + 18, sy, { size: 12, color: crit ? POSTER.goldSoft : POSTER.soft });
+          text(ctx, sub.text, x + cardW - 18, sy, {
+            size: 12, weight: crit ? "600" : "", color: crit ? POSTER.gold : POSTER.soft, align: "right",
+          });
+        });
+
+        var footY = cy + cardH - 40;
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.beginPath();
+        ctx.moveTo(x + 14, footY);
+        ctx.lineTo(x + cardW - 14, footY);
+        ctx.stroke();
+        text(ctx, String(item.cv), x + 18, footY + 26, { size: 18, weight: "700", color: gradeColor });
+        ctx.font = "700 18px system-ui, sans-serif";
+        text(ctx, "CV", x + 22 + ctx.measureText(String(item.cv)).width, footY + 26, { size: 10, color: POSTER.dim });
+        if (grade) {
+          text(ctx, grade + " " + item.efficiency + "%", x + cardW - 18, footY + 26, {
+            size: 11, weight: "600", color: gradeColor, align: "right",
+          });
+        }
+      });
+
+      if (effects.length) {
+        var ey = y + rows * (cardH + 16) + 4;
+        text(ctx, "生效套装效果", PAD, ey, { size: 14, weight: "600", color: POSTER.text });
+        effects.forEach(function (line, index) {
+          text(ctx, clipText(ctx, "· " + line, W - PAD * 2, 12), PAD, ey + 22 + index * 22, {
+            size: 12, color: POSTER.soft,
+          });
+        });
+      }
+
+      text(
+        ctx,
+        "数据来源：" + (c.source === "miyoushe" ? "米游社（扫码登录）" : c.source || "") + " · 圣遗物词条来自游戏内角色展柜",
+        PAD, H - 34, { size: 11, color: POSTER.dim },
+      );
+      text(ctx, new Date().toLocaleString("zh-CN"), W - PAD, H - 34, {
+        size: 11, color: POSTER.dim, align: "right",
+      });
 
       canvas.toBlob(function (blob) {
         if (!blob) return;
@@ -1406,8 +1745,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       }, "image/png");
     });
   }
-
-
   // ── page ────────────────────────────────────────────────────────────────
   function draftFrom(config) {
     var c = config || {};
@@ -1717,6 +2054,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             offerVerification(reason);
             return;
           }
+          accountUid = (data.state && data.state.uid) || (data.overview && data.overview.uid) || accountUid;
           setSummary(data);
           return data;
         })
@@ -2417,6 +2755,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     CharacterDetail: CharacterDetail,
     CharactersTab: CharactersTab,
     GachaTab: GachaTab,
+    exportImage: exportCharacterImage,
   };
   return module.exports;
 }});
