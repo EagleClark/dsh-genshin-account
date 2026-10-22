@@ -25,12 +25,13 @@ const check = (name, condition, detail) => {
 function createElement(type, props, ...children) {
   return { type, props: props || {}, children: children.flat() }
 }
-const TAB_OVERRIDE = process.env.DSH_TEST_TAB || ''
+const tabOverride = () => process.env.DSH_TEST_TAB || ''
 const stubReact = {
   createElement,
   useState: (initial) => {
     const value = typeof initial === 'function' ? initial() : initial
-    if (TAB_OVERRIDE && value === 'overview') return [TAB_OVERRIDE, () => {}]
+    const forced = tabOverride()
+    if (forced && (value === 'overview' || value === 'settings')) return [forced, () => {}]
     return [value, () => {}]
   },
   // Effects run so the form-resolution path is exercised, not just rendering.
@@ -475,6 +476,27 @@ check('gacha tab receives the analysis object', /analysis: gacha \|\| null/.test
 check('weapon cards reveal details on hover', clientSource.includes('dga-wPop') && clientSource.includes('onMouseEnter'), 'hover popover missing')
 check('artifact cards fall back to a slot glyph', clientSource.includes('SlotGlyph') && clientSource.includes('naturalWidth >= 512'), 'icon fallback missing')
 check('overview explains the server code', clientSource.includes('SERVER_LABEL') && clientSource.includes('cn_gf01: "天空岛"'), 'server label missing')
+// --- async surfaces: skeletons must actually exist --------------------------
+// The page opens on 设置, so the `loading && !summary` branch never ran in this
+// test before — which is exactly how a missing skeleton component shipped.
+process.env.DSH_TEST_TAB = 'overview'
+let coldTree = null
+let coldError = null
+try {
+  coldTree = flatten(expand(main.component({})))
+} catch (error) {
+  coldError = error
+}
+delete process.env.DSH_TEST_TAB
+check('cold overview renders without throwing', coldError === null, coldError && coldError.message)
+const skeletonNodes = []
+walk(coldTree, (node) => { if (className(node).includes('dga-skel')) skeletonNodes.push(node) })
+check('cold overview shows a skeleton, not bare text', skeletonNodes.length > 0, String(skeletonNodes.length))
+check(
+  'skeleton components are defined where they are used',
+  ['function Skeleton', 'function PanelSkeleton', 'function ListSkeleton'].every((needle) => clientSource.includes(needle)),
+  'a skeleton component is missing',
+)
 console.log('registrations:', registrations.map((entry) => entry.options.name + '(' + (entry.options.key || entry.options.id) + ')').join(', '))
 console.log('page root:', pageTree && pageTree.type, 'children:', pageTree && (pageTree.children || []).length)
 console.log('contract checked against', artifact.setName, artifact.main)

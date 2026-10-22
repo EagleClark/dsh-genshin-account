@@ -585,6 +585,35 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   // ── account overview ────────────────────────────────────────────────────
   var SERVER_LABEL = { cn_gf01: "天空岛", cn_qd01: "世界树" };
 
+  /** A pulsing placeholder block; async surfaces show these instead of a bare "读取中…". */
+  function Skeleton(props) {
+    return h("span", {
+      className: "dga-skel",
+      style: Object.assign({ display: "block", height: 12 }, props.style || {}),
+    });
+  }
+
+  /** Skeleton for the whole panel body while the first summary is in flight. */
+  function PanelSkeleton() {
+    return h("div", { className: "dga-skelStack" },
+      h(Skeleton, { style: { width: 180, height: 22 } }),
+      h(Skeleton, { style: { width: "55%", height: 12 } }),
+      h("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, minmax(0,1fr))", gap: 10, marginTop: 8 } },
+        [0, 1, 2, 3].map(function (i) { return h(Skeleton, { key: i, style: { height: 54, borderRadius: 12 } }); })),
+      h("div", { style: { display: "flex", flexDirection: "column", gap: 8, marginTop: 10 } },
+        [0, 1, 2, 3, 4].map(function (i) { return h(Skeleton, { key: i, style: { width: 86 - i * 9 + "%", height: 10 } }); })));
+  }
+
+  /** Skeleton for a list column (characters, weapons) while it loads. */
+  function ListSkeleton() {
+    return h("div", null,
+      [0, 1, 2, 3, 4, 5, 6, 7].map(function (i) {
+        return h("div", { className: "dga-skelRow", key: i },
+          h(Skeleton, { style: { width: 36, height: 36, borderRadius: 12, flex: "0 0 auto" } }),
+          h(Skeleton, { style: { width: 52 + ((i * 7) % 30) + "%", height: 11 } }));
+      }));
+  }
+
   /**
    * One element mark. Drawn inline instead of shipped as images: the seven
    * glyphs are a few paths each, they inherit the element colour, and they stay
