@@ -157,7 +157,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-verifyFrame{width:100%;max-width:560px;height:520px;margin-top:12px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-layer-2)}",
     ".dga-art{display:inline-flex;align-items:center;justify-content:center;object-fit:cover;border-radius:12px;border:2px solid transparent;background:var(--dsw-alias-bg-layer-2);flex:0 0 auto}",
     ".dga-art-ph{color:var(--dsw-alias-label-tertiary);font-weight:600;font-size:18px}",
-    ".dga-hero{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 20px;margin:16px 20px 4px;border:1px solid var(--dsw-alias-border-l2);border-radius:16px;background:linear-gradient(135deg,var(--dsw-alias-bg-layer-2),var(--dsw-alias-bg-base))}",
+    ".dga-hero{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 20px;margin:0 0 20px;border:1px solid var(--dsw-alias-border-l2);border-radius:16px;background:linear-gradient(135deg,var(--dsw-alias-bg-layer-2),var(--dsw-alias-bg-base))}",
     ".dga-heroMain{flex:1;min-width:190px}",
     ".dga-heroName{font-size:22px;font-weight:650;margin-bottom:4px}",
     ".dga-heroMeta{color:var(--dsw-alias-label-tertiary);font-size:12px}",
@@ -165,11 +165,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-tile{min-width:78px;padding:10px 14px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);text-align:center}",
     ".dga-tileValue{font-size:20px;font-weight:650;line-height:1.2}",
     ".dga-tileLabel{color:var(--dsw-alias-label-tertiary);font-size:11px;margin-top:2px}",
-    ".dga-avatarRow{display:flex;gap:14px;flex-wrap:wrap}",
-    ".dga-avatarCell{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:64px}",
-    ".dga-avatarCell:hover .dga-art{border-color:var(--dsw-alias-label-dimmed)}",
-    ".dga-avatarLv{font-size:11px;color:var(--dsw-alias-label-secondary)}",
-    ".dga-avatarName{font-size:11px;color:var(--dsw-alias-label-tertiary);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
     ".dga-bars{display:flex;flex-direction:column;gap:7px}",
     ".dga-barRow{display:flex;align-items:center;gap:10px;font-size:12px}",
     ".dga-barLabel{width:20px;color:var(--dsw-alias-label-secondary)}",
@@ -658,7 +653,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var progress = o.progress || {};
     var list = o.elementList || [];
     var total = list.reduce(function (sum, entry) { return sum + entry.count; }, 0) || 1;
-    var top = (props.topCharacters || []).slice(0, 8);
     var all = props.allCharacters || [];
     var five = all.filter(function (c) { return c.rarity === 5; }).length;
     var four = all.filter(function (c) { return c.rarity === 4; }).length;
@@ -724,21 +718,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h(StatTile, { value: String(five), label: "五星" }),
           h(StatTile, { value: String(four), label: "四星" }),
           h(StatTile, { value: String(showcase), label: "展柜" }))),
-
-      top.length
-        ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "等级最高的角色"),
-            h("div", { className: "dga-avatarRow" }, top.map(function (c) {
-              return h("div", {
-                className: "dga-avatarCell",
-                key: c.id,
-                onClick: function () { if (props.onOpenCharacter) props.onOpenCharacter(c.name); },
-              },
-                h(Art, { src: c.icon, alt: c.name, size: 56, style: { borderColor: elementColor(c.element) } }),
-                h("span", { className: "dga-avatarLv" }, "Lv." + c.level),
-                h("span", { className: "dga-avatarName" }, c.name));
-            })))
-        : null,
 
       list.length
         ? h("div", { className: "dga-block" },
@@ -2197,7 +2176,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     } else if (tab === "overview") {
       body = h(OverviewTab, {
         overview: summary.overview,
-        topCharacters: (summary.characters || []).slice(0, 8),
         allCharacters: summary.characters || [],
         onOpenCharacter: function (name) {
           setTab("characters");
