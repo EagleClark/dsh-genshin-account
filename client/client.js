@@ -69,16 +69,23 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-title{font-size:15px;font-weight:600;margin:0}",
     ".dga-sub{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.5}",
     ".dga-grow{flex:1;min-width:0}",
-    ".dga-btn{appearance:none;font:inherit;cursor:pointer;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-secondary);border-radius:8px;padding:5px 14px;font-size:13px;line-height:1.5}",
+    ".dga-btn{appearance:none;font:inherit;cursor:pointer;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-secondary);border-radius:8px;padding:6px 14px;min-height:32px;font-size:13px;line-height:1.5;transition:transform .12s ease,color .12s ease,border-color .12s ease}",
+    ".dga-btn:active:not(:disabled){transform:translateY(1px)}",
+    ".dga-btn:focus-visible{outline:2px solid var(--dga-gold);outline-offset:2px}",
     ".dga-btn:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}",
     ".dga-btn:disabled{opacity:.45;cursor:default}",
     ".dga-btn-primary{background:var(--dsw-alias-label-primary);color:var(--dsw-alias-bg-layer-3);border-color:transparent}",
     ".dga-tabs{display:flex;gap:4px;padding:10px 20px 0;flex:0 0 auto;border-bottom:1px solid var(--dsw-alias-border-l2)}",
-    ".dga-tab{appearance:none;font:inherit;cursor:pointer;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dsw-alias-label-tertiary);padding:6px 12px 8px;font-size:13px}",
+    ".dga-tab{appearance:none;font:inherit;cursor:pointer;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dsw-alias-label-tertiary);padding:8px 12px 9px;min-height:36px;font-size:13px;transition:color .12s ease}",
+    ".dga-tab:focus-visible{outline:2px solid var(--dga-gold);outline-offset:-2px}",
     ".dga-tab:hover{color:var(--dsw-alias-label-primary)}",
     ".dga-tab-on{color:var(--dsw-alias-label-primary);border-bottom-color:var(--dsw-alias-brand-primary)}",
     ".dga-body{flex:1;min-height:0;display:flex;overflow:hidden}",
-    ".dga-scroll{overflow:auto;padding:16px 20px}",
+    // Thin, themed scrollbars: polished surface, still fully scrollable.
+    ".dga-scroll{overflow:auto;padding:16px 20px;scrollbar-width:thin;scrollbar-color:var(--dsw-alias-label-dimmed) transparent}",
+    ".dga-scroll::-webkit-scrollbar{width:8px;height:8px}",
+    ".dga-scroll::-webkit-scrollbar-thumb{background:var(--dsw-alias-label-dimmed);border-radius:999px;opacity:.5}",
+    ".dga-scroll::-webkit-scrollbar-track{background:transparent}",
     ".dga-col-list{width:260px;flex:0 0 auto;border-right:1px solid var(--dsw-alias-border-l2);overflow:auto;padding:10px}",
     ".dga-col-detail{flex:1;min-width:0;overflow:auto;padding:16px 20px}",
     ".dga-searcher{width:100%;box-sizing:border-box;font:inherit;font-size:13px;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:8px;padding:6px 10px;margin-bottom:8px}",
@@ -105,6 +112,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-table tr:last-child td{border-bottom:none}",
     ".dga-num{font-variant-numeric:tabular-nums;white-space:nowrap}",
     ".dga-empty{color:var(--dsw-alias-label-tertiary);padding:32px 4px;line-height:1.8}",
+    "@keyframes dgaPulse{0%,100%{opacity:.55}50%{opacity:1}}",
+    ".dga-skel{border-radius:8px;background:var(--dsw-alias-bg-layer-3);animation:dgaPulse 1.4s ease-in-out infinite}",
+    ".dga-skelRow{display:flex;align-items:center;gap:10px;padding:7px 8px}",
+    ".dga-skelStack{display:flex;flex-direction:column;gap:14px;padding:18px 20px}",
     ".dga-err{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-state-error-primary);border-radius:10px;padding:12px 16px;color:var(--dsw-alias-label-primary);line-height:1.7;white-space:pre-wrap}",
     ".dga-grade{font-weight:600}",
     ".dga-muted{color:var(--dsw-alias-label-tertiary)}",
@@ -184,7 +195,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     // artifact cards
     ".dga-artiGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;margin-bottom:6px}",
     ".dga-artiCard{position:relative;padding:12px 13px 11px;border-radius:14px;background:linear-gradient(158deg, var(--dsw-alias-bg-layer-2), var(--dsw-alias-bg-layer-1));border:1px solid var(--dsw-alias-border-l2);overflow:hidden}",
-    ".dga-artiCard:hover{border-color:var(--dsw-alias-label-dimmed)}",
+    ".dga-artiCard{transition:transform .14s ease,border-color .14s ease}",
+    ".dga-artiCard:hover{transform:translateY(-1px);border-color:var(--dsw-alias-label-dimmed)}",
     ".dga-artiAccent{position:absolute;inset:0 auto 0 0;width:3px}",
     ".dga-artiHead{display:flex;align-items:center;gap:10px;margin-bottom:10px}",
     ".dga-artiIcon{background:var(--dga-gold-soft);border-color:transparent;border-radius:12px}",
@@ -204,7 +216,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-cvV{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}",
     ".dga-cvL{font-size:10px;color:var(--dsw-alias-label-tertiary)}",
     ".dga-meter{flex:1;height:6px;border-radius:999px;background:var(--dsw-alias-bg-layer-3);overflow:hidden}",
-    ".dga-meterFill{display:block;height:100%;border-radius:999px;transition:width .25s}",
+    ".dga-meterFill{display:block;height:100%;width:100%;border-radius:999px;transform-origin:left center;transition:transform .28s ease}",
     ".dga-gradePill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}",
     ".dga-showcaseTag{font-size:10px;line-height:15px;padding:0 6px;border-radius:999px;border:1px solid color-mix(in srgb, var(--dga-gold) 45%, transparent);background:color-mix(in srgb, var(--dga-gold) 16%, transparent);color:#d8b566;white-space:nowrap}",
     ".dga-rowBadges{display:flex;align-items:center;gap:6px;flex:0 0 auto}",
@@ -247,8 +259,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     // weapon hover card
     ".dga-wCardRel{position:relative}",
-    ".dga-wCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
-    ".dga-wPop{position:absolute;left:0;top:calc(100% + 6px);z-index:20;width:250px;padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-3));border:1px solid var(--dsw-alias-border-l2);box-shadow:0 12px 32px rgba(0,0,0,.22);font-size:12px;line-height:1.7}",
+    ".dga-wCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);transition:transform .14s ease,border-color .14s ease}",
+    ".dga-wCardRel:hover .dga-wCard{transform:translateY(-1px);border-color:var(--dsw-alias-label-dimmed)}",
+    ".dga-wPop{position:absolute;left:0;top:calc(100% + 6px);z-index:20;width:320px;max-height:340px;overflow:auto;padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-3));border:1px solid var(--dsw-alias-border-l2);box-shadow:0 12px 32px rgba(0,0,0,.22);font-size:12px;line-height:1.75}",
+    ".dga-wPopStats{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin-bottom:8px}",
+    ".dga-wPopPassive{font-weight:600;color:var(--dsw-alias-label-primary);margin-bottom:2px}",
+    ".dga-wPopRefine{color:var(--dsw-alias-label-secondary)}",
+    ".dga-wPopLore{margin-top:8px;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-tertiary);font-style:italic}",
     ".dga-wPopRow{display:flex;justify-content:space-between;gap:12px}",
     ".dga-wPopK{color:var(--dsw-alias-label-tertiary)}",
     ".dga-wPopV{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}",
@@ -514,7 +531,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h("span", { className: "dga-cvV", style: { color: color } }, String(a.cv)),
           h("span", { className: "dga-cvL" }, "CV")),
         h("div", { className: "dga-meter" },
-          h("span", { className: "dga-meterFill", style: { width: efficiency + "%", background: color } })),
+          h("span", { className: "dga-meterFill", style: { transform: "scaleX(" + efficiency / 100 + ")", background: color } })),
         h("span", {
           className: "dga-gradePill",
           style: {
@@ -681,7 +698,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       top.length
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "练度最高的角色"),
+            h("div", { className: "dga-sec" }, "等级最高的角色"),
             h("div", { className: "dga-avatarRow" }, top.map(function (c) {
               return h("div", {
                 className: "dga-avatarCell",
@@ -726,9 +743,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       (function () {
         if (!all.length) return null;
-        var bands = { "90": 0, "80-89": 0, "70-79": 0, "1-69": 0 };
+        var bands = { "90+": 0, "90": 0, "80-89": 0, "70-79": 0, "1-69": 0 };
         all.forEach(function (c) {
-          if (c.level >= 90) bands["90"] += 1;
+          if (c.level > 90) bands["90+"] += 1;
+          else if (c.level >= 90) bands["90"] += 1;
           else if (c.level >= 80) bands["80-89"] += 1;
           else if (c.level >= 70) bands["70-79"] += 1;
           else bands["1-69"] += 1;
@@ -736,9 +754,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         var maxBand = Math.max.apply(null, Object.keys(bands).map(function (k) { return bands[k]; })) || 1;
         return h("div", { className: "dga-block" },
           h("div", { className: "dga-sec" }, "等级分布"),
-          h("div", { className: "dga-bars" }, ["90", "80-89", "70-79", "1-69"].map(function (band) {
+          h("div", { className: "dga-bars" }, ["90+", "90", "80-89", "70-79", "1-69"].map(function (band) {
             return h("div", { className: "dga-barRow", key: band },
-              h("span", { className: "dga-barLabel", style: { width: 56 } }, band === "90" ? "Lv.90" : band),
+              h("span", { className: "dga-barLabel", style: { width: 56 } }, band === "90" ? "Lv.90" : band === "90+" ? "Lv.90+" : band),
               h("span", { className: "dga-barTrack" },
                 h("span", {
                   className: "dga-barFill",
@@ -842,8 +860,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               return h(ArtifactCard, { key: index, a: a });
             })),
             h("p", { className: "dga-hint" },
-              "CV = 暴击率 × 2 + 暴击伤害（只算副词条）；效率 = 副词条相对 5★ 顶档强化的达成率，100% 表示每次强化都吃到最高档。" +
-              "评级：CV ≥ 40 或效率 ≥ 85 为极品，≥ 30 / ≥ 70 为优秀，≥ 20 / ≥ 55 为可用，其余为一般。金色的两条是双暴词条。"))
+              "CV = 暴击率×2 + 暴击伤害，只算副词条；效率 = 相对 5★ 顶档的达成率。评级线：CV 40 / 30 / 20，效率 85 / 70 / 55。"))
         : pieces.length
           ? h("div", { className: "dga-block" },
               h("div", { className: "dga-sec" }, "已装备圣遗物"),
@@ -946,7 +963,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         })),
       h("div", { className: "dga-col-detail" },
         props.loading
-          ? h("div", { className: "dga-empty" }, "读取中…")
+          ? h("div", { className: "dga-col-detail" }, h(ListSkeleton))
           : h(CharacterDetail, { character: props.selected, onExport: props.onExport })));
   }
 
@@ -958,7 +975,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var rarityState = React.useState(0);
     var rarityFilter = rarityState[0], setRarityFilter = rarityState[1];
 
-    if (props.loading) return h("div", { className: "dga-empty" }, "读取中…");
+    if (props.loading) return h("div", { className: "dga-skelStack" }, h(ListSkeleton), h(ListSkeleton));
     if (!rows.length) return h("div", { className: "dga-empty" }, "没有武器数据。");
 
     var types = ["sword", "claymore", "polearm", "bow", "catalyst"];
@@ -997,7 +1014,35 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       })));
   }
 
-  /** One weapon card; hovering reveals the fields the grid has no room for. */
+  /**
+   * The hover card: the weapon's own page — max-level stats, passive text at the
+   * current refinement, and the lore line. Name/type/rarity/level/owner are
+   * already on the card, so repeating them here would waste the popover.
+   */
+  function WeaponPopover(props) {
+    var w = props.w;
+    var d = w.detail;
+    if (!d) {
+      return h("div", { className: "dga-wPop" },
+        h("div", { className: "dga-hint", style: { margin: 0 } }, "暂无这把武器的资料。"));
+    }
+    var refineIndex = Math.max(0, Math.min(4, (Number(w.refinement) || 1) - 1));
+    var passiveText = (d.refines && d.refines[refineIndex]) || (d.refines && d.refines[0]) || "";
+    return h("div", { className: "dga-wPop" },
+      h("div", { className: "dga-wPopStats" },
+        h("span", { className: "dga-wPopK" }, "基础攻击力"),
+        h("span", { className: "dga-wPopV" }, d.baseAtk == null ? "—" : String(d.baseAtk)),
+        h("span", { className: "dga-wPopK" }, "副属性"),
+        h("span", { className: "dga-wPopV" }, d.subLabel ? d.subLabel + " " + (d.subValue || "") : "—")),
+      d.passive
+        ? h("div", null,
+            h("div", { className: "dga-wPopPassive" }, d.passive + (w.refinement ? " · 精炼 " + w.refinement : "")),
+            h("div", { className: "dga-wPopRefine" }, passiveText))
+        : null,
+      d.lore ? h("div", { className: "dga-wPopLore" }, d.lore) : null);
+  }
+
+  /** One weapon card; hovering reveals the weapon's own details. */
   function WeaponCard(props) {
     var w = props.w;
     var hoverState = React.useState(false);
@@ -1016,13 +1061,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             (w.refinement ? " · 精" + w.refinement : "")),
           h("div", { className: "dga-sub" }, w.owner ? "装备于 " + w.owner : "未装备"))),
       hover
-        ? h("div", { className: "dga-wPop" },
-            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "名称"), h("span", { className: "dga-wPopV" }, w.name)),
-            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "类型"), h("span", { className: "dga-wPopV" }, w.typeZh)),
-            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "稀有度"), h("span", { className: "dga-wPopV" }, w.rarity + "★")),
-            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "等级"), h("span", { className: "dga-wPopV" }, "Lv." + w.level)),
-            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "精炼"), h("span", { className: "dga-wPopV" }, w.refinement ? "精炼 " + w.refinement + " 阶" : "—")),
-            h("div", { className: "dga-wPopRow" }, h("span", { className: "dga-wPopK" }, "装备者"), h("span", { className: "dga-wPopV" }, w.owner || "未装备")))
+        ? h(WeaponPopover, { w: w })
         : null);
   }
 
@@ -2122,7 +2161,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         verifyBoxRef: verifyBoxRef,
       });
     } else if (loading && !summary) {
-      body = h("div", { className: "dga-empty" }, "读取中…");
+      body = h(PanelSkeleton);
     } else if (!summary) {
       body = h("div", { className: "dga-empty" },
         "还没有可显示的数据。" + (configured === false ? "先到「设置」里选一种数据源。" : "配置好数据源后点右上角「同步」。"));

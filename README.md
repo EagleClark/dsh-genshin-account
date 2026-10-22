@@ -133,6 +133,7 @@ dsh plugin --profile web add <仓库绝对路径>
 | `aliases.json` | `"HuTao"` → `10000046` 这类 key 索引（大小写与标点无关） |
 | `names-zh.json` | 接口返回的 hash/id → 中文名（含词条名） |
 | `skill-orders.json` | 每个角色的「普攻/战技/爆发」技能 id 顺序 |
+| `weapon-details.json` | 255 把武器的 90 级基础攻击力、副属性、被动（精炼 1–5 原文）与故事 |
 
 **为什么需要 `skill-orders.json`**：技能 id **不是**按 普攻→战技→爆发 递增的（神里绫华的普攻 id 比爆发 id 大），按 id 排序会把天赋等级张冠李戴。
 
@@ -152,6 +153,7 @@ PREVIEW_LOCAL=1 REACT_DIR=%TEMP%\ga-react node scripts/ui-preview.mjs   # 用仓
 node scripts/build-dict.mjs <genshin-db 路径>
 node scripts/build-names.mjs
 node scripts/build-skill-orders.mjs
+node scripts/build-weapon-details.mjs   # 需要 genshin-db：npm i --prefix %TEMP%\gsdb genshin-db，并设 GENSHIN_DB_DIR
 ```
 
 游戏更新后角色/武器/圣遗物名字缺失时，重跑上面三条即可；插件本身不需要改代码。
