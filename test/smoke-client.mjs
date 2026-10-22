@@ -472,6 +472,9 @@ check('wish history charts months and pity', clientSource.includes('dga-monthCha
 // The gacha state holds the analysis object itself; reading `.analysis` off it
 // once blanked the whole tab, so pin the binding down.
 check('gacha tab receives the analysis object', /analysis: gacha \|\| null/.test(clientSource), 'analysis binding changed')
+check('weapon cards reveal details on hover', clientSource.includes('dga-wPop') && clientSource.includes('onMouseEnter'), 'hover popover missing')
+check('artifact cards fall back to a slot glyph', clientSource.includes('SlotGlyph') && clientSource.includes('naturalWidth >= 512'), 'icon fallback missing')
+check('overview explains the server code', clientSource.includes('SERVER_LABEL') && clientSource.includes('cn_gf01: "天空岛"'), 'server label missing')
 console.log('registrations:', registrations.map((entry) => entry.options.name + '(' + (entry.options.key || entry.options.id) + ')').join(', '))
 console.log('page root:', pageTree && pageTree.type, 'children:', pageTree && (pageTree.children || []).length)
 console.log('contract checked against', artifact.setName, artifact.main)
