@@ -115,7 +115,7 @@ function render(name, element) {
 
 const pageResult = render('page', React.createElement(page.component, {}))
 check('page renders with real React', pageResult.error === null, pageResult.error)
-check('page output mentions the plugin', pageResult.html.includes('原神账号'), pageResult.html.slice(0, 200))
+check('page output shows the panel name', pageResult.html.includes('原神启动'), pageResult.html.slice(0, 200))
 const cardCount = (pageResult.html.match(/class="dga-src(?=[" ])/g) || []).length
 check('page output no longer renders source cards', cardCount === 0, String(cardCount))
 

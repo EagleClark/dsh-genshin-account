@@ -131,6 +131,7 @@ check('main has a key', main && typeof main.options.key === 'string' && main.opt
 check('key is not the reserved conversation panel', main && main.options.key !== 'conversation', main && main.options.key)
 check('panellist id matches main key', main && icon && icon.options.id === main.options.key, (main && main.options.key) + ' vs ' + (icon && icon.options.id))
 check('panellist has an order', icon && typeof icon.options.order === 'number')
+check('panellist label is the panel name', (typeof icon.options.label === 'function' ? icon.options.label() : icon.options.label).includes('原神启动'), 'label')
 check('panellist label resolves', typeof icon.options.label === 'function' ? typeof icon.options.label() === 'string' : typeof icon.options.label === 'string')
 check('icon component is a function', typeof icon.component === 'function')
 check('page component is a function', typeof main.component === 'function')

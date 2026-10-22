@@ -650,36 +650,104 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
    * glyphs are a few paths each, they inherit the element colour, and they stay
    * crisp in both themes without a sprite sheet.
    */
+  /**
+   * The seven elemental marks.
+   *
+   * Drawn as vector art in the element's own colour: a flame, a droplet with a
+   * wave, a swirl, a bolt, a snowflake, a faceted rhombus and a leaf. The shapes
+   * follow the in-game symbols rather than generic icons, and they scale to any
+   * size because they are paths, not a sprite sheet.
+   */
+  var ELEMENT_ART = {
+    pyro: {
+      fill: "M12 2.3c3.6 4 5.6 7 5.6 9.6a5.6 5.6 0 0 1-11.2 0c0-2 1-3.8 2.3-5.3.1 1.4.7 2.4 1.7 2.9-.3-2.7.4-5.2 1.6-7.2Z",
+    },
+    hydro: {
+      fill: "M12 2.4c3.8 4.5 5.8 7.5 5.8 10a5.8 5.8 0 1 1-11.6 0c0-2.5 2-5.5 5.8-10Z",
+      inner: "M8.7 12.4c1.2.9 2.3.9 3.4-.1s2.2-1 3.2 0c.5.5 1 .7 1.5.6",
+    },
+    anemo: {
+      stroke: "M4.2 9.1h9.6a2.9 2.9 0 1 0-2.9-2.9M4.2 14.9h11.9a2.9 2.9 0 1 1-2.9 2.9",
+    },
+    electro: {
+      fill: "M13.9 2 6 13.4h4.3L9 22l7.9-11.5h-4.4L13.9 2Z",
+    },
+    cryo: {
+      stroke: "M12 2.6v18.8M4 7.3l16 9.4M20 7.3 4 16.7",
+      barbs: [
+        "M10.2 4.4 12 6.2l1.8-1.8",
+        "M10.2 19.6 12 17.8l1.8 1.8",
+        "M5.3 10.1l2.5.5.5-2.5",
+        "M18.7 13.9l-2.5-.5-.5 2.5",
+        "M5.3 13.9l2.5-.5.5 2.5",
+        "M18.7 10.1l-2.5.5-.5-2.5",
+      ],
+    },
+    geo: {
+      fill: "M12 2.8 20.4 12 12 21.2 3.6 12Z",
+      inner: "M12 7.4 16.4 12 12 16.6 7.6 12Z",
+    },
+    dendro: {
+      stroke: "M12 20.8V9.6M12 9.6c0-3.6 2.6-6 6.9-6 0 4.4-2.6 7-6.9 7ZM12 13.4c0-3.6-2.6-6-6.9-6 0 4.4 2.6 7 6.9 7Z",
+    },
+    none: {
+      stroke: "M12 3.6a8.4 8.4 0 1 0 0 16.8 8.4 8.4 0 0 0 0-16.8Z",
+      dashed: true,
+    },
+  };
+
   function ElementGlyph(props) {
-    var key = props.element || "none";
+    var key = ELEMENT_ART[props.element] ? props.element : "none";
+    var art = ELEMENT_ART[key];
     var color = elementColor(key);
     var size = props.size || 18;
-    var paths = {
-      pyro: "M12 3c2.6 3.2 4 5.4 4 7.4a4 4 0 0 1-8 0C8 8.4 9.4 6.2 12 3Z",
-      hydro: "M12 3.4c3.2 3.8 5.2 6.3 5.2 8.8a5.2 5.2 0 0 1-10.4 0c0-2.5 2-5 5.2-8.8Z",
-      anemo: "M4 9.2h9.4a2.6 2.6 0 1 0-2.6-2.6M4 14.6h12a2.6 2.6 0 1 1-2.6 2.6",
-      electro: "M13.4 2.4 6.2 13.4h4.4l-1.2 8.2 8-11.6h-4.6l.6-7.6Z",
-      cryo: "M12 3.2v17.6M4.4 7.6l15.2 8.8M19.6 7.6 4.4 16.4",
-      geo: "M12 3.2 19.6 12 12 20.8 4.4 12Z",
-      dendro: "M12 20.6V9.4M12 9.4c0-3.1 2.2-5.2 6.2-5.2 0 4.1-2.2 6.3-6.2 6.3ZM12 13.2c0-3.1-2.2-5.2-6.2-5.2 0 4.1 2.2 6.3 6.2 6.3Z",
-      none: "M12 4.6a7.4 7.4 0 1 0 0 14.8 7.4 7.4 0 0 0 0-14.8Z",
-    };
-    var filled = key === "pyro" || key === "hydro" || key === "electro" || key === "geo";
+    var parts = [];
+    if (art.fill) {
+      parts.push(h("path", { key: "f", d: art.fill, fill: color }));
+    }
+    if (art.inner) {
+      // Light stroke over the filled body: reads as the engraved detail on the
+      // in-game symbol without needing a lighter tint per element.
+      parts.push(h("path", {
+        key: "i",
+        d: art.inner,
+        fill: "none",
+        stroke: "rgba(255,255,255,0.72)",
+        strokeWidth: 1.2,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+      }));
+    }
+    if (art.stroke) {
+      parts.push(h("path", {
+        key: "s",
+        d: art.stroke,
+        fill: "none",
+        stroke: color,
+        strokeWidth: 1.7,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        strokeDasharray: art.dashed ? "2.4 2.6" : undefined,
+      }));
+    }
+    (art.barbs || []).forEach(function (d, index) {
+      parts.push(h("path", {
+        key: "b" + index,
+        d: d,
+        fill: "none",
+        stroke: color,
+        strokeWidth: 1.5,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+      }));
+    });
     return h("svg", {
       className: "dga-elemIcon",
       width: size,
       height: size,
       viewBox: "0 0 24 24",
       "aria-hidden": "true",
-    },
-      h("path", {
-        d: paths[key] || paths.none,
-        fill: filled ? color : "none",
-        stroke: color,
-        strokeWidth: filled ? 1 : 1.7,
-        strokeLinecap: "round",
-        strokeLinejoin: "round",
-      }));
+    }, parts);
   }
 
   function OverviewTab(props) {
@@ -757,7 +825,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       list.length
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "元素分布"),
+            h("div", { className: "dga-sec" }, "角色元素分布"),
             h("div", { className: "dga-bars" }, list.map(function (entry) {
               return h("div", { className: "dga-elemRow", key: entry.key },
                 h(ElementGlyph, { element: entry.key }),
@@ -2550,7 +2618,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     return h("div", { className: "dga-root" },
       h("div", { className: "dga-head" },
         h("div", { className: "dga-grow" },
-          h("div", { className: "dga-title" }, "原神账号"),
+          h("div", { className: "dga-title" }, "《原神启动》"),
           h("div", { className: "dga-sub" },
             state
               ? (SOURCE_LABEL[state.source] || state.source) +
@@ -2624,7 +2692,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         return h("div", { className: "dga-root" },
           h("div", { className: "dga-scroll" },
             h("div", { className: "dga-err" },
-              "原神账号面板渲染出错：\n" +
+              "《原神启动》面板渲染出错：\n" +
               String((this.state.error && this.state.error.message) || this.state.error) +
               "\n\n详细信息已上报，可以把这段文字发给开发者。")));
       }
@@ -2695,7 +2763,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     owned.push(
       ctx.slots.inject("sidebar.panellist", function () {
         return ctx.slots.register(
-          { name: "sidebar.panellist", id: PANEL_ID, order: 20, label: function () { return "原神账号"; }, registrant: PKG },
+          { name: "sidebar.panellist", id: PANEL_ID, order: 20, label: function () { return "《原神启动》"; }, registrant: PKG },
           GenshinIcon,
         );
       }),
