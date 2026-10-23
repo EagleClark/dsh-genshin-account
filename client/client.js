@@ -461,6 +461,22 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     dendro: "var(--dga-el-dendro)",
     none: "var(--dga-el-none)",
   };
+  /**
+   * Rarity tint used behind item and character icons.
+   *
+   * This is the game's own rarity palette: 5★ gold-orange, 4★ purple, 3★ blue,
+   * 2★ green, 1★ grey. 3★ is blue, not red — the wish screen shows 3★ weapons on
+   * a blue card.
+   */
+  var RARITY_TINT = { 5: "#e0a33e", 4: "#a256e1", 3: "#4f8fe0", 2: "#3fa05e", 1: "#8e8e8e" };
+
+  /** Soft radial tint so the icon sits on a rarity card instead of transparent. */
+  function rarityBackground(rarity) {
+    var tint = RARITY_TINT[Number(rarity)] || RARITY_TINT[1];
+    return "radial-gradient(125% 125% at 50% 0%, color-mix(in srgb, " + tint +
+      " 62%, transparent), color-mix(in srgb, " + tint + " 20%, transparent))";
+  }
+
   var RARITY_COLOR = { 5: "var(--dga-gold)", 4: "#9c7bb8", 3: "#5f8fc0", 2: "#5c9c6a", 1: "#8b93a5" };
 
   function elementColor(element) {
@@ -584,6 +600,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   /** Official art from the miHoYo CDN; degrades to a coloured placeholder. */
   function Art(props) {
     var style = Object.assign({ width: props.size, height: props.size }, props.style || {});
+    if (props.rarity) {
+      var tint = RARITY_TINT[Number(props.rarity)] || RARITY_TINT[1];
+      var elementRing = style.borderColor;
+      style.borderColor = tint;
+      style.background = rarityBackground(props.rarity);
+      if (elementRing) style.boxShadow = "inset 0 0 0 1.5px " + elementRing;
+    }
     // A broken URL (a dead CDN, a stale hash) must degrade to the same letter
     // placeholder as a missing one instead of leaving an empty square.
     var brokenState = React.useState(false);
@@ -956,7 +979,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     return h("div", { className: "dga-detail" },
       h("div", { className: "dga-charHead" },
-        h(Art, { src: c.icon, alt: c.name, size: 76, style: { borderColor: color } }),
+        h(Art, { src: c.icon, alt: c.name, size: 76, rarity: c.rarity, style: { borderColor: color } }),
         h("div", { className: "dga-charHeadText" },
           h("div", { className: "dga-charName" }, c.name),
           h("div", { className: "dga-sub" },
@@ -1007,7 +1030,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             h("div", { className: "dga-sec" }, "武器"),
             h(WeaponHover, { weapon: weapon, children: function (hover) {
               return h("div", { className: "dga-inline" + (hover ? " dga-inlineHover" : "") },
-                h(Art, { src: weapon.icon, alt: weapon.name, size: 48 }),
+                h(Art, { src: weapon.icon, alt: weapon.name, size: 48, rarity: weapon.rarity }),
                 h("div", null,
                   h("div", null, weapon.name),
                   h("div", { className: "dga-sub" },
@@ -1119,7 +1142,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             className: "dga-row" + (selected && selected.id === c.id ? " dga-row-on" : ""),
             onClick: function () { props.onSelect(c.name); },
           },
-            h(Art, { src: c.icon, alt: c.name, size: 36, style: { borderColor: elementColor(c.element) } }),
+            h(Art, { src: c.icon, alt: c.name, size: 36, rarity: c.rarity, style: { borderColor: elementColor(c.element) } }),
             h("span", { className: "dga-rowname" }, c.name),
             h("div", { className: "dga-rowBadges" },
               c.showcase ? h("span", { className: "dga-showcaseTag", title: "在游戏内角色展柜里，能读到圣遗物主副词条" }, "展柜") : null),
@@ -1674,7 +1697,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       var avatar = loaded[0];
       var weaponIcon = loaded[1];
 
-      fillRound(ctx, PAD, 52, iconSize, iconSize, 18, hexA(accent, 0.16));
+      var plateTint = RARITY_HEX[c.rarity] || POSTER.gold;
+      fillRound(ctx, PAD, 52, iconSize, iconSize, 18, hexA(plateTint, 0.22));
       if (avatar) {
         ctx.save();
         ctx.beginPath();

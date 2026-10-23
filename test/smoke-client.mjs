@@ -483,6 +483,9 @@ check('overview explains the server code', clientSource.includes('SERVER_LABEL')
 check('element bars scale to the largest bucket', clientSource.includes('entry.count / peak'), 'bar formula')
 check('element bars do not floor at 6%', !clientSource.includes('Math.max(6,'), 'floor removed')
 check('artifact cards show roll counts', clientSource.includes('dga-artiSubRolls'), 'roll chip')
+// Rarity needs the game's own palette: 5★ gold, 4★ purple, 3★ blue (not red).
+check('rarity palette is the in-game one', /RARITY_TINT = \{ 5: "#e0a33e", 4: "#a256e1", 3: "#4f8fe0"/.test(clientSource), 'palette')
+check('avatars take their rarity tint', clientSource.includes('rarity: c.rarity'), 'avatar tint')
 check('character page shares the weapon hover card', clientSource.includes('function WeaponHover'), 'hover helper')
 
 process.env.DSH_TEST_TAB = 'overview'
