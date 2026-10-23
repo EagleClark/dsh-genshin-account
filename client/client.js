@@ -565,21 +565,22 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h("div", { className: "dga-artiSlot" }, a.slotZh + " · +" + (a.level == null ? "-" : a.level)))),
       a.mainStat
         ? h("div", { className: "dga-artiMain" },
-            h("span", { className: "dga-artiMainL" }, "主词条 · " + a.mainStat.label),
-            h("span", { className: "dga-artiMainV" }, a.mainStat.text))
+            h("span", { className: "dga-artiMainL" }, "主词条 · " + statDisplay(a.mainStat.label, "", a.mainStat.percent).label),
+            h("span", { className: "dga-artiMainV" }, statDisplay(a.mainStat.label, a.mainStat.text, a.mainStat.percent).text))
         : null,
       h("div", { className: "dga-artiSubs" },
         subs
           ? subs.map(function (sub, index) {
               var crit = sub.key === "critRate_" || sub.key === "critDMG_";
+              var shown = statDisplay(sub.label, sub.text, sub.percent);
               return h("div", { className: "dga-artiSub" + (crit ? " dga-artiSubCrit" : ""), key: index },
-                h("span", { className: "dga-artiSubK" }, sub.label),
+                h("span", { className: "dga-artiSubK" }, shown.label),
                 h("span", {
                   className: "dga-artiSubRolls",
                   title: sub.rollsExact
                     ? "精确强化次数：数值可由官方四档强化值唯一分解"
                     : "约等于：该数值有多种强化组合，已按整件圣遗物的总次数约束求解",
-                }, sub.rolls == null ? "" : (sub.rollsExact ? "×" : "≈") + sub.rolls),
+                }, sub.rolls == null ? "" : (sub.rollsExact ? "" : "≈") + sub.rolls + " 次"),
                 h("span", { className: "dga-artiSubV" }, sub.text));
             })
           : (a.subs || []).map(function (text, index) {
@@ -589,16 +590,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("div", { className: "dga-cvBox" },
           h("span", { className: "dga-cvV", style: { color: color } }, String(a.cv)),
           h("span", { className: "dga-cvL" }, "CV")),
-        a.rollsTotal
-          ? h("div", {
-              className: "dga-cvBox",
-              title: a.initialSubstats
-                ? "总词条 " + a.rollsTotal + " 次 − 升级 " + a.rollsUpgrades + " 次 = 初始 " + a.initialSubstats + " 词条"
-                : "整件圣遗物的强化次数",
-            },
-              h("span", { className: "dga-cvV", style: { fontSize: 13, fontWeight: 600 } }, String(a.rollsTotal)),
-              h("span", { className: "dga-cvL" }, "词条" + (a.initialSubstats ? " · 初始 " + a.initialSubstats : "")))
-          : null,
         h("div", { className: "dga-meter" },
           h("span", { className: "dga-meterFill", style: { transform: "scaleX(" + efficiency / 100 + ")", background: color } })),
         h("span", {
@@ -609,6 +600,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             background: "var(--dsw-alias-bg-layer-3)",
           },
         }, (a.grade ? a.grade + " " : "") + a.efficiency + "%")));
+  }
+
+  /**
+   * Attack / HP / DEF exist in both a flat and a percentage form. Show the
+   * percentage one as `攻击力%` and drop the `%` from the value, so a card reads
+   * `攻击力% 15.7` next to `攻击力 18` instead of two identical labels.
+   */
+  var PAIRED_STATS = { "攻击力": true, "生命值": true, "防御力": true };
+
+  function statDisplay(label, text, percent) {
+    if (!percent || !PAIRED_STATS[label]) return { label: label, text: text };
+    return { label: label + "%", text: String(text == null ? "" : text).replace(/%$/, "") };
   }
 
   /** Official art from the miHoYo CDN; degrades to a coloured placeholder. */
@@ -1880,21 +1883,25 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
         var mainY = cy + 66;
         fillRound(ctx, x + 14, mainY, cardW - 28, 34, 9, "rgba(255,255,255,0.04)");
-        text(ctx, item.mainStat ? item.mainStat.label : "主词条", x + 24, mainY + 22, { size: 11, color: POSTER.dim });
-        text(ctx, item.mainStat ? item.mainStat.text : "—", x + cardW - 24, mainY + 23, {
-          size: 16, weight: "700", align: "right",
-        });
+        if (item.mainStat) {
+          var shownMain = statDisplay(item.mainStat.label, item.mainStat.text, item.mainStat.percent);
+          text(ctx, shownMain.label, x + 24, mainY + 22, { size: 11, color: POSTER.dim });
+          text(ctx, shownMain.text, x + cardW - 24, mainY + 23, { size: 16, weight: "700", align: "right" });
+        } else {
+          text(ctx, "主词条", x + 24, mainY + 22, { size: 11, color: POSTER.dim });
+        }
 
         var subs = item.subStats || [];
         subs.slice(0, 4).forEach(function (sub, subIndex) {
           var sy = mainY + 56 + subIndex * 21;
           var crit = sub.key === "critRate_" || sub.key === "critDMG_";
-          text(ctx, sub.label, x + 18, sy, { size: 12, color: crit ? POSTER.goldSoft : POSTER.soft });
-          text(ctx, sub.text, x + cardW - 18, sy, {
+          var shownSub = statDisplay(sub.label, sub.text, sub.percent);
+          text(ctx, shownSub.label, x + 18, sy, { size: 12, color: crit ? POSTER.goldSoft : POSTER.soft });
+          text(ctx, shownSub.text, x + cardW - 18, sy, {
             size: 12, weight: crit ? "600" : "", color: crit ? POSTER.gold : POSTER.soft, align: "right",
           });
           if (sub.rolls != null) {
-            text(ctx, (sub.rollsExact ? "×" : "≈") + sub.rolls, x + cardW - 68, sy, {
+            text(ctx, (sub.rollsExact ? "" : "≈") + sub.rolls + " 次", x + cardW - 66, sy, {
               size: 10, color: crit ? POSTER.gold : POSTER.dim, align: "right",
             });
           }
@@ -1909,12 +1916,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         text(ctx, String(item.cv), x + 18, footY + 26, { size: 18, weight: "700", color: gradeColor });
         ctx.font = "700 18px system-ui, sans-serif";
         text(ctx, "CV", x + 22 + ctx.measureText(String(item.cv)).width, footY + 26, { size: 10, color: POSTER.dim });
-        if (item.rollsTotal) {
-          var rollNote = item.initialSubstats
-            ? item.rollsTotal + " − " + item.rollsUpgrades + " = 初始 " + item.initialSubstats
-            : item.rollsTotal + " 次";
-          text(ctx, rollNote, x + 92, footY + 25, { size: 10, color: POSTER.dim });
-        }
         if (grade) {
           text(ctx, grade + " " + item.efficiency + "%", x + cardW - 18, footY + 26, {
             size: 11, weight: "600", color: gradeColor, align: "right",
