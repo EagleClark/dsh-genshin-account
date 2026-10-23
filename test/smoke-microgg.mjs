@@ -6,7 +6,7 @@
  * The fixture below is trimmed from a real `profile.microgg.cn` response.
  */
 import { fetchShowcase, mergeShowcase } from '../lib/sources/microgg.js'
-import { buildSnapshot } from '../lib/model.js'
+import { buildSnapshot, characterView } from '../lib/model.js'
 
 let failures = 0
 let checks = 0
@@ -41,6 +41,13 @@ const fixture = {
     {
       avatarId: 10000046,
       propMap: { 4001: { type: 4001, ival: '90', val: '90' } },
+      // Trimmed panel props: base HP/ATK/DEF (1/4/7), final (2000-2002), crit,
+      // ER, EM and the pyro bonus at 40.
+      fightPropMap: {
+        1: 15552, 4: 106, 7: 876, 20: 0.6, 22: 1.8, 23: 1.5, 26: 0, 28: 120,
+        40: 0.466, 41: 0, 42: 0, 43: 0, 44: 0, 45: 0, 46: 0,
+        2000: 30123, 2001: 1288, 2002: 1104,
+      },
       equipList: [
         {
           itemId: 13501,
@@ -103,6 +110,8 @@ check('character level from propMap', hutao && hutao.level === 90, hutao && huta
 check('weapon name resolves from the dictionary', hutao && hutao.weapon && hutao.weapon.name === '护摩之杖', hutao && hutao.weapon && hutao.weapon.name)
 check('weapon refinement is 1-based', hutao && hutao.weapon && hutao.weapon.refinement === 5, hutao && hutao.weapon && hutao.weapon.refinement)
 check('two artifacts mapped', hutao && hutao.artifacts.length === 2, hutao && hutao.artifacts.length)
+check('panel stats are read from fightPropMap', hutao && hutao.stats && hutao.stats.hp === 30123 && hutao.stats.critRate_ === 60, hutao && JSON.stringify(hutao.stats))
+check('em and elemental bonus are kept', hutao && hutao.stats.eleMas === 120 && hutao.stats.dmg.pyro === 46.6, hutao && JSON.stringify(hutao.stats))
 
 const flower = hutao.artifacts[0]
 check('set name resolves from setId', flower.setName === '角斗士的终幕礼', flower.setName)
@@ -119,7 +128,7 @@ const snapshot = buildSnapshot({
   uid: '188337967',
   player: {},
   characters: [
-    { id: '10000046', key: 'hutao', name: '胡桃', equippedPieces: [], artifacts: [] },
+    { id: '10000046', key: 'hutao', name: '胡桃', element: 'pyro', equippedPieces: [], artifacts: [] },
     { id: '10000002', key: 'kamisatoayaka', name: '神里绫华', equippedPieces: [], artifacts: [] },
   ],
   weapons: [],
@@ -132,8 +141,16 @@ check('merge adds the showcase artifacts', merged.artifacts.length === 2, merged
 check('artifacts attach to the right character', merged.characters[0].artifacts.length === 2, merged.characters[0].artifacts.length)
 check('character without a build stays empty', merged.characters[1].artifacts.length === 0, merged.characters[1].artifacts.length)
 check('showcase character is flagged', merged.characters[0].showcase === true, merged.characters[0].showcase)
+check('panel stats survive the merge', merged.characters[0].stats && merged.characters[0].stats.hp === 30123, 'stats')
+check('character without a build has no panel', !merged.characters[1].stats, 'stats leaked')
 check('note names what was upgraded', /展柜/.test(merged.note), merged.note)
 check('counts follow the merge', merged.counts.artifacts === 2, merged.counts.artifacts)
+// The card and the poster both render per-substat roll counts and a weapon card.
+const view = characterView(merged, merged.characters[0].artifacts.length ? merged.characters[0] : merged.characters[0])
+check('view exposes the matching element bonus', view.stats && view.stats.elemDmg === 46.6, view.stats && view.stats.elemDmg)
+check('view carries the weapon detail for the hover card', Boolean(view.weapon && view.weapon.detail && view.weapon.detail.baseAtk), view.weapon && JSON.stringify(view.weapon).slice(0, 160))
+const critSub = view.artifacts[0].subStats.find((sub) => sub.key === 'critRate_')
+check('substat roll count is estimated from the average roll', critSub && critSub.rolls === 3.2, critSub && critSub.rolls)
 check('best artifact is exposed', merged.artifacts[0].score.cv >= merged.artifacts[1].score.cv || merged.artifacts.length === 2, 'ordering')
 
 // An empty showcase is a normal state, not an error.

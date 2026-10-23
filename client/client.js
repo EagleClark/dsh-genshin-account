@@ -119,7 +119,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-err{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-state-error-primary);border-radius:10px;padding:12px 16px;color:var(--dsw-alias-label-primary);line-height:1.7;white-space:pre-wrap}",
     ".dga-grade{font-weight:600}",
     ".dga-muted{color:var(--dsw-alias-label-tertiary)}",
-    ".dga-statline{display:flex;flex-wrap:wrap;gap:6px 18px;margin:6px 0 0}",
+    ".dga-statline{display:flex;flex-wrap:wrap;gap:6px 20px;margin:6px 0 0}",
+    ".dga-statline > * + *{position:relative}",
+    ".dga-statline > * + *::before{content:'';position:absolute;left:-11px;top:50%;width:3px;height:3px;border-radius:50%;background:var(--dsw-alias-label-dimmed);transform:translateY(-50%)}",
     ".dga-stat{display:flex;gap:6px;align-items:baseline}",
     ".dga-statK{color:var(--dsw-alias-label-tertiary);font-size:12px}",
     ".dga-statV{font-variant-numeric:tabular-nums}",
@@ -206,6 +208,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-artiSubCrit{color:var(--dga-gold);font-weight:600}",
     ".dga-artiSubK{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
     ".dga-artiSubV{font-variant-numeric:tabular-nums;flex:0 0 auto}",
+    ".dga-artiSubRolls{font-variant-numeric:tabular-nums;font-size:10.5px;color:var(--dsw-alias-label-tertiary);margin-left:auto;padding:0 6px;border-radius:6px;background:var(--dsw-alias-bg-layer-2);min-width:34px;text-align:right}",
+    ".dga-artiSubCrit .dga-artiSubRolls{color:var(--dga-gold);background:color-mix(in srgb,var(--dga-gold) 14%,transparent)}",
     ".dga-artiFoot{display:flex;align-items:center;gap:10px;padding-top:9px;border-top:1px solid var(--dsw-alias-border-l1)}",
     ".dga-cvBox{display:flex;flex-direction:column;line-height:1.15}",
     ".dga-cvV{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}",
@@ -255,6 +259,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     // weapon hover card
     ".dga-wCardRel{position:relative}",
+    ".dga-inlineHover{border-radius:10px;background:color-mix(in srgb,var(--dga-gold) 8%,transparent)}",
     ".dga-wCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);transition:transform .14s ease,border-color .14s ease}",
     ".dga-wCardRel:hover .dga-wCard{transform:translateY(-1px);border-color:var(--dsw-alias-label-dimmed)}",
     ".dga-wPop{position:absolute;left:0;top:calc(100% + 6px);z-index:20;width:320px;max-height:340px;overflow:auto;padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-3));border:1px solid var(--dsw-alias-border-l2);box-shadow:0 12px 32px rgba(0,0,0,.22);font-size:12px;line-height:1.75}",
@@ -553,6 +558,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               var crit = sub.key === "critRate_" || sub.key === "critDMG_";
               return h("div", { className: "dga-artiSub" + (crit ? " dga-artiSubCrit" : ""), key: index },
                 h("span", { className: "dga-artiSubK" }, sub.label),
+                h("span", { className: "dga-artiSubRolls", title: "估算强化次数 = 数值 ÷ 该词条平均单次强化" },
+                  sub.rolls == null ? "" : "×" + sub.rolls),
                 h("span", { className: "dga-artiSubV" }, sub.text));
             })
           : (a.subs || []).map(function (text, index) {
@@ -793,6 +800,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var progress = o.progress || {};
     var list = o.elementList || [];
     var total = list.reduce(function (sum, entry) { return sum + entry.count; }, 0) || 1;
+    // Bars are relative to the largest element, not to the whole roster: with a
+    // 98-character account every bar was under 20% and the chart read as noise.
+    var peak = list.reduce(function (max, entry) { return Math.max(max, entry.count); }, 1);
     var all = props.allCharacters || [];
     var five = all.filter(function (c) { return c.rarity === 5; }).length;
     var four = all.filter(function (c) { return c.rarity === 4; }).length;
@@ -870,7 +880,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 h("span", { className: "dga-barTrack" },
                   h("span", {
                     className: "dga-barFill",
-                    style: { width: Math.max(6, Math.round((entry.count / total) * 100)) + "%", background: elementColor(entry.key) },
+                    style: { width: Math.max(2, Math.round((entry.count / peak) * 100)) + "%", background: elementColor(entry.key) },
                   })),
                 h("span", { className: "dga-elemCount" }, String(entry.count)));
             })),
@@ -936,6 +946,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       ["暴击伤害", stats.critDMG_ != null ? stats.critDMG_ + "%" : null],
       ["元素充能", stats.enerRech_ != null ? stats.enerRech_ + "%" : null],
       ["元素精通", stats.eleMas],
+      ["元素伤害", stats.elemDmg ? stats.elemDmg + "%" : null],
+      ["治疗加成", stats.heal_ ? stats.heal_ + "%" : null],
     ].filter(function (pair) { return pair[1] != null && pair[1] !== ""; });
     var weapon = c.equippedWeapon || c.weapon || null;
     var pieces = c.equippedPieces || [];
@@ -987,19 +999,22 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         ? h("div", { className: "dga-statline" }, statDefs.map(function (pair) {
             return h(Stat, { label: pair[0], value: String(pair[1]), key: pair[0] });
           }))
-        : null,
+        : h("p", { className: "dga-hint" },
+            "面板数据只对游戏内「角色展柜」中的角色开放，把角色放进展柜即可显示。"),
 
       weapon
         ? h("div", { className: "dga-block" },
             h("div", { className: "dga-sec" }, "武器"),
-            h("div", { className: "dga-inline" },
-              h(Art, { src: weapon.icon, alt: weapon.name, size: 48 }),
-              h("div", null,
-                h("div", null, weapon.name),
-                h("div", { className: "dga-sub" },
-                  "Lv." + weapon.level +
-                  (weapon.refinement ? " · 精" + weapon.refinement : "") +
-                  " · " + weapon.rarity + "★"))))
+            h(WeaponHover, { weapon: weapon, children: function (hover) {
+              return h("div", { className: "dga-inline" + (hover ? " dga-inlineHover" : "") },
+                h(Art, { src: weapon.icon, alt: weapon.name, size: 48 }),
+                h("div", null,
+                  h("div", null, weapon.name),
+                  h("div", { className: "dga-sub" },
+                    "Lv." + weapon.level +
+                    (weapon.refinement ? " · 精" + weapon.refinement : "") +
+                    " · " + weapon.rarity + "★")));
+            } }))
         : null,
 
       scored.length
@@ -1161,6 +1176,23 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-cardGrid" }, filtered.map(function (w, index) {
         return h(WeaponCard, { key: index, w: w });
       })));
+  }
+
+  /**
+   * Hover wrapper shared by the 武器 grid and the character page: renders its
+   * children and shows the weapon popover while the pointer is inside.
+   */
+  function WeaponHover(props) {
+    var on = React.useState(false);
+    var hover = on[0], setHover = on[1];
+    return h("div", {
+      className: "dga-wCardRel",
+      style: { position: "relative", display: "block" },
+      onMouseEnter: function () { setHover(true); },
+      onMouseLeave: function () { setHover(false); },
+    },
+      props.children(hover),
+      hover ? h(WeaponPopover, { w: props.weapon }) : null);
   }
 
   /**
@@ -1599,7 +1631,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var cardW = (W - PAD * 2 - 32) / 3;
     var cardH = 232;
     var rows = Math.ceil(Math.max(1, artifacts.length || pieces.length) / 3);
-    var H = 470 + rows * (cardH + 16) + (effects.length ? 56 + effects.length * 22 : 0) + 80;
+    var hasStats = Boolean(c.stats && c.stats.hp);
+    var H = 470 + (hasStats ? 58 : 0) + rows * (cardH + 16) + (effects.length ? 56 + effects.length * 22 : 0) + 80;
 
     var canvas = document.createElement("canvas");
     canvas.width = W;
@@ -1723,9 +1756,31 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         });
       }
 
-      y = 330;
+      // Panel values, when the character is in the in-game showcase.
+      y = 322;
+      if (hasStats) {
+        var st = c.stats;
+        var cells = [
+          ["生命", String(st.hp)],
+          ["攻击", String(st.atk)],
+          ["防御", String(st.def)],
+          ["暴击率", st.critRate_ + "%"],
+          ["暴击伤害", st.critDMG_ + "%"],
+          ["充能", st.enerRech_ + "%"],
+          ["精通", String(st.eleMas)],
+        ];
+        if (st.elemDmg) cells.push([(c.elementZh || "") + "伤", st.elemDmg + "%"]);
+        var cellW = (W - PAD * 2) / cells.length;
+        cells.forEach(function (cell, index) {
+          var cx = PAD + index * cellW;
+          text(ctx, cell[1], cx, y + 20, { size: 16, weight: "700", color: POSTER.text });
+          text(ctx, cell[0], cx, y + 38, { size: 10.5, color: POSTER.dim });
+        });
+        y += 60;
+      }
+
       panel(ctx, PAD, y, W - PAD * 2, 96, 14, weapon ? RARITY_HEX[weapon.rarity] || POSTER.gold : null);
-      if (weaponIcon) {
+      if (weaponIcon && weaponIcon.naturalWidth && weaponIcon.naturalWidth < 512) {
         ctx.save();
         ctx.beginPath();
         roundRect(ctx, PAD + 16, y + 18, 60, 60, 10);
@@ -1751,7 +1806,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         text(ctx, "套装件数", W - PAD - 20, y + 70, { size: 11, color: POSTER.dim, align: "right" });
       }
 
-      y = 452;
+      y += 122;
       text(ctx, "圣遗物", PAD, y, { size: 16, weight: "600", color: POSTER.text });
       text(ctx, artifacts.length ? artifacts.length + " 件 · 主副词条与评分" : "暂无词条数据", W - PAD, y, {
         size: 12, color: POSTER.dim, align: "right",
@@ -1800,6 +1855,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           text(ctx, sub.text, x + cardW - 18, sy, {
             size: 12, weight: crit ? "600" : "", color: crit ? POSTER.gold : POSTER.soft, align: "right",
           });
+          if (sub.rolls != null) {
+            text(ctx, "×" + sub.rolls, x + cardW - 68, sy, {
+              size: 10, color: crit ? POSTER.gold : POSTER.dim, align: "right",
+            });
+          }
         });
 
         var footY = cy + cardH - 40;

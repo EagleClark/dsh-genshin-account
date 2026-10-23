@@ -480,6 +480,11 @@ check('overview explains the server code', clientSource.includes('SERVER_LABEL')
 // --- async surfaces: skeletons must actually exist --------------------------
 // The page opens on 设置, so the `loading && !summary` branch never ran in this
 // test before — which is exactly how a missing skeleton component shipped.
+check('element bars scale to the largest bucket', clientSource.includes('entry.count / peak'), 'bar formula')
+check('element bars do not floor at 6%', !clientSource.includes('Math.max(6,'), 'floor removed')
+check('artifact cards show roll counts', clientSource.includes('dga-artiSubRolls'), 'roll chip')
+check('character page shares the weapon hover card', clientSource.includes('function WeaponHover'), 'hover helper')
+
 process.env.DSH_TEST_TAB = 'overview'
 let coldTree = null
 let coldError = null
