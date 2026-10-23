@@ -129,6 +129,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     // setup wizard
     ".dga-wizard{max-width:780px}",
+    ".dga-setCard{margin-bottom:14px;padding:16px 18px;border-radius:14px}",
+    ".dga-setRow{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}",
+    ".dga-status{margin-left:auto;font-size:11.5px;color:var(--dsw-alias-label-tertiary);padding:2px 9px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2)}",
+    ".dga-statusOn{color:var(--dga-gold);border-color:var(--dga-line-strong);background:color-mix(in srgb, var(--dga-gold) 12%, transparent)}",
+    ".dga-qrBox{margin-top:12px;padding:12px;background:#fff;width:280px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.18)}",
     ".dga-srcList{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}",
     ".dga-src{display:flex;gap:12px;align-items:flex-start;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;padding:12px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}",
     ".dga-src:hover{border-color:var(--dsw-alias-label-dimmed)}",
@@ -141,7 +146,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-badge{background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;padding:1px 8px;font-size:11px;line-height:17px;font-weight:500}",
     ".dga-badgeOk{background:var(--dsw-alias-state-success-primary);color:var(--dsw-alias-bg-layer-3)}",
     ".dga-field{margin-bottom:14px}",
-    ".dga-label{display:block;color:var(--dsw-alias-label-primary);font-size:12.5px;font-weight:500;margin-bottom:5px}",
+    ".dga-label{display:block;color:var(--dsw-alias-label-secondary);font-size:12px;letter-spacing:.02em;font-weight:500;margin:10px 0 6px}",
     ".dga-input{width:100%;box-sizing:border-box;font:inherit;font-size:13px;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:8px;padding:7px 10px}",
     ".dga-input:focus{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}",
     ".dga-textarea{min-height:64px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5}",
@@ -395,56 +400,57 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var draft = props.draft;
     var set = props.setField;
 
-    var fields = h("div", null,
-      h("div", { className: "dga-field" },
-        h("label", { className: "dga-label" }, "国服 UID"),
-        h("input", {
-          className: "dga-input",
-          type: "text",
-          inputMode: "numeric",
-          placeholder: "例如 123456789",
-          value: draft.miyousheUid,
-          onChange: function (event) { props.setMiyousheUid(event.target.value.trim()); },
-        }),
-        h("p", { className: "dga-hint" },
-          "填游戏里的 UID。区服自动判断：1/2 开头天空岛，5 开头世界树。" +
-          (draft.miyousheServer ? " 当前：" + draft.miyousheServer : ""))),
+    // Each concern gets its own card: the account, the login, the showcase sync.
+    // A flat list of labels on the page background read as an unfinished form.
+    var accountCard = h("section", { className: "dga-card dga-setCard" },
+      h("div", { className: "dga-sec" }, "账号"),
+      h("label", { className: "dga-label", htmlFor: "dga-uid" }, "国服 UID"),
+      h("input", {
+        id: "dga-uid",
+        className: "dga-input",
+        type: "text",
+        inputMode: "numeric",
+        placeholder: "例如 123456789",
+        value: draft.miyousheUid,
+        onChange: function (event) { props.setMiyousheUid(event.target.value.trim()); },
+      }),
+      h("p", { className: "dga-hint" },
+        "填游戏里的 UID。区服自动判断：1/2 开头天空岛，5 开头世界树。" +
+        (draft.miyousheServer ? " 当前：" + draft.miyousheServer : "")));
 
-      h("div", { className: "dga-field" },
-        h("label", { className: "dga-label" }, "扫码登录"),
-        h("div", { className: "dga-fileRow" },
-          h("button", {
-            className: "dga-btn dga-btn-primary",
-            onClick: props.onStartQr,
-            disabled: props.busy || props.qrBusy,
-          }, props.qrBusy ? "生成中…" : (props.qr ? "换一张二维码" : "生成二维码")),
-          props.qr
-            ? h("button", { className: "dga-btn", onClick: props.onCancelQr, disabled: props.qrBusy }, "取消")
-            : null),
+    var loginCard = h("section", { className: "dga-card dga-setCard" },
+      h("div", { className: "dga-sec" }, "扫码登录"),
+      h("div", { className: "dga-setRow" },
+        h("button", {
+          className: "dga-btn dga-btn-primary",
+          onClick: props.onStartQr,
+          disabled: props.busy || props.qrBusy,
+        }, props.qrBusy ? "生成中…" : (props.qr ? "换一张二维码" : "生成二维码")),
         props.qr
-          ? h("div", {
-              style: { marginTop: 10, padding: 10, background: "#fff", width: 280, borderRadius: 10 },
-              dangerouslySetInnerHTML: { __html: props.qr.svg },
-            })
+          ? h("button", { className: "dga-btn", onClick: props.onCancelQr, disabled: props.qrBusy }, "取消")
           : null,
-        props.qrStatus ? h("p", { className: "dga-hint" }, props.qrStatus) : null,
-        h("p", { className: "dga-hint" },
-          "用手机米游社 App 扫码并在手机上确认。会话由这次扫码签发、只存在本机：插件不接触你的密码，也不需要你复制 Cookie。" +
-          (draft.hasCookie ? " 当前状态：已登录。" : " 当前状态：未登录。"))),
+        h("span", { className: "dga-status" + (draft.hasCookie ? " dga-statusOn" : "") },
+          draft.hasCookie ? "已登录" : "未登录")),
+      props.qr
+        ? h("div", { className: "dga-qrBox", dangerouslySetInnerHTML: { __html: props.qr.svg } })
+        : null,
+      props.qrStatus ? h("p", { className: "dga-hint" }, props.qrStatus) : null,
+      h("p", { className: "dga-hint" },
+        "用手机米游社 App 扫码并在手机上确认。会话由这次扫码签发、只存在本机：插件不接触你的密码，也不需要你复制 Cookie。"));
 
-      h("div", { className: "dga-field" },
-        h("label", { className: "dga-label" }, "圣遗物副词条"),
-        h("p", { className: "dga-hint" },
-          "圣遗物副词条只从游戏内「角色展柜」读取：放上角色并开启「显示详情」，5 分钟后点「重新同步」即可。"),
-        h("div", { className: "dga-fileRow" },
-          h("button", { className: "dga-btn", onClick: props.onRefresh }, "重新同步（读展柜）")),
-        props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null));
+    var showcaseCard = h("section", { className: "dga-card dga-setCard" },
+      h("div", { className: "dga-sec" }, "圣遗物副词条"),
+      h("p", { className: "dga-hint", style: { marginTop: 0 } },
+        "副词条只从游戏内「角色展柜」读取：放上角色并开启「显示详情」，5 分钟后重新同步即可。"),
+      h("div", { className: "dga-setRow" },
+        h("button", { className: "dga-btn", onClick: props.onRefresh }, "重新同步（读展柜）")),
+      props.verifyStatus ? h("p", { className: "dga-hint" }, props.verifyStatus) : null);
 
     return h("div", { className: "dga-scroll" },
       h("div", { className: "dga-wizard" },
-        h("div", { className: "dga-block" },
-          h("div", { className: "dga-sec" }, "登录"),
-          fields),
+        accountCard,
+        loginCard,
+        showcaseCard,
 
         h("div", { className: "dga-actions" },
           h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSaveAndSync, disabled: props.busy },
@@ -456,7 +462,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               "当前页面无法写入配置（可能不是从本机打开，或插件配置未就绪）。可以直接编辑 profile 的 cordis.patch.yml。")
           : null));
   }
-
 
   // ── data tabs ───────────────────────────────────────────────────────────
   // ── visual helpers ──────────────────────────────────────────────────────
@@ -999,8 +1004,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       h("div", { className: "dga-block" },
         h("div", { className: "dga-sec" }, "数据状态"),
-        h("div", { className: "dga-sub" },
-          (SOURCE_LABEL[o.source] || o.source) + " · 同步于 " + when(o.fetchedAt)),
         h("div", { className: "dga-sub" }, o.noteShort || "")));
   }
 
@@ -1409,9 +1412,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("div", { className: "dga-heroMain" },
           h("div", { className: "dga-heroName" }, "祈愿记录"),
           h("div", { className: "dga-heroMeta" },
-            "共 " + a.total + " 抽 · " +
-            (a.uid ? "UID " + a.uid + " · " : "") +
-            (a.lastPullAt ? "最近一抽 " + a.lastPullAt : "") +
+            (a.lastPullAt ? "最近一抽 " + a.lastPullAt : "还没有记录") +
             (a.updatedAt ? " · 更新于 " + when(a.updatedAt) : ""))),
         h("div", { className: "dga-heroStats" },
           h(StatTile, { value: String(a.total), label: "总抽数" }),
@@ -1454,15 +1455,22 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             h("div", { style: { flex: 1, minWidth: 0 } },
               h("div", { style: { fontSize: 12.5, fontWeight: 600 } }, bucket.label),
               h("div", { className: "dga-sub" },
-                "已垫 " + bucket.sinceFive + " 抽 · 距硬保底 " + left + " 抽 · 累计 " + bucket.pulls + " 抽 " + bucket.five + " 金" +
+                "距硬保底 " + left + " 抽 · 累计 " + bucket.pulls + " 抽 " + bucket.five + " 金" +
                   (soft ? " · 已进软保底" : "")),
               h("div", { className: "dga-pityBar", style: { width: "100%", marginTop: 6 } },
                 h("span", {
                   className: "dga-pityFill",
                   style: { width: Math.max(2, progress) + "%", background: soft ? "var(--dga-red)" : "var(--dga-gold)" },
                 }))),
-            h("span", { className: "dga-num", style: { color: soft ? "var(--dga-red)" : "var(--dsw-alias-label-secondary)", fontSize: 15, fontWeight: 650 } },
-              String(bucket.sinceFive)));
+            h("span", {
+              className: "dga-num",
+              style: {
+                color: soft ? "var(--dga-red)" : "var(--dsw-alias-label-secondary)",
+                fontSize: 12,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              },
+            }, bucket.sinceFive + " / 90"));
         })),
         h("p", { className: "dga-hint" },
           "「已垫」= 这个池子自上一个五星之后又抽了多少次。90 抽为硬保底，74 抽之后进入软保底（概率明显提高）。")),
@@ -1492,7 +1500,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                     className: "dga-pityFill",
                     style: { width: Math.max(2, Math.min(100, (pity / 90) * 100)) + "%", background: early ? "var(--dga-green)" : "var(--dga-gold)" },
                   })),
-                h("span", { className: "dga-num", style: { width: 46, textAlign: "right", color: early ? "var(--dga-green)" : "var(--dsw-alias-label-secondary)" } }, pity + " 抽"),
+                h("span", { className: "dga-num", style: { width: 62, textAlign: "right", color: early ? "var(--dga-green)" : "var(--dsw-alias-label-secondary)" } }, pity + " / 90"),
                 h("span", { className: "dga-fiveMeta", style: { width: 96, textAlign: "right" } }, String(item.time || "").slice(0, 10)));
             }),
             h("p", { className: "dga-hint" }, "绿色 = 40 抽内出金（比较欧）。"))
