@@ -5,7 +5,7 @@
  * official four-magnitude roll table. These cases are taken from the account's
  * own artifacts, so a table or solver change shows up immediately.
  */
-import { candidateRolls, solveRolls, upgradesOf } from '../lib/rolls.js'
+import { candidateRolls, initialSubstatsOf, solveRolls, upgradesOf } from '../lib/rolls.js'
 import { publicArtifact } from '../lib/model.js'
 import { scoreArtifact } from '../lib/score.js'
 import { STATS } from '../lib/stats.js'
@@ -41,6 +41,11 @@ check('percent HP 866 is impossible', candidateRolls('hp_', 866).length === 0, c
 check('flat attack 19 is one roll', JSON.stringify(candidateRolls('atk', 19)) === '[1]', candidateRolls('atk', 19))
 check('percent attack 19 is impossible', candidateRolls('atk_', 19).length === 0, candidateRolls('atk_', 19))
 check('flat and percent are different keys', ['hp', 'atk', 'def'].every((key) => key + '_' in STATS && STATS[key].maxRoll !== STATS[key + '_'].maxRoll), 'keys')
+
+// 初始词条 = 总次数 − 升级次数（5★ +20：9 − 5 = 4，8 − 5 = 3）
+check('9 rolls minus 5 upgrades means four initial substats', initialSubstatsOf(9, 5) === 4, initialSubstatsOf(9, 5))
+check('8 rolls minus 5 upgrades means three initial substats', initialSubstatsOf(8, 5) === 3, initialSubstatsOf(8, 5))
+check('an impossible total yields no initial count', initialSubstatsOf(7, 5) === null, initialSubstatsOf(7, 5))
 
 // --- level → upgrades --------------------------------------------------------
 check('API level 21 means +20 (five upgrades)', upgradesOf(21) === 5, upgradesOf(21))

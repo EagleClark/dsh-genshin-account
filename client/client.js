@@ -590,7 +590,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h("span", { className: "dga-cvV", style: { color: color } }, String(a.cv)),
           h("span", { className: "dga-cvL" }, "CV")),
         a.rollsTotal
-          ? h("div", { className: "dga-cvBox", title: "整件圣遗物的强化次数，以及这件圣遗物初始是 3 词条还是 4 词条（由总次数反推）" },
+          ? h("div", {
+              className: "dga-cvBox",
+              title: a.initialSubstats
+                ? "总词条 " + a.rollsTotal + " 次 − 升级 " + a.rollsUpgrades + " 次 = 初始 " + a.initialSubstats + " 词条"
+                : "整件圣遗物的强化次数",
+            },
               h("span", { className: "dga-cvV", style: { fontSize: 13, fontWeight: 600 } }, String(a.rollsTotal)),
               h("span", { className: "dga-cvL" }, "词条" + (a.initialSubstats ? " · 初始 " + a.initialSubstats : "")))
           : null,
@@ -1905,9 +1910,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         ctx.font = "700 18px system-ui, sans-serif";
         text(ctx, "CV", x + 22 + ctx.measureText(String(item.cv)).width, footY + 26, { size: 10, color: POSTER.dim });
         if (item.rollsTotal) {
-          text(ctx, String(item.rollsTotal) + " 次" + (item.initialSubstats ? " · 初始 " + item.initialSubstats + " 词条" : ""), x + 74, footY + 25, {
-            size: 10, color: POSTER.dim,
-          });
+          var rollNote = item.initialSubstats
+            ? item.rollsTotal + " − " + item.rollsUpgrades + " = 初始 " + item.initialSubstats
+            : item.rollsTotal + " 次";
+          text(ctx, rollNote, x + 92, footY + 25, { size: 10, color: POSTER.dim });
         }
         if (grade) {
           text(ctx, grade + " " + item.efficiency + "%", x + cardW - 18, footY + 26, {
