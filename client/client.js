@@ -210,13 +210,23 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-artiSubV{font-variant-numeric:tabular-nums;flex:0 0 auto}",
     ".dga-artiSubRolls{font-variant-numeric:tabular-nums;font-size:10.5px;color:var(--dsw-alias-label-tertiary);margin-left:auto;padding:0 6px;border-radius:6px;background:var(--dsw-alias-bg-layer-2);min-width:34px;text-align:right}",
     ".dga-artiSubCrit .dga-artiSubRolls{color:var(--dga-gold);background:color-mix(in srgb,var(--dga-gold) 14%,transparent)}",
-    ".dga-artiFoot{display:flex;align-items:center;gap:10px;padding-top:9px;border-top:1px solid var(--dsw-alias-border-l1)}",
+    // Footer reads on one baseline: score, then the initial-substat fact, then the
+    // grade. The efficiency bar moved below the row so it no longer splits the
+    // numbers into a fake column table.
+    ".dga-artiFoot{display:flex;align-items:baseline;gap:10px;padding-top:10px;border-top:1px solid var(--dsw-alias-border-l1)}",
+    ".dga-artiStat{display:flex;align-items:baseline;gap:4px}",
+    ".dga-artiStatV{font-size:16px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}",
+    ".dga-artiStatL{font-size:10px;letter-spacing:.04em;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-artiInit{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap}",
+    ".dga-artiInit b{font-weight:700;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}",
+    ".dga-artiBar{height:3px;border-radius:999px;margin-top:9px;overflow:hidden;background:color-mix(in srgb, var(--dga-gold) 12%, transparent)}",
+    ".dga-artiBarFill{display:block;height:100%;width:100%;border-radius:999px;transform-origin:left center;transition:transform .28s ease}",
     ".dga-cvBox{display:flex;flex-direction:column;line-height:1.15}",
     ".dga-cvV{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}",
     ".dga-cvL{font-size:10px;color:var(--dsw-alias-label-tertiary)}",
     ".dga-meter{flex:1;height:6px;border-radius:999px;background:var(--dsw-alias-bg-layer-3);overflow:hidden}",
     ".dga-meterFill{display:block;height:100%;width:100%;border-radius:999px;transform-origin:left center;transition:transform .28s ease}",
-    ".dga-gradePill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}",
+    ".dga-gradePill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;margin-left:auto}",
     ".dga-showcaseTag{font-size:10px;line-height:15px;padding:0 6px;border-radius:999px;border:1px solid color-mix(in srgb, var(--dga-gold) 45%, transparent);background:color-mix(in srgb, var(--dga-gold) 16%, transparent);color:#d8b566;white-space:nowrap}",
     ".dga-rowBadges{display:flex;align-items:center;gap:6px;flex:0 0 auto}",
 
@@ -587,16 +597,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               return h("div", { className: "dga-artiSub", key: index }, h("span", { className: "dga-artiSubK" }, text));
             })),
       h("div", { className: "dga-artiFoot" },
-        h("div", { className: "dga-cvBox" },
-          h("span", { className: "dga-cvV", style: { color: color } }, String(a.cv)),
-          h("span", { className: "dga-cvL" }, "CV")),
+        h("div", { className: "dga-artiStat" },
+          h("span", { className: "dga-artiStatV", style: { color: color } }, String(a.cv)),
+          h("span", { className: "dga-artiStatL" }, "CV")),
         a.initialSubstats
-          ? h("div", { className: "dga-cvBox", title: "这件圣遗物初始是 " + a.initialSubstats + " 词条" },
-              h("span", { className: "dga-cvV", style: { fontSize: 13, fontWeight: 600 } }, String(a.initialSubstats)),
-              h("span", { className: "dga-cvL" }, "初始词条"))
+          ? h("div", { className: "dga-artiInit", title: "这件圣遗物初始是 " + a.initialSubstats + " 词条" },
+              "初始 ", h("b", null, String(a.initialSubstats)), " 词条")
           : null,
-        h("div", { className: "dga-meter" },
-          h("span", { className: "dga-meterFill", style: { transform: "scaleX(" + efficiency / 100 + ")", background: color } })),
         h("span", {
           className: "dga-gradePill",
           style: {
@@ -604,7 +611,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             border: "1px solid " + color,
             background: "var(--dsw-alias-bg-layer-3)",
           },
-        }, (a.grade ? a.grade + " " : "") + a.efficiency + "%")));
+        }, (a.grade ? a.grade + " " : "") + a.efficiency + "%")),
+      h("div", { className: "dga-artiBar" },
+        h("span", {
+          className: "dga-artiBarFill",
+          style: { transform: "scaleX(" + efficiency / 100 + ")", background: color },
+        })));
   }
 
   /**
