@@ -776,11 +776,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     if (abyss && abyss.text) {
       cards.push({ key: "abyss", label: "深境螺旋", value: abyss.text, sub: abyss.stars ? abyss.stars + " 星" : "" });
     }
-    if (theater && (theater.act || theater.stars)) {
+    if (theater && (theater.act || theater.maxRound || theater.stars)) {
+      var act = theater.act || theater.maxRound;
       cards.push({
         key: "theater",
         label: "幻想真境剧诗",
-        value: theater.act ? "第 " + theater.act + " 幕" : "—",
+        value: act ? "第 " + act + " 幕" : "已挑战",
         sub: theater.stars ? theater.stars + " 星" : "",
       });
     }
@@ -790,7 +791,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         key: "stygian",
         label: "幽境危战" + (stygian.name ? " · " + stygian.name : ""),
         value: "难度 " + stygian.difficulty,
-        sub: secs ? Math.floor(secs / 60) + " 分 " + (secs % 60) + " 秒" : "",
+        sub: secs ? "用时 " + secs + " 秒" : "",
       });
     }
     if (progress.achievements) {
@@ -2618,7 +2619,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     return h("div", { className: "dga-root" },
       h("div", { className: "dga-head" },
         h("div", { className: "dga-grow" },
-          h("div", { className: "dga-title" }, "《原神启动》"),
+          h("div", { className: "dga-title" }, "原神启动"),
           h("div", { className: "dga-sub" },
             state
               ? (SOURCE_LABEL[state.source] || state.source) +
@@ -2692,7 +2693,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         return h("div", { className: "dga-root" },
           h("div", { className: "dga-scroll" },
             h("div", { className: "dga-err" },
-              "《原神启动》面板渲染出错：\n" +
+              "原神启动面板渲染出错：\n" +
               String((this.state.error && this.state.error.message) || this.state.error) +
               "\n\n详细信息已上报，可以把这段文字发给开发者。")));
       }
@@ -2763,7 +2764,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     owned.push(
       ctx.slots.inject("sidebar.panellist", function () {
         return ctx.slots.register(
-          { name: "sidebar.panellist", id: PANEL_ID, order: 20, label: function () { return "《原神启动》"; }, registrant: PKG },
+          { name: "sidebar.panellist", id: PANEL_ID, order: 20, label: function () { return "原神启动"; }, registrant: PKG },
           GenshinIcon,
         );
       }),
