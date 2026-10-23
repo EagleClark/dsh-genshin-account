@@ -8,6 +8,7 @@
 import { candidateRolls, solveRolls, upgradesOf } from '../lib/rolls.js'
 import { publicArtifact } from '../lib/model.js'
 import { scoreArtifact } from '../lib/score.js'
+import { STATS } from '../lib/stats.js'
 
 let failures = 0
 let checks = 0
@@ -29,6 +30,17 @@ check('crit damage 20.2% is three rolls', JSON.stringify(candidateRolls('critDMG
 check('element mastery 49 is three rolls', JSON.stringify(candidateRolls('eleMas', 49)) === '[3]', candidateRolls('eleMas', 49))
 check('flat attack 29 is two rolls', JSON.stringify(candidateRolls('atk', 29)) === '[2]', candidateRolls('atk', 29))
 check('energy recharge 5.2% is one roll', JSON.stringify(candidateRolls('enerRech_', 5.2)) === '[1]', candidateRolls('enerRech_', 5.2))
+
+// --- flat vs percent share a label but not a table ---------------------------
+// "防御力 65" is a flat roll; "防御力 65%" is impossible (percent rolls top out at
+// 7.3%). Treating the two as one stat was the original worry, so pin it down.
+check('flat defence 65 resolves against the flat table', JSON.stringify(candidateRolls('def', 65)) === '[3,4]', candidateRolls('def', 65))
+check('percent defence 65 is impossible', candidateRolls('def_', 65).length === 0, candidateRolls('def_', 65))
+check('flat HP 866 resolves against the flat table', JSON.stringify(candidateRolls('hp', 866)) === '[3,4]', candidateRolls('hp', 866))
+check('percent HP 866 is impossible', candidateRolls('hp_', 866).length === 0, candidateRolls('hp_', 866))
+check('flat attack 19 is one roll', JSON.stringify(candidateRolls('atk', 19)) === '[1]', candidateRolls('atk', 19))
+check('percent attack 19 is impossible', candidateRolls('atk_', 19).length === 0, candidateRolls('atk_', 19))
+check('flat and percent are different keys', ['hp', 'atk', 'def'].every((key) => key + '_' in STATS && STATS[key].maxRoll !== STATS[key + '_'].maxRoll), 'keys')
 
 // --- level → upgrades --------------------------------------------------------
 check('API level 21 means +20 (five upgrades)', upgradesOf(21) === 5, upgradesOf(21))
