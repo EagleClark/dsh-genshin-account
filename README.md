@@ -146,6 +146,7 @@ dsh plugin --profile web add <仓库绝对路径>
 | `names-zh.json` | 接口返回的 hash/id → 中文名（含词条名） |
 | `skill-orders.json` | 每个角色的「普攻/战技/爆发」技能 id 顺序 |
 | `weapon-details.json` | 255 把武器的 90 级基础攻击力、副属性、被动（精炼 1–5 原文）与故事 |
+| `element-icons/*.webp` | 官方七元素图标（火/水/风/雷/冰/岩/草），由插件自己的 `/asset/element/<key>.webp` 路由提供给面板 |
 
 **为什么需要 `skill-orders.json`**：技能 id **不是**按 普攻→战技→爆发 递增的（神里绫华的普攻 id 比爆发 id 大），按 id 排序会把天赋等级张冠李戴。
 

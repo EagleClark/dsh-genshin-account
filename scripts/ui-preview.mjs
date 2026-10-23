@@ -14,6 +14,8 @@
  *   REACT_DIR=%TEMP%\ga-react node scripts/ui-preview.mjs
  */
 import { spawn } from 'node:child_process'
+import { createServer } from 'node:http'
+import { existsSync as fileExists } from 'node:fs'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -286,9 +288,29 @@ const send = (method, params = {}) =>
   })
 await send('Page.enable')
 
+// --- tiny http server -------------------------------------------------------
+const MIME = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.js': 'text/javascript' }
+const server = createServer((req, res) => {
+  const url = new URL(req.url, 'http://127.0.0.1')
+  let target = null
+  const asset = url.pathname.match(/^\/dsh-genshin-account\/asset\/element\/([a-z]+\.webp)$/)
+  if (asset) target = join(root, 'data', 'element-icons', asset[1])
+  else target = join(outDir, url.pathname.replace(/^\//, '') || 'index.html')
+  if (!fileExists(target)) {
+    res.writeHead(404)
+    res.end('missing')
+    return
+  }
+  res.writeHead(200, { 'content-type': MIME[target.slice(target.lastIndexOf('.'))] || 'application/octet-stream' })
+  res.end(readFileSync(target))
+})
+await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+const origin = 'http://127.0.0.1:' + server.address().port
+console.log('预览服务:', origin)
+
 const shots = []
 for (const file of htmlFiles) {
-  await send('Page.navigate', { url: 'file:///' + file.replace(/\\/g, '/') })
+  await send('Page.navigate', { url: origin + '/' + file.split(/[\\/]/).pop() })
   await new Promise((resolve) => setTimeout(resolve, 4200))
   const name = 'ui-' + THEME + '-' + file.split('tab-')[1].replace('.html', '') + '.png'
   const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true })
@@ -298,6 +320,7 @@ for (const file of htmlFiles) {
   }
 }
 socket.close()
+server.close()
 try {
   spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
 } catch {

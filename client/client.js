@@ -242,7 +242,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     // element glyphs + overview polish
     ".dga-elemRow{display:flex;align-items:center;gap:10px;font-size:12.5px}",
-    ".dga-elemIcon{width:20px;height:20px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}",
+    ".dga-elemIcon{width:22px;height:22px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}",
+    ".dga-elemIcon img{width:100%;height:100%;object-fit:contain;display:block}",
     ".dga-elemName{width:32px;flex:0 0 auto;color:var(--dsw-alias-label-secondary)}",
     ".dga-elemCount{width:30px;text-align:right;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}",
     ".dga-progressGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}",
@@ -696,7 +697,27 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     },
   };
 
+  /** Official element symbol (served from the plugin's asset route). */
+  function elementIconSrc(key) {
+    return API + "/asset/element/" + key + ".webp";
+  }
+
   function ElementGlyph(props) {
+    var requested = props.element;
+    var brokenState = React.useState(false);
+    var broken = brokenState[0], setBroken = brokenState[1];
+    if (!broken && ELEMENT_ART[requested] && requested !== "none") {
+      return h("span", { className: "dga-elemIcon" },
+        h("img", {
+          src: elementIconSrc(requested),
+          alt: "",
+          width: props.size || 18,
+          height: props.size || 18,
+          draggable: false,
+          loading: "lazy",
+          onError: function () { setBroken(true); },
+        }));
+    }
     var key = ELEMENT_ART[props.element] ? props.element : "none";
     var art = ELEMENT_ART[key];
     var color = elementColor(key);
@@ -829,7 +850,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             h("div", { className: "dga-sec" }, "角色元素分布"),
             h("div", { className: "dga-bars" }, list.map(function (entry) {
               return h("div", { className: "dga-elemRow", key: entry.key },
-                h(ElementGlyph, { element: entry.key }),
+                h(ElementGlyph, { element: entry.key, size: 22 }),
                 h("span", { className: "dga-elemName" }, entry.key === "none" ? "其他" : entry.zh),
                 h("span", { className: "dga-barTrack" },
                   h("span", {
