@@ -64,7 +64,14 @@ async function buildLocal() {
   const cfg = { miyousheUid: uid, miyousheServer: 'cn_gf01', miyousheCookie: cookie }
 
   const base = await calc.fetchSnapshot(cfg)
-  const showcase = await microgg.fetchShowcase(base.uid || cfg.miyousheUid)
+  const showcaseUid = base.uid || cfg.miyousheUid
+  const storageDir = join(
+    process.env.APPDATA || join(process.env.USERPROFILE || '', 'AppData', 'Roaming'),
+    'dsh-desktop', 'harness', 'data', 'dsh-genshin-account',
+  )
+  const showcase = await microgg.fetchShowcase(showcaseUid, {
+    cacheFile: showcaseUid ? join(storageDir, 'showcase-' + showcaseUid + '.json') : '',
+  })
   const snapshot = showcase.builds.length ? microgg.mergeShowcase(base, showcase) : base
 
   const characters = model.listCharacters(snapshot, {})

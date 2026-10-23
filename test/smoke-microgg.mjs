@@ -150,7 +150,7 @@ const view = characterView(merged, merged.characters[0].artifacts.length ? merge
 check('view exposes the matching element bonus', view.stats && view.stats.elemDmg === 46.6, view.stats && view.stats.elemDmg)
 check('view carries the weapon detail for the hover card', Boolean(view.weapon && view.weapon.detail && view.weapon.detail.baseAtk), view.weapon && JSON.stringify(view.weapon).slice(0, 160))
 const critSub = view.artifacts[0].subStats.find((sub) => sub.key === 'critRate_')
-check('substat roll count is estimated from the average roll', critSub && critSub.rolls === 3.2, critSub && critSub.rolls)
+check('substat roll count is solved from the roll tiers', critSub && critSub.rolls === 3 && critSub.rollsExact === true, critSub && JSON.stringify(critSub))
 check('best artifact is exposed', merged.artifacts[0].score.cv >= merged.artifacts[1].score.cv || merged.artifacts.length === 2, 'ordering')
 
 

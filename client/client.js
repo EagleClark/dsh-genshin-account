@@ -574,8 +574,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               var crit = sub.key === "critRate_" || sub.key === "critDMG_";
               return h("div", { className: "dga-artiSub" + (crit ? " dga-artiSubCrit" : ""), key: index },
                 h("span", { className: "dga-artiSubK" }, sub.label),
-                h("span", { className: "dga-artiSubRolls", title: "估算强化次数 = 数值 ÷ 该词条平均单次强化" },
-                  sub.rolls == null ? "" : "×" + sub.rolls),
+                h("span", {
+                  className: "dga-artiSubRolls",
+                  title: sub.rollsExact
+                    ? "精确强化次数：数值可由官方四档强化值唯一分解"
+                    : "约等于：该数值有多种强化组合，已按整件圣遗物的总次数约束求解",
+                }, sub.rolls == null ? "" : (sub.rollsExact ? "×" : "≈") + sub.rolls),
                 h("span", { className: "dga-artiSubV" }, sub.text));
             })
           : (a.subs || []).map(function (text, index) {
@@ -585,6 +589,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("div", { className: "dga-cvBox" },
           h("span", { className: "dga-cvV", style: { color: color } }, String(a.cv)),
           h("span", { className: "dga-cvL" }, "CV")),
+        a.rollsTotal
+          ? h("div", { className: "dga-cvBox", title: "整件圣遗物的强化次数，以及这件圣遗物初始是 3 词条还是 4 词条（由总次数反推）" },
+              h("span", { className: "dga-cvV", style: { fontSize: 13, fontWeight: 600 } }, String(a.rollsTotal)),
+              h("span", { className: "dga-cvL" }, "词条" + (a.initialSubstats ? " · 初始 " + a.initialSubstats : "")))
+          : null,
         h("div", { className: "dga-meter" },
           h("span", { className: "dga-meterFill", style: { transform: "scaleX(" + efficiency / 100 + ")", background: color } })),
         h("span", {
@@ -1880,7 +1889,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             size: 12, weight: crit ? "600" : "", color: crit ? POSTER.gold : POSTER.soft, align: "right",
           });
           if (sub.rolls != null) {
-            text(ctx, "×" + sub.rolls, x + cardW - 68, sy, {
+            text(ctx, (sub.rollsExact ? "×" : "≈") + sub.rolls, x + cardW - 68, sy, {
               size: 10, color: crit ? POSTER.gold : POSTER.dim, align: "right",
             });
           }
@@ -1895,6 +1904,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         text(ctx, String(item.cv), x + 18, footY + 26, { size: 18, weight: "700", color: gradeColor });
         ctx.font = "700 18px system-ui, sans-serif";
         text(ctx, "CV", x + 22 + ctx.measureText(String(item.cv)).width, footY + 26, { size: 10, color: POSTER.dim });
+        if (item.rollsTotal) {
+          text(ctx, String(item.rollsTotal) + " 次" + (item.initialSubstats ? " · 初始 " + item.initialSubstats + " 词条" : ""), x + 74, footY + 25, {
+            size: 10, color: POSTER.dim,
+          });
+        }
         if (grade) {
           text(ctx, grade + " " + item.efficiency + "%", x + cardW - 18, footY + 26, {
             size: 11, weight: "600", color: gradeColor, align: "right",
