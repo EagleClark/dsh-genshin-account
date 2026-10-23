@@ -6,7 +6,7 @@
  * The fixture below is trimmed from a real `profile.microgg.cn` response.
  */
 import { fetchShowcase, mergeShowcase } from '../lib/sources/microgg.js'
-import { buildSnapshot, carryForwardShowcase, characterView, overview } from '../lib/model.js'
+import { buildSnapshot, carryForwardShowcase, characterView, listWeapons, overview } from '../lib/model.js'
 
 let failures = 0
 let checks = 0
@@ -199,6 +199,23 @@ const empty = await fetchShowcase('188337967')
 check('empty showcase is ok but has no builds', empty.ok === true && empty.builds.length === 0, JSON.stringify(empty).slice(0, 160))
 check('empty showcase explains what to do', /角色展柜/.test(empty.note), empty.note)
 check('merging an empty showcase is a no-op', mergeShowcase(snapshot, empty) === snapshot)
+
+
+// --- refinement only exists in the showcase payload --------------------------
+// The calculator path never reports 精炼, and buildSnapshot re-links the equipped
+// weapon from the snapshot's weapon list — so the merge has to copy it there.
+const weaponSnapshot = buildSnapshot({
+  source: 'miyoushe',
+  uid: '188337967',
+  player: {},
+  characters: [{ id: '10000046', key: 'hutao', name: '胡桃', element: 'pyro', rarity: 5, level: 90, artifacts: [], equippedPieces: [] }],
+  weapons: [{ id: '13501', key: 'homa', name: '护摩之杖', rarity: 5, type: 'polearm', level: 90, location: 'hutao', refinement: null }],
+  artifacts: [],
+})
+const mergedWeapons = mergeShowcase(weaponSnapshot, showcase)
+check('showcase refinement lands on the weapon list', mergedWeapons.weapons[0].refinement === 5, JSON.stringify(mergedWeapons.weapons[0]))
+check('the equipped weapon keeps its refinement', mergedWeapons.characters[0].equippedWeapon.refinement === 5, mergedWeapons.characters[0].equippedWeapon && mergedWeapons.characters[0].equippedWeapon.refinement)
+check('listWeapons exposes the refinement', listWeapons(mergedWeapons, { limit: 10 })[0].refinement === 5, JSON.stringify(listWeapons(mergedWeapons, { limit: 10 })[0]))
 
 globalThis.fetch = realFetch
 

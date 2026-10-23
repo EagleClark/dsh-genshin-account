@@ -1052,7 +1052,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                   h("div", null, weapon.name),
                   h("div", { className: "dga-sub" },
                     "Lv." + weapon.level +
-                    (weapon.refinement ? " · 精" + weapon.refinement : "") +
+                    (weapon.refinement ? " · 精炼 " + weapon.refinement : "") +
                     " · " + weapon.rarity + "★")));
             } }))
         : null,
@@ -1212,7 +1212,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           });
         })),
       h("div", { className: "dga-sub", style: { padding: "0 2px 8px" } },
-        filtered.length + " / " + rows.length + " 把武器"),
+        filtered.length + " / " + rows.length + " 把武器 · 精炼只对游戏内「角色展柜」中角色的武器可见"),
       h("div", { className: "dga-cardGrid" }, filtered.map(function (w, index) {
         return h(WeaponCard, { key: index, w: w });
       })));
@@ -1279,7 +1279,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h("div", { className: "dga-itemName" }, w.name),
           h("div", { className: "dga-sub" },
             w.rarity + "★ · " + w.typeZh + " · Lv." + w.level +
-            (w.refinement ? " · 精" + w.refinement : "")),
+            (w.refinement ? " · 精炼 " + w.refinement : "")),
           h("div", { className: "dga-sub" }, w.owner ? "装备于 " + w.owner : "未装备"))),
       hover
         ? h(WeaponPopover, { w: w })

@@ -318,7 +318,22 @@ console.log('预览服务:', origin)
 const shots = []
 for (const file of htmlFiles) {
   await send('Page.navigate', { url: origin + '/' + file.split(/[\\/]/).pop() })
-  await new Promise((resolve) => setTimeout(resolve, 4200))
+  await new Promise((resolve) => setTimeout(resolve, 6200))
+  // Wait for the tab's own content: the weapons tab fetches its rows after the
+  // summary lands, and "no skeleton" is already true before React mounts.
+  const readySelector = file.includes('tab-weapons')
+    ? '.dga-wCard'
+    : file.includes('tab-characters')
+      ? '.dga-detail, .dga-empty'
+      : '.dga-root'
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const ready = await send('Runtime.evaluate', {
+      expression: "!!document.querySelector('" + readySelector + "') && !document.querySelector('.dga-skel')",
+      returnByValue: true,
+    })
+    if (ready.result && ready.result.result && ready.result.result.value) break
+    await new Promise((resolve) => setTimeout(resolve, 300))
+  }
   const name = 'ui-' + THEME + '-' + file.split('tab-')[1].replace('.html', '') + '.png'
   const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true })
   if (shot.result && shot.result.data) {
