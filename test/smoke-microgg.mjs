@@ -6,7 +6,7 @@
  * The fixture below is trimmed from a real `profile.microgg.cn` response.
  */
 import { fetchShowcase, mergeShowcase } from '../lib/sources/microgg.js'
-import { buildSnapshot, characterView } from '../lib/model.js'
+import { buildSnapshot, carryForwardShowcase, characterView, overview } from '../lib/model.js'
 
 let failures = 0
 let checks = 0
@@ -152,6 +152,46 @@ check('view carries the weapon detail for the hover card', Boolean(view.weapon &
 const critSub = view.artifacts[0].subStats.find((sub) => sub.key === 'critRate_')
 check('substat roll count is estimated from the average roll', critSub && critSub.rolls === 3.2, critSub && critSub.rolls)
 check('best artifact is exposed', merged.artifacts[0].score.cv >= merged.artifacts[1].score.cv || merged.artifacts.length === 2, 'ordering')
+
+
+// --- a failed showcase read must not delete account progress -----------------
+// The calculator path has no achievements / abyss / artifacts; before this
+// guard, one 424 from the mirror emptied the 进度 card and every artifact.
+const enriched = buildSnapshot({
+  source: 'miyoushe',
+  uid: '188337967',
+  player: {
+    nickname: 'x',
+    achievements: '1181',
+    abyss: { floor: 12, chamber: 3, stars: 36 },
+    stygian: { difficulty: 4, seconds: 255 },
+    fetterCount: 63,
+  },
+  characters: [
+    { id: '10000046', key: 'hutao', name: '胡桃', element: 'pyro', rarity: 5, level: 95, levelFromShowcase: true, showcase: true, artifactCount: 1, stats: { hp: 30123 }, artifacts: [], equippedPieces: [] },
+  ],
+  weapons: [],
+  artifacts: [
+    { id: 'p1', setKey: 's1', setName: '炽烈的炎之魔女', slot: 'flower', slotZh: '生之花', rarity: 5, level: 20, location: 'hutao', main: { key: 'hp', label: '生命值', text: '4780', value: 4780, percent: false }, subs: [{ key: 'critRate_', label: '暴击率', text: '3.5%', value: 3.5, percent: true }] },
+  ],
+})
+const bare = buildSnapshot({
+  source: 'miyoushe',
+  uid: '188337967',
+  player: { nickname: 'x' },
+  characters: [{ id: '10000046', key: 'hutao', name: '胡桃', element: 'pyro', rarity: 5, level: 90, artifacts: [], equippedPieces: [] }],
+  weapons: [],
+  artifacts: [],
+  note: '养成计算器',
+})
+check('a bare snapshot really has no progress', overview(bare).progress.achievements === '', overview(bare).progress.achievements)
+const carried = carryForwardShowcase(enriched, bare)
+check('carry-forward keeps achievements', carried && carried.player.achievements === '1181', carried && carried.player.achievements)
+check('carry-forward keeps abyss', carried && carried.player.abyss && carried.player.abyss.floor === 12, carried && JSON.stringify(carried.player.abyss))
+check('carry-forward keeps the artifacts', carried && carried.artifacts.length === 1, carried && carried.artifacts.length)
+check('carry-forward keeps the panel and level', carried && carried.characters[0].stats.hp === 30123 && carried.characters[0].level === 95, 'panel')
+check('carry-forward says the data is inherited', /沿用上次数据/.test(carried.note), carried.note)
+check('a different account is never carried over', carryForwardShowcase(enriched, { ...bare, uid: '999999999' }) === null, 'uid guard')
 
 // An empty showcase is a normal state, not an error.
 globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ playerInfo: {}, avatarInfoList: [] }) })
