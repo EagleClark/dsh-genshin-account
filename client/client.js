@@ -606,12 +606,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           : null,
         h("span", {
           className: "dga-gradePill",
+          title: "CV " + a.cv + " · 效率 " + a.efficiency + "%",
           style: {
-            color: color,
-            border: "1px solid " + color,
+            color: cvGradeColor(a.cvGrade),
+            border: "1px solid " + cvGradeColor(a.cvGrade),
             background: "var(--dsw-alias-bg-layer-3)",
           },
-        }, (a.grade ? a.grade + " " : "") + a.efficiency + "%")),
+        }, a.cvGrade || "—")),
       h("div", { className: "dga-artiBar" },
         h("span", {
           className: "dga-artiBarFill",
@@ -625,6 +626,20 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
    * `攻击力% 15.7` next to `攻击力 18` instead of two identical labels.
    */
   var PAIRED_STATS = { "攻击力": true, "生命值": true, "防御力": true };
+
+  /** CV 评级的颜色：灰 → 蓝 → 绿 → 金 → 砖红，越往后越稀罕。 */
+  var CV_GRADE_COLOR = {
+    "拉完了": "var(--dsw-alias-label-tertiary)",
+    "及格": "var(--dsw-alias-label-secondary)",
+    "良好": "#7fb2e5",
+    "小毕业": "#7fc9a0",
+    "大毕业": "var(--dga-gold)",
+    "传家宝": "#e8734a",
+  };
+
+  function cvGradeColor(grade) {
+    return CV_GRADE_COLOR[grade] || "var(--dsw-alias-label-tertiary)";
+  }
 
   function statDisplay(label, text, percent) {
     if (!percent || !PAIRED_STATS[label]) return { label: label, text: text };
@@ -1033,8 +1048,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       c.buildScore
         ? h("div", { className: "dga-build" },
             h("div", null,
-              h("div", { className: "dga-buildGrade", style: { color: gradeColor(c.buildScore.grade) } }, c.buildScore.grade),
-              h("div", { className: "dga-buildLabel" }, c.buildScore.label)),
+              h("div", { className: "dga-buildGrade", style: { color: cvGradeColor(c.buildScore.cvGrade), fontSize: 20 } }, c.buildScore.cvGrade || "—"),
+              h("div", { className: "dga-buildLabel" }, "CV 总评级")),
             h("div", { className: "dga-buildStats" },
               h("div", { className: "dga-buildStat" }, h("b", null, String(c.buildScore.cv)), "CV 合计"),
               h("div", { className: "dga-buildStat" }, h("b", null, c.buildScore.efficiency + "%"), "平均效率"),
@@ -1043,13 +1058,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             h("details", { className: "dga-adv", style: { margin: 0, flex: "0 0 auto", border: "none", padding: 0 } },
               h("summary", null, "评分怎么算"),
               h("div", { className: "dga-hint", style: { width: 260, marginTop: 8 } },
-                "CV（暴击值）= 暴击率 × 2 + 暴击伤害，只统计副词条，是社区通用的暴击贡献口径。" ,
+                "CV（暴击值）= 暴击率 × 2 + 暴击伤害。理之冠的主词条是双暴时也计入（暴击率 31.1% 记 62.2）。",
                 h("br"),
-                "效率 = 所有副词条相对 5★ 顶档强化的达成率，覆盖暴击、攻击、充能、精通等全部词条。" ,
+                "单件评级按部位分档：花/羽 30·35·40·45·50，沙/杯 20·25·30·35·40，冠 40·50·60·70·85，",
+                "对应 拉完了 / 及格 / 良好 / 小毕业 / 大毕业 / 传家宝。",
                 h("br"),
-                "评级取两者中较高的一档：S 顶级 / A 优秀 / B 可用 / C 待提升。" ,
+                "五件套合计按 180·210·230·250·280 分档（默认带双暴头）。",
                 h("br"),
-                "注意：CV 只反映暴击，一件堆满暴击但对角色无用的圣遗物也会得高分；配装还要看套装效果与角色的真实需求。")))
+                "效率是另一项参考指标：所有副词条相对 5★ 顶档强化的达成率。",
+                h("br"),
+                "注意：CV 只反映暴击，堆满暴击但对角色无用的圣遗物也会得高分；配装还要看套装与角色需求。")))
         : null,
 
       statDefs.length
@@ -1081,7 +1099,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               return h(ArtifactCard, { key: index, a: a });
             })),
             h("p", { className: "dga-hint" },
-              "CV = 暴击率×2 + 暴击伤害，只算副词条；效率 = 相对 5★ 顶档的达成率。评级线：CV 40 / 30 / 20，效率 85 / 70 / 55。"))
+              "CV = 暴击率×2 + 暴击伤害（双暴主词条的理之冠也计入）。评级线——花羽 30/35/40/45/50，沙杯 20/25/30/35/40，冠 40/50/60/70/85；五件套合计 180/210/230/250/280。"))
         : pieces.length
           ? h("div", { className: "dga-block" },
               h("div", { className: "dga-sec" }, "已装备圣遗物"),
@@ -1530,6 +1548,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     cryo: "#9fd6e3", geo: "#fab72e", dendro: "#a5c83b", none: "#8b93a5",
   };
   var RARITY_HEX = { 5: "#d8b56a", 4: "#a884c9", 3: "#6f95c4", 2: "#6fa87f", 1: "#8b93a5" };
+  /** CV 评级的画布配色（CSS 变量在 canvas 里无效）。 */
+  var CV_GRADE_HEX = {
+    "拉完了": "#6f8a88", "及格": "#9db4b1", "良好": "#7fb2e5",
+    "小毕业": "#7fc9a0", "大毕业": "#dcbb6f", "传家宝": "#e8734a",
+  };
   var accountUid = "";
   var POSTER = {
     ink: "#08222a",
@@ -1793,10 +1816,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       var scoreW = W - PAD - scoreX;
       panel(ctx, scoreX, y, scoreW, 74, 12, build ? POSTER.gold : null);
       if (build) {
-        text(ctx, build.grade, scoreX + 22, y + 50, {
-          size: 34, weight: "800", color: build.grade === "C" ? POSTER.dim : POSTER.gold,
+        var buildGradeColor = CV_GRADE_HEX[build.cvGrade] || POSTER.gold;
+        text(ctx, build.cvGrade, scoreX + 22, y + 46, {
+          size: 22, weight: "800", color: buildGradeColor,
         });
-        text(ctx, build.label, scoreX + 22, y + 66, { size: 11, color: POSTER.soft });
+        text(ctx, "CV 总评级", scoreX + 22, y + 66, { size: 11, color: POSTER.soft });
         var metrics = [
           ["CV 合计", String(build.cv)],
           ["平均效率", build.efficiency + "%"],
@@ -1877,8 +1901,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         var row = Math.floor(index / 3);
         var x = PAD + col * (cardW + 16);
         var cy = y + row * (cardH + 16);
-        var grade = item.grade || "";
-        var gradeColor = grade === "极品" ? POSTER.gold : grade === "优秀" ? "#7fb2e5" : grade === "可用" ? "#7fc9a0" : POSTER.dim;
+        var gradeColor = CV_GRADE_HEX[item.cvGrade] || POSTER.dim;
         panel(ctx, x, cy, cardW, cardH, 14, RARITY_HEX[item.rarity] || POSTER.gold);
 
         var icon = loaded[2 + index];
@@ -1936,8 +1959,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         if (item.initialSubstats) {
           text(ctx, "初始 " + item.initialSubstats + " 词条", x + 92, footY + 25, { size: 10, color: POSTER.dim });
         }
-        if (grade) {
-          text(ctx, grade + " " + item.efficiency + "%", x + cardW - 18, footY + 26, {
+        if (item.cvGrade) {
+          text(ctx, item.cvGrade, x + cardW - 18, footY + 26, {
             size: 11, weight: "600", color: gradeColor, align: "right",
           });
         }
