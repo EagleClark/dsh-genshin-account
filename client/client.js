@@ -590,6 +590,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("div", { className: "dga-cvBox" },
           h("span", { className: "dga-cvV", style: { color: color } }, String(a.cv)),
           h("span", { className: "dga-cvL" }, "CV")),
+        a.initialSubstats
+          ? h("div", { className: "dga-cvBox", title: "这件圣遗物初始是 " + a.initialSubstats + " 词条" },
+              h("span", { className: "dga-cvV", style: { fontSize: 13, fontWeight: 600 } }, String(a.initialSubstats)),
+              h("span", { className: "dga-cvL" }, "初始词条"))
+          : null,
         h("div", { className: "dga-meter" },
           h("span", { className: "dga-meterFill", style: { transform: "scaleX(" + efficiency / 100 + ")", background: color } })),
         h("span", {
@@ -1916,6 +1921,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         text(ctx, String(item.cv), x + 18, footY + 26, { size: 18, weight: "700", color: gradeColor });
         ctx.font = "700 18px system-ui, sans-serif";
         text(ctx, "CV", x + 22 + ctx.measureText(String(item.cv)).width, footY + 26, { size: 10, color: POSTER.dim });
+        if (item.initialSubstats) {
+          text(ctx, "初始 " + item.initialSubstats + " 词条", x + 92, footY + 25, { size: 10, color: POSTER.dim });
+        }
         if (grade) {
           text(ctx, grade + " " + item.efficiency + "%", x + cardW - 18, footY + 26, {
             size: 11, weight: "600", color: gradeColor, align: "right",
