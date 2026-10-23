@@ -146,7 +146,7 @@ dsh plugin --profile web add <仓库绝对路径>
 | `names-zh.json` | 接口返回的 hash/id → 中文名（含词条名） |
 | `skill-orders.json` | 每个角色的「普攻/战技/爆发」技能 id 顺序 |
 | `weapon-details.json` | 255 把武器的 90 级基础攻击力、副属性、被动（精炼 1–5 原文）与故事 |
-| `element-icons/*.webp` | 官方七元素图标（火/水/风/雷/冰/岩/草），由插件自己的 `/asset/element/<key>.webp` 路由提供给面板 |
+| `element-icons/*.webp` | 官方七元素图标母图（942×942）。面板里用的是 `scripts/build-element-icons.mjs` 生成的 96px PNG data URL，已内联进客户端包 |
 
 **为什么需要 `skill-orders.json`**：技能 id **不是**按 普攻→战技→爆发 递增的（神里绫华的普攻 id 比爆发 id 大），按 id 排序会把天赋等级张冠李戴。
 
@@ -167,6 +167,7 @@ node scripts/build-dict.mjs <genshin-db 路径>
 node scripts/build-names.mjs
 node scripts/build-skill-orders.mjs
 node scripts/build-weapon-details.mjs   # 需要 genshin-db：npm i --prefix %TEMP%\gsdb genshin-db，并设 GENSHIN_DB_DIR
+node scripts/build-element-icons.mjs    # 改了元素母图后重跑，会就地更新 client.js 里的 ELEMENT_ICON_DATA
 ```
 
 游戏更新后角色/武器/圣遗物名字缺失时，重跑上面三条即可；插件本身不需要改代码。

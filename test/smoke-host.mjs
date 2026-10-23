@@ -182,8 +182,7 @@ check('weapons ok', weaponsResult.value.ok === true, JSON.stringify(weaponsResul
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-check('routes mounted', routePaths.length === 16, routePaths.join(','))
-check('element icon route mounted', routePaths.some((p) => p.endsWith('/asset/element')), routePaths.join(','))
+check('routes mounted', routePaths.length === 15, routePaths.join(','))
 
 function fakeRes() {
   return {
