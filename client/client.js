@@ -219,9 +219,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     // grade. The efficiency bar moved below the row so it no longer splits the
     // numbers into a fake column table.
     ".dga-artiFoot{display:flex;align-items:baseline;gap:10px;padding-top:10px;border-top:1px solid var(--dsw-alias-border-l1)}",
-    ".dga-artiStat{display:flex;align-items:baseline;gap:4px}",
+    ".dga-artiStat{display:flex;align-items:baseline;gap:4px;white-space:nowrap}",
     ".dga-artiStatV{font-size:16px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}",
-    ".dga-artiStatL{font-size:10px;letter-spacing:.04em;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-artiStatL{font-size:10px;letter-spacing:.04em;color:var(--dsw-alias-label-tertiary);white-space:nowrap}",
     ".dga-artiInit{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap}",
     ".dga-artiInit b{font-weight:700;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}",
     ".dga-artiBar{height:3px;border-radius:999px;margin-top:9px;overflow:hidden;background:color-mix(in srgb, var(--dga-gold) 12%, transparent)}",
@@ -658,6 +658,19 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   var CV_TOP = { flower: 50, plume: 50, sands: 45, goblet: 45, circlet: 95 };
   var EFF_TOP = { piece: 54.3, circlet: 116.3 };
 
+  /** 把角色的权重对象渲染成一句话：生命 0% · 攻击 70% …（0 记 -） */
+  function weightsLine(weights, source) {
+    if (!weights) return "";
+    var parts = [
+      ["生命", weights.hp], ["攻击", weights.atk], ["防御", weights.def],
+      ["暴击", weights.critRate], ["爆伤", weights.critDMG],
+      ["精通", weights.em], ["充能", weights.er], ["治疗", weights.heal],
+    ].map(function (pair) {
+      return pair[0] + " " + (pair[1] ? Math.round(pair[1] * 100) + "%" : "-");
+    });
+    return parts.join(" · ") + (source === "template" ? "（通用模板）" : "（官方权重表）");
+  }
+
   function cvGradeColor(grade) {
     return CV_GRADE_COLOR[grade] || "var(--dsw-alias-label-tertiary)";
   }
@@ -671,11 +684,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   function Art(props) {
     var style = Object.assign({ width: props.size, height: props.size }, props.style || {});
     if (props.rarity) {
+      // 只按稀有度上边框；元素色内框会显得多一层，已去掉
       var tint = RARITY_TINT[Number(props.rarity)] || RARITY_TINT[1];
-      var elementRing = style.borderColor;
       style.borderColor = tint;
       style.background = rarityBackground(props.rarity);
-      if (elementRing) style.boxShadow = "inset 0 0 0 1.5px " + elementRing;
     }
     // A broken URL (a dead CDN, a stale hash) must degrade to the same letter
     // placeholder as a missing one instead of leaving an empty square.
@@ -1100,7 +1112,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                     "理之冠多算主词条那 8 次，因此是 11/12/13/14/15 次（85.3 / 93 / 100.8 / 108.5 / 116.3），",
                     "五件合计 178.3 / 217 / 255.8 / 294.5 / 333.3。",
                     h("br"),
-                    "权重来自 data/character-weights.json（120 个角色），未收录的用通用权重。")
+                    "权重来自 data/character-weights.json（120 个角色），未收录的用通用权重。",
+                    h("br"),
+                    h("b", null, "当前角色权重："), weightsLine(c.weights, c.weightsSource))
                 : h("div", { className: "dga-hint", style: { width: 300, marginTop: 8 } },
                     "CV（暴击值）= 暴击率 × 2 + 暴击伤害。理之冠的主词条是双暴时也计入（暴击率 31.1% 记 62.2）。",
                     h("br"),
@@ -1141,7 +1155,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             })),
             h("p", { className: "dga-hint" },
               effMode
-                ? "权重评分 = Σ（词条数值 × 官方系数 × 角色权重），只算副词条 + 理之冠主词条。评级线——普通部位 23.3/31/38.8/46.5/54.3，理之冠 85.3/93/100.8/108.5/116.3，五件合计 178.3/217/255.8/294.5/333.3。"
+                ? "权重评分 = Σ（词条数值 × 官方系数 × 角色权重），只算副词条 + 理之冠主词条。评级线——普通部位 23.3/31/38.8/46.5/54.3，理之冠 85.3/93/100.8/108.5/116.3，五件合计 178.3/217/255.8/294.5/333.3。当前权重：" + weightsLine(c.weights, c.weightsSource)
                 : "CV = 暴击率×2 + 暴击伤害（双暴主词条的理之冠也计入）。评级线——花羽 30/35/40/45/50，沙杯 25/30/35/40/45，冠 50/60/70/80/95；五件套合计 160/190/220/250/285。"))
         : pieces.length
           ? h("div", { className: "dga-block" },
