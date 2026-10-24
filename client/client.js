@@ -291,6 +291,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-buildGrade{font-size:22px;font-weight:750;line-height:1}",
     ".dga-buildLabel{font-size:11.5px;color:var(--dsw-alias-label-tertiary);margin-top:3px}",
     ".dga-buildStats{display:flex;gap:18px;flex-wrap:wrap;flex:1}",
+    ".dga-secRow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}",
+    ".dga-secRow .dga-sec{margin-bottom:0}",
+    ".dga-seg{display:inline-flex;padding:2px;border-radius:999px;border:1px solid var(--dga-line);background:var(--dsw-alias-bg-layer-2)}",
+    ".dga-segBtn{appearance:none;font:inherit;cursor:pointer;border:none;background:transparent;color:var(--dsw-alias-label-tertiary);font-size:11.5px;padding:3px 10px;border-radius:999px;transition:color .12s ease,background .12s ease}",
+    ".dga-segBtnOn{color:var(--dsw-alias-label-primary);background:color-mix(in srgb, var(--dga-gold) 22%, transparent)}",
     ".dga-buildStat{font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
     ".dga-buildStat b{display:block;font-size:15px;color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}",
 
@@ -561,10 +566,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
    */
   function ArtifactCard(props) {
     var a = props.a;
+    // 两种评分可切换：CV（双暴）或 有效词条（按角色的词条权重）
+    var effMode = props.mode === "eff";
+    var activeValue = effMode ? a.eff : a.cv;
+    var activeGrade = effMode ? a.effGrade : a.cvGrade;
     var color = gradeColor(a.grade);
     var isHex = /^#[0-9a-f]{6}$/i.test(color);
     var subs = a.subStats && a.subStats.length ? a.subStats : null;
     var efficiency = Math.max(3, Math.min(100, Number(a.efficiency) || 0));
+    var activeBar = effMode ? Math.max(3, Math.min(100, ((Number(a.eff) || 0) / 70) * 100)) : efficiency;
     return h("div", { className: "dga-artiCard" },
       h("span", { className: "dga-artiAccent", style: { background: color } }),
       h("div", { className: "dga-artiHead" },
@@ -577,7 +587,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         }),
         h("div", { className: "dga-artiHeadText" },
           h("div", { className: "dga-artiSet", title: a.setName }, a.setName + " " + (a.rarity || 5) + "★"),
-          h("div", { className: "dga-artiSlot" }, a.slotZh + " · +" + (a.level == null ? "-" : a.level)))),
+          h("div", { className: "dga-artiSlot" }, a.slotZh + " · +" + (a.level == null ? "-" : a.level - 1)))),
       a.mainStat
         ? h("div", { className: "dga-artiMain" },
             h("span", { className: "dga-artiMainL" }, "主词条 · " + statDisplay(a.mainStat.label, "", a.mainStat.percent).label),
@@ -592,10 +602,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 h("span", { className: "dga-artiSubK" }, shown.label),
                 h("span", {
                   className: "dga-artiSubRolls",
-                  title: sub.rollsExact
-                    ? "精确强化次数：数值可由官方四档强化值唯一分解"
-                    : "约等于：该数值有多种强化组合，已按整件圣遗物的总次数约束求解",
-                }, sub.rolls == null ? "" : (sub.rollsExact ? "" : "≈") + sub.rolls + " 次"),
+                  title: "这条副词条被强化了 " + ((sub.rolls || 1) - 1) + " 次（不含初始那一次）",
+                }, sub.rolls == null ? "" : String(sub.rolls - 1) + " 次"),
                 h("span", { className: "dga-artiSubV" }, sub.text));
             })
           : (a.subs || []).map(function (text, index) {
@@ -603,25 +611,25 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             })),
       h("div", { className: "dga-artiFoot" },
         h("div", { className: "dga-artiStat" },
-          h("span", { className: "dga-artiStatV", style: { color: color } }, String(a.cv)),
-          h("span", { className: "dga-artiStatL" }, "CV")),
+          h("span", { className: "dga-artiStatV", style: { color: color } }, String(activeValue)),
+          h("span", { className: "dga-artiStatL" }, effMode ? "有效词条" : "CV")),
         a.initialSubstats
           ? h("div", { className: "dga-artiInit", title: "这件圣遗物初始是 " + a.initialSubstats + " 词条" },
               "初始 ", h("b", null, String(a.initialSubstats)), " 词条")
           : null,
         h("span", {
           className: "dga-gradePill",
-          title: "CV " + a.cv + " · 效率 " + a.efficiency + "%",
+          title: effMode ? "CV " + a.cv + " · 有效词条 " + a.eff : "CV " + a.cv + " · 效率 " + a.efficiency + "%",
           style: {
-            color: cvGradeColor(a.cvGrade),
-            border: "1px solid " + cvGradeColor(a.cvGrade),
+            color: cvGradeColor(activeGrade),
+            border: "1px solid " + cvGradeColor(activeGrade),
             background: "var(--dsw-alias-bg-layer-3)",
           },
-        }, a.cvGrade || "—")),
+        }, activeGrade || "—")),
       h("div", { className: "dga-artiBar" },
         h("span", {
           className: "dga-artiBarFill",
-          style: { transform: "scaleX(" + efficiency / 100 + ")", background: color },
+          style: { transform: "scaleX(" + activeBar / 100 + ")", background: color },
         })));
   }
 
@@ -1028,6 +1036,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var pieces = c.equippedPieces || [];
     var scored = c.artifacts || [];
     var color = elementColor(c.elementId || c.element);
+    // 两种评分：CV（双暴）或 有效词条（角色权重）
+    var modeState = React.useState("cv");
+    var scoreMode = modeState[0], setScoreMode = modeState[1];
+    var effMode = scoreMode === "eff";
 
     return h("div", { className: "dga-detail" },
       h("div", { className: "dga-charHead" },
@@ -1051,16 +1063,17 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       c.buildScore
         ? h("div", { className: "dga-build" },
             h("div", null,
-              h("div", { className: "dga-buildGrade", style: { color: cvGradeColor(c.buildScore.cvGrade), fontSize: 20 } }, c.buildScore.cvGrade || "—"),
-              h("div", { className: "dga-buildLabel" }, "CV 总评级")),
+              h("div", { className: "dga-buildGrade", style: { color: cvGradeColor(effMode ? (c.effective && c.effective.grade) : c.buildScore.cvGrade), fontSize: 20 } }, (effMode ? (c.effective && c.effective.grade) : c.buildScore.cvGrade) || "—"),
+              h("div", { className: "dga-buildLabel" }, effMode ? "有效词条总评级" : "CV 总评级")),
             h("div", { className: "dga-buildStats" },
-              h("div", { className: "dga-buildStat" }, h("b", null, String(c.buildScore.cv)), "CV 合计"),
-              h("div", { className: "dga-buildStat" }, h("b", null, c.buildScore.efficiency + "%"), "平均效率"),
-              h("div", { className: "dga-buildStat" }, h("b", null, String(c.buildScore.averageCv)), "平均 CV"),
+              h("div", { className: "dga-buildStat" }, h("b", null, String(effMode ? (c.effective && c.effective.total) : c.buildScore.cv)), effMode ? "有效词条" : "CV 合计"),
+              h("div", { className: "dga-buildStat" }, h("b", null, String(effMode ? ((c.effective && (c.effective.total / Math.max(1, c.effective.count))).toFixed(1)) : c.buildScore.averageCv)), effMode ? "平均每件" : "平均 CV"),
               h("div", { className: "dga-buildStat" }, h("b", null, c.buildScore.count + " 件"), "已读到")),
             h("details", { className: "dga-adv", style: { margin: 0, flex: "0 0 auto", border: "none", padding: 0 } },
               h("summary", null, "评分怎么算"),
               h("div", { className: "dga-hint", style: { width: 260, marginTop: 8 } },
+                "两种评分可切换：CV（只看双暴）与 有效词条（按角色的词条权重加权）。",
+                h("br"),
                 "CV（暴击值）= 暴击率 × 2 + 暴击伤害。理之冠的主词条是双暴时也计入（暴击率 31.1% 记 62.2）。",
                 h("br"),
                 "单件评级按部位分档：花/羽 30·35·40·45·50，沙/杯 20·25·30·35·40，冠 50·60·70·80·95，",
@@ -1068,9 +1081,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 h("br"),
                 "五件套合计取「五件各自档位下限之和」：150 / 180 / 210 / 240 / 275。",
                 h("br"),
-                "效率是另一项参考指标：所有副词条相对 5★ 顶档强化的达成率。",
-                h("br"),
-                "注意：CV 只反映暴击，堆满暴击但对角色无用的圣遗物也会得高分；配装还要看套装与角色需求。")))
+
+                "注意：CV 只反映暴击，堆满暴击但对角色无用的圣遗物也会得高分；配装还要看套装与角色需求。" +
+                " 有效词条用的是每个角色自己的权重（data/character-weights.json）。")))
         : null,
 
       statDefs.length
@@ -1097,9 +1110,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       scored.length
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "圣遗物 · 主副词条与评分"),
+            h("div", { className: "dga-secRow" },
+              h("div", { className: "dga-sec" }, "圣遗物 · 主副词条与评分"),
+              h("div", { className: "dga-seg" },
+                ["cv", "eff"].map(function (key) {
+                  return h("button", {
+                    key: key,
+                    className: "dga-segBtn" + (scoreMode === key ? " dga-segBtnOn" : ""),
+                    onClick: function () { setScoreMode(key); },
+                  }, key === "cv" ? "CV" : "有效词条");
+                }))),
             h("div", { className: "dga-artiGrid" }, scored.map(function (a, index) {
-              return h(ArtifactCard, { key: index, a: a });
+              return h(ArtifactCard, { key: index, a: a, mode: scoreMode });
             })),
             h("p", { className: "dga-hint" },
               "CV = 暴击率×2 + 暴击伤害（双暴主词条的理之冠也计入）。评级线——花羽 30/35/40/45/50，沙杯 20/25/30/35/40，冠 50/60/70/80/95；五件套合计 150/180/210/240/275。"))
@@ -1925,7 +1947,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           drawSlotGlyph(ctx, item.slot, x + 34, iconY + 20, 26, gradeColor);
         }
         text(ctx, clipText(ctx, item.setName, cardW - 84, 13, "600"), x + 62, cy + 30, { size: 13, weight: "600" });
-        text(ctx, item.slotZh + " · +" + (item.level == null ? "-" : item.level), x + 62, cy + 47, {
+        text(ctx, item.slotZh + " · +" + (item.level == null ? "-" : item.level - 1), x + 62, cy + 47, {
           size: 11, color: POSTER.dim,
         });
 
@@ -1949,7 +1971,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             size: 12, weight: crit ? "600" : "", color: crit ? POSTER.gold : POSTER.soft, align: "right",
           });
           if (sub.rolls != null) {
-            text(ctx, (sub.rollsExact ? "" : "≈") + sub.rolls + " 次", x + cardW - 66, sy, {
+            text(ctx, String(sub.rolls - 1) + " 次", x + cardW - 66, sy, {
               size: 10, color: crit ? POSTER.gold : POSTER.dim, align: "right",
             });
           }

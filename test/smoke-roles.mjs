@@ -4,7 +4,7 @@
  * 系数来自用户提供的官方公式表；权重以阿蕾奇诺为样板（大生命0% / 大攻击70% /
  * 大防御0% / 暴击率100% / 暴击伤害100% / 精通50% / 充能0%）。
  */
-import { COEFFICIENTS, CHARACTER_WEIGHTS, ROLES, hasTableWeights, roleOf, scorePiece, scoreSub, weightOf, weightsFor } from '../lib/roles.js'
+import { COEFFICIENTS, CHARACTER_WEIGHTS, EFF_LABELS, ROLES, hasTableWeights, pieceGradeOf, roleOf, scorePiece, scoreSub, totalGradeOf, weightOf, weightsFor } from '../lib/roles.js'
 
 let failures = 0
 let checks = 0
@@ -98,6 +98,14 @@ check('a hp circlet main is worth nothing for a crit role', scorePiece(circletHp
 
 // 换定位分数会变
 check('the same flower scores lower for a support role', scorePiece(flower, 'support') < scorePiece(flower, 'crit'), [scorePiece(flower, 'support'), scorePiece(flower, 'crit')])
+
+
+// --- 六档评级（单件 / 合计）--------------------------------------------------
+const pieceBands = [22.9, 23, 31, 39, 47, 54]
+check('piece bands map to the six labels', JSON.stringify(pieceBands.map(pieceGradeOf)) === JSON.stringify(['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']), JSON.stringify(pieceBands.map(pieceGradeOf)))
+const totalBands = [115.9, 116, 155, 194, 232, 271]
+check('total bands map to the six labels', JSON.stringify(totalBands.map(totalGradeOf)) === JSON.stringify(['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']), JSON.stringify(totalBands.map(totalGradeOf)))
+check('six labels are used for both scales', EFF_LABELS.length === 6, EFF_LABELS.length)
 
 if (failures) {
   console.log('roles: ' + (checks - failures) + '/' + checks + ' checks passed')
