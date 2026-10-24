@@ -4,7 +4,7 @@
  * 系数来自用户提供的官方公式表；权重以阿蕾奇诺为样板（大生命0% / 大攻击70% /
  * 大防御0% / 暴击率100% / 暴击伤害100% / 精通50% / 充能0%）。
  */
-import { COEFFICIENTS, ROLES, roleOf, scorePiece, scoreSub, weightOf } from '../lib/roles.js'
+import { COEFFICIENTS, CHARACTER_WEIGHTS, ROLES, hasTableWeights, roleOf, scorePiece, scoreSub, weightOf, weightsFor } from '../lib/roles.js'
 
 let failures = 0
 let checks = 0
@@ -35,16 +35,31 @@ for (const [key, value] of Object.entries(maxRoll)) {
   check('one max roll of ' + key + ' is about 7.7 points', points > 7.6 && points < 7.9, points.toFixed(2))
 }
 
-// --- 阿蕾奇诺的权重 ----------------------------------------------------------
-const arle = ROLES[roleOf('阿蕾奇诺')]
-check('阿蕾奇诺 maps to the crit template', roleOf('阿蕾奇诺') === 'crit', roleOf('阿蕾奇诺'))
-check('hp weight is 0', arle.weights.hp === 0, arle.weights.hp)
-check('atk weight is 0.7', arle.weights.atk === 0.7, arle.weights.atk)
-check('def weight is 0', arle.weights.def === 0, arle.weights.def)
-check('crit rate weight is 1', arle.weights.critRate === 1, arle.weights.critRate)
-check('crit damage weight is 1', arle.weights.critDMG === 1, arle.weights.critDMG)
-check('mastery weight is 0.5', arle.weights.em === 0.5, arle.weights.em)
-check('energy recharge weight is 0', arle.weights.er === 0, arle.weights.er)
+// --- 官方权重表：阿蕾奇诺 ----------------------------------------------------
+const arle = weightsFor('阿蕾奇诺')
+check('阿蕾奇诺 has table weights', hasTableWeights('阿蕾奇诺'), hasTableWeights('阿蕾奇诺'))
+check('阿蕾奇诺 still maps to the crit template', roleOf('阿蕾奇诺') === 'crit', roleOf('阿蕾奇诺'))
+check('hp weight is 0', arle.hp === 0, arle.hp)
+check('atk weight is 0.7', arle.atk === 0.7, arle.atk)
+check('def weight is 0', arle.def === 0, arle.def)
+check('crit rate weight is 1', arle.critRate === 1, arle.critRate)
+check('crit damage weight is 1', arle.critDMG === 1, arle.critDMG)
+check('mastery weight is 0.5', arle.em === 0.5, arle.em)
+check('energy recharge weight is 0', arle.er === 0, arle.er)
+
+// 抽查表里其他几个角色
+const tableChecks = [
+  ['那维莱特', { hp: 1, atk: 0, def: 0, critRate: 1, critDMG: 1, em: 0, er: 0.3 }],
+  ['班尼特', { hp: 1, atk: 0.5, def: 0, critRate: 0.5, critDMG: 0.5, em: 0, er: 1 }],
+  ['芭芭拉', { hp: 1, atk: 0.5, def: 0, critRate: 1, critDMG: 1, em: 0, er: 0.55 }],
+  ['诺艾尔', { hp: 0, atk: 0.5, def: 1, critRate: 1, critDMG: 1, em: 0, er: 0.55 }],
+]
+for (const [name, expected] of tableChecks) {
+  const actual = weightsFor(name)
+  check(name + ' weights match the table', JSON.stringify(actual) === JSON.stringify(expected), JSON.stringify(actual))
+}
+check('the table covers over 100 characters', Object.keys(CHARACTER_WEIGHTS).length >= 100, Object.keys(CHARACTER_WEIGHTS).length)
+check('an unknown character falls back to a template', weightsFor('不存在的角色') === ROLES.generic.weights, 'fallback')
 
 // --- 用她的真实生之花验算 ----------------------------------------------------
 // 生命值 4780(主) / 攻击 27 / 精通 21 / 暴击率 9.3 / 暴伤 22.5
