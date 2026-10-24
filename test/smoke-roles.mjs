@@ -18,7 +18,7 @@ function check(label, ok, detail) {
 
 // --- 系数与官方表一致 --------------------------------------------------------
 check('crit rate coefficient is 2', COEFFICIENTS.critRate_ === 2, COEFFICIENTS.critRate_)
-check('crit damage coefficient is 2', COEFFICIENTS.critDMG_ === 2, COEFFICIENTS.critDMG_)
+check('crit damage coefficient is 1', COEFFICIENTS.critDMG_ === 1, COEFFICIENTS.critDMG_)
 check('elemental mastery coefficient is 0.33', COEFFICIENTS.eleMas === 0.33, COEFFICIENTS.eleMas)
 check('energy recharge coefficient is 1.1979', COEFFICIENTS.enerRech_ === 1.1979, COEFFICIENTS.enerRech_)
 check('atk% / hp% coefficient is 1.33', COEFFICIENTS.atk_ === 1.33 && COEFFICIENTS.hp_ === 1.33, 'atk/hp')
@@ -29,7 +29,7 @@ check('flat def coefficient is 0.335 x 0.66', Math.abs(COEFFICIENTS.def - 0.335 
 check('elemental damage bonus uses the atk% coefficient', COEFFICIENTS.pyro_dmg_ === 1.33 && COEFFICIENTS.cryo_dmg_ === 1.33, 'elemental')
 
 // 一次满档强化：除爆伤外都落在 7.7-7.8（官方“等预算”）
-const maxRoll = { critRate_: 3.89, eleMas: 23.31, enerRech_: 6.48, atk_: 5.83, hp_: 5.83, def_: 7.29 }
+const maxRoll = { critRate_: 3.89, critDMG_: 7.77, eleMas: 23.31, enerRech_: 6.48, atk_: 5.83, hp_: 5.83, def_: 7.29 }
 for (const [key, value] of Object.entries(maxRoll)) {
   const points = value * COEFFICIENTS[key]
   check('one max roll of ' + key + ' is about 7.7 points', points > 7.6 && points < 7.9, points.toFixed(2))
@@ -58,16 +58,15 @@ const flower = {
     { key: 'critDMG_', value: 22.5 },
   ],
 }
-check('阿蕾奇诺 flower scores 70.8', scorePiece(flower, 'crit') === 70.8, scorePiece(flower, 'crit'))
+// 只算副词条：攻击 3.8 + 精通 3.5 + 暴击 18.6 + 爆伤 22.5
+check('阿蕾奇诺 flower scores 48.3', scorePiece(flower, 'crit') === 48.3, scorePiece(flower, 'crit'))
 check('a zero-weight stat contributes nothing', scoreSub('hp', 4780, 'crit') === 0, scoreSub('hp', 4780, 'crit'))
 
-// 元素伤害主词条要算进杯子
-const goblet = {
-  slot: 'goblet',
-  main: { key: 'pyro_dmg_', value: 46.6 },
-  subs: [{ key: 'critRate_', value: 7.4 }],
-}
-check('an elemental goblet main counts', scorePiece(goblet, 'crit') === 58.2, scorePiece(goblet, 'crit'))
+// 主词条不参与计算：同一个杯子，主词条换了也不影响得分
+const gobletA = { slot: 'goblet', main: { key: 'pyro_dmg_', value: 46.6 }, subs: [{ key: 'critRate_', value: 7.4 }] }
+const gobletB = { slot: 'goblet', main: { key: 'def_', value: 58.3 }, subs: [{ key: 'critRate_', value: 7.4 }] }
+check('a main stat does not score', scorePiece(gobletA, 'crit') === 14.8, scorePiece(gobletA, 'crit'))
+check('changing the main stat changes nothing', scorePiece(gobletA, 'crit') === scorePiece(gobletB, 'crit'), [scorePiece(gobletA, 'crit'), scorePiece(gobletB, 'crit')])
 
 // 换定位分数会变
 check('the same flower scores lower for a support role', scorePiece(flower, 'support') < scorePiece(flower, 'crit'), [scorePiece(flower, 'support'), scorePiece(flower, 'crit')])
