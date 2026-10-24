@@ -49,16 +49,23 @@ check('energy recharge weight is 0', arle.er === 0, arle.er)
 
 // 抽查表里其他几个角色
 const tableChecks = [
-  ['那维莱特', { hp: 1, atk: 0, def: 0, critRate: 1, critDMG: 1, em: 0, er: 0.3 }],
-  ['班尼特', { hp: 1, atk: 0.5, def: 0, critRate: 0.5, critDMG: 0.5, em: 0, er: 1 }],
-  ['芭芭拉', { hp: 1, atk: 0.5, def: 0, critRate: 1, critDMG: 1, em: 0, er: 0.55 }],
-  ['诺艾尔', { hp: 0, atk: 0.5, def: 1, critRate: 1, critDMG: 1, em: 0, er: 0.55 }],
+  ['那维莱特', { hp: 1, atk: 0, def: 0, critRate: 1, critDMG: 1, em: 0, er: 0.3, heal: 0 }],
+  ['班尼特', { hp: 1, atk: 0.5, def: 0, critRate: 0.5, critDMG: 0.5, em: 0, er: 1, heal: 1 }],
+  ['芭芭拉', { hp: 1, atk: 0.5, def: 0, critRate: 1, critDMG: 1, em: 0, er: 0.55, heal: 1 }],
+  ['诺艾尔', { hp: 0, atk: 0.5, def: 1, critRate: 1, critDMG: 1, em: 0, er: 0.55, heal: 0.99 }],
 ]
 for (const [name, expected] of tableChecks) {
   const actual = weightsFor(name)
   check(name + ' weights match the table', JSON.stringify(actual) === JSON.stringify(expected), JSON.stringify(actual))
 }
 check('the table covers over 100 characters', Object.keys(CHARACTER_WEIGHTS).length >= 100, Object.keys(CHARACTER_WEIGHTS).length)
+
+// 治疗列（第 8 项）来自 Miao 表
+check('莉奈娅 carries a heal weight', weightsFor('莉奈娅').heal === 0.99, weightsFor('莉奈娅').heal)
+check('班尼特 carries a heal weight', weightsFor('班尼特').heal === 1, weightsFor('班尼特').heal)
+check('阿蕾奇诺 has no heal weight', weightsFor('阿蕾奇诺').heal === 0, weightsFor('阿蕾奇诺').heal)
+check('兹白 uses the defence template', weightsFor('兹白').def === 1 && weightsFor('兹白').critRate === 1, JSON.stringify(weightsFor('兹白')))
+check('丝柯克 uses the attack crit template', weightsFor('丝柯克').atk === 1 && weightsFor('丝柯克').em === 0, JSON.stringify(weightsFor('丝柯克')))
 check('an unknown character falls back to a template', weightsFor('不存在的角色') === ROLES.generic.weights, 'fallback')
 
 // --- 用她的真实生之花验算 ----------------------------------------------------

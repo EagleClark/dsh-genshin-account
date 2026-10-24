@@ -40,12 +40,12 @@ lines.push('')
 const missing = characters.filter((c) => !hasTableWeights(c.name)).map((c) => c.name)
 lines.push(`覆盖 ${characters.length - missing.length} / ${characters.length} 个角色；表里没有的（回落通用）${missing.length} 个：${missing.join('、') || '无'}`)
 lines.push('')
-lines.push('| 角色 | 生命 | 攻击 | 防御 | 暴击 | 暴伤 | 精通 | 充能 |')
-lines.push('|---|---|---|---|---|---|---|---|')
+lines.push('| 角色 | 生命 | 攻击 | 防御 | 暴击 | 暴伤 | 精通 | 充能 | 治疗 |')
+lines.push('|---|---|---|---|---|---|---|---|---|')
 for (const c of characters.slice().sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name, 'zh'))) {
   const w = weightsFor(c.name)
   const pct = (value) => (value ? Math.round(value * 100) + '%' : '-')
-  lines.push(`| ${c.name}${hasTableWeights(c.name) ? '' : ' *'} | ${pct(w.hp)} | ${pct(w.atk)} | ${pct(w.def)} | ${pct(w.critRate)} | ${pct(w.critDMG)} | ${pct(w.em)} | ${pct(w.er)} |`)
+  lines.push(`| ${c.name}${hasTableWeights(c.name) ? '' : ' *'} | ${pct(w.hp)} | ${pct(w.atk)} | ${pct(w.def)} | ${pct(w.critRate)} | ${pct(w.critDMG)} | ${pct(w.em)} | ${pct(w.er)} | ${pct(w.heal) || '-'} |`)
 }
 
 lines.push('## 三、按当前定位算出的分数')
