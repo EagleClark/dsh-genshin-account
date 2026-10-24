@@ -64,7 +64,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     // dark marker, so every accent below works in both themes.
     ":root{--dga-gold:#a8752a;--dga-gold-soft:#f6ecd8;--dga-blue:#2f6fbf;--dga-green:#2c8a55;--dga-red:#bd4b47;--dga-purple:#6a5cb5;--dga-orange:#c9741c;--dga-grey:#8a8f98;--dga-bar:#8aa4c8;--dga-track:rgba(15,17,21,.08);--dga-el-pyro:#c8551f;--dga-el-hydro:#1a7ab8;--dga-el-anemo:#2f9578;--dga-el-electro:#7d4fa3;--dga-el-cryo:#3f93b8;--dga-el-geo:#b07d10;--dga-el-dendro:#5c8a1e;--dga-el-none:#6b7280}",
     "body[data-ds-dark-theme]{--dga-gold:#d8b566;--dga-gold-soft:#3a3020;--dga-blue:#6aa8f0;--dga-green:#5ec27f;--dga-red:#e08585;--dga-purple:#9a8ede;--dga-orange:#ee9a4e;--dga-grey:#9aa0aa;--dga-bar:#6f8cb8;--dga-track:rgba(255,255,255,.10);--dga-el-pyro:#ef7938;--dga-el-hydro:#4cc2f1;--dga-el-anemo:#74c2a8;--dga-el-electro:#af8ec1;--dga-el-cryo:#9fd6e3;--dga-el-geo:#fab72e;--dga-el-dendro:#a5c83b;--dga-el-none:#8b93a5}",
-    ".dga-root{height:100%;display:flex;flex-direction:column;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px}",
+    ".dga-root{position:relative;height:100%;display:flex;flex-direction:column;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px}",
+    ".dga-lock{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-start;justify-content:center;padding-top:96px;background:color-mix(in srgb, var(--dsw-alias-bg-base) 62%, transparent);cursor:progress}",
+    ".dga-lockChip{font-size:12px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:999px;padding:5px 14px}",
     ".dga-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:0 0 auto}",
     ".dga-title{font-size:15px;font-weight:600;margin:0}",
     ".dga-sub{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.5}",
@@ -1082,7 +1084,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h("div", { className: "dga-sub" },
             "命之座 " + c.constellation +
             (c.talents ? " · 天赋 " + [c.talents.auto, c.talents.skill, c.talents.burst].map(function (v) { return v == null ? "-" : v; }).join(" / ") : ""))),
-        h("button", { className: "dga-btn", onClick: function () { props.onExport(c); } }, "生成图片")),
+        h("button", { className: "dga-btn", onClick: function () { props.onExport(c, scoreMode); } }, "生成图片")),
 
       c.talents
         ? h("div", { className: "dga-talentRow" },
@@ -1773,7 +1775,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
    * artifacts as cards that keep their main stat and every substat. Everything is
    * drawn locally from the snapshot; nothing is uploaded.
    */
-  function exportCharacterImage(c) {
+  function exportCharacterImage(c, mode) {
+    var effMode = mode === "eff";
+    var build = effMode && c.effective
+      ? { grade: c.effective.grade, total: c.effective.total, avg: (c.effective.total / Math.max(1, c.effective.count)).toFixed(1), count: c.effective.count, name: "权重评分总评级", totalLabel: "权重评分", avgLabel: "平均每件" }
+      : { grade: (c.buildScore || {}).cvGrade, total: (c.buildScore || {}).cv, avg: (c.buildScore || {}).averageCv, count: (c.buildScore || {}).count, name: "CV 总评级", totalLabel: "CV 合计", avgLabel: "平均 CV" };
     var W = 1000;
     var PAD = 48;
     var accent = ELEMENT_HEX[c.elementId || c.element] || ELEMENT_HEX.none;
@@ -1781,7 +1787,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var pieces = (c.equippedPieces || []).slice(0, 5);
     var effects = (c.setEffects || []).slice(0, 4);
     var weapon = c.equippedWeapon || c.weapon || null;
-    var build = c.buildScore || null;
+    if (!build) build = c.buildScore || null;
 
     var cardW = (W - PAD * 2 - 32) / 3;
     var cardH = 232;
@@ -1789,10 +1795,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var hasStats = Boolean(c.stats && c.stats.hp);
     var H = 470 + (hasStats ? 58 : 0) + rows * (cardH + 16) + (effects.length ? 56 + effects.length * 22 : 0) + 80;
 
+    // 3 倍像素密度：导出的 PNG 在聊天/相册里不糊
+    var SCALE = 3;
     var canvas = document.createElement("canvas");
-    canvas.width = W;
-    canvas.height = H;
+    canvas.width = Math.round(W * SCALE);
+    canvas.height = Math.round(H * SCALE);
     var ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.scale(SCALE, SCALE);
 
     var bg = ctx.createLinearGradient(0, 0, W * 0.6, H);
     bg.addColorStop(0, POSTER.ink2);
@@ -1891,19 +1902,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       var scoreW = W - PAD - scoreX;
       panel(ctx, scoreX, y, scoreW, 74, 12, build ? POSTER.gold : null);
       if (build) {
-        var buildGradeColor = CV_GRADE_HEX[build.cvGrade] || POSTER.gold;
-        text(ctx, build.cvGrade, scoreX + 22, y + 46, {
+        var buildGradeColor = CV_GRADE_HEX[build.grade] || POSTER.gold;
+        text(ctx, build.grade || "—", scoreX + 22, y + 46, {
           size: 22, weight: "800", color: buildGradeColor,
         });
-        text(ctx, "CV 总评级", scoreX + 22, y + 66, { size: 11, color: POSTER.soft });
+        text(ctx, build.name, scoreX + 22, y + 66, { size: 11, color: POSTER.soft });
         var metrics = [
-          ["CV 合计", String(build.cv)],
-          ["平均效率", build.efficiency + "%"],
-          ["平均 CV", String(build.averageCv)],
+          [build.totalLabel, String(build.total)],
+          [build.avgLabel, String(build.avg)],
           ["已读到", build.count + " 件"],
         ];
         metrics.forEach(function (pair, index) {
-          var mx = scoreX + 104 + index * ((scoreW - 120) / 4);
+          var mx = scoreX + 104 + index * ((scoreW - 120) / 3);
           text(ctx, pair[1], mx, y + 44, { size: 19, weight: "700", color: POSTER.text });
           text(ctx, pair[0], mx, y + 62, { size: 11, color: POSTER.dim });
         });
@@ -1976,7 +1986,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         var row = Math.floor(index / 3);
         var x = PAD + col * (cardW + 16);
         var cy = y + row * (cardH + 16);
-        var gradeColor = CV_GRADE_HEX[item.cvGrade] || POSTER.dim;
+        var itemValue = effMode ? item.eff : item.cv;
+    var itemGrade = effMode ? item.effGrade : item.cvGrade;
+    var itemLabel = effMode ? "权重" : "CV";
+    var gradeColor = CV_GRADE_HEX[itemGrade] || POSTER.dim;
         panel(ctx, x, cy, cardW, cardH, 14, RARITY_HEX[item.rarity] || POSTER.gold);
 
         var icon = loaded[2 + index];
@@ -2009,7 +2022,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         var subs = item.subStats || [];
         subs.slice(0, 4).forEach(function (sub, subIndex) {
           var sy = mainY + 56 + subIndex * 21;
-          var crit = sub.key === "critRate_" || sub.key === "critDMG_";
+          var subGroup = WEIGHT_GROUP_UI[sub.key];
+          var crit = effMode ? Boolean(c.weights && c.weights[subGroup] > 0) : (sub.key === "critRate_" || sub.key === "critDMG_");
           var shownSub = statDisplay(sub.label, sub.text, sub.percent);
           text(ctx, shownSub.label, x + 18, sy, { size: 12, color: crit ? POSTER.goldSoft : POSTER.soft });
           text(ctx, shownSub.text, x + cardW - 18, sy, {
@@ -2028,14 +2042,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         ctx.moveTo(x + 14, footY);
         ctx.lineTo(x + cardW - 14, footY);
         ctx.stroke();
-        text(ctx, String(item.cv), x + 18, footY + 26, { size: 18, weight: "700", color: gradeColor });
+        text(ctx, String(itemValue), x + 18, footY + 26, { size: 18, weight: "700", color: gradeColor });
         ctx.font = "700 18px system-ui, sans-serif";
-        text(ctx, "CV", x + 22 + ctx.measureText(String(item.cv)).width, footY + 26, { size: 10, color: POSTER.dim });
+        text(ctx, itemLabel, x + 22 + ctx.measureText(String(itemValue)).width, footY + 26, { size: 10, color: POSTER.dim });
         if (item.initialSubstats) {
           text(ctx, "初始 " + item.initialSubstats + " 词条", x + 92, footY + 25, { size: 10, color: POSTER.dim });
         }
-        if (item.cvGrade) {
-          text(ctx, item.cvGrade, x + cardW - 18, footY + 26, {
+        if (itemGrade) {
+          text(ctx, itemGrade, x + cardW - 18, footY + 26, {
             size: 11, weight: "600", color: gradeColor, align: "right",
           });
         }
@@ -2890,7 +2904,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         return h("button", {
           key: item.id,
           className: "dga-tab" + (tab === item.id ? " dga-tab-on" : ""),
-          onClick: function () { tabTouched.current = true; setTab(item.id); },
+          disabled: syncing,
+          onClick: function () {
+            if (syncing) return;
+            tabTouched.current = true;
+            setTab(item.id);
+          },
         }, item.label);
       })),
       // Feedback lives above the panel body, not inside the wizard: pressing
@@ -2898,7 +2917,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       message
         ? h("div", { className: "dga-banner" + (messageError ? " dga-banner-err" : "") }, message)
         : null,
-      body);
+      body,
+      // 同步期间盖住整个面板：按钮、页签、卡片都点不到
+      syncing ? h("div", { className: "dga-lock", "aria-busy": "true" }, h("span", { className: "dga-lockChip" }, "同步中…")) : null);
   }
 
   // ── sidebar icon ────────────────────────────────────────────────────────
