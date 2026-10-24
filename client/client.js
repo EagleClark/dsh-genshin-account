@@ -62,8 +62,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   var CSS = [
     // Plugin-scoped palette. Light values on :root, dark overrides on the shell's
     // dark marker, so every accent below works in both themes.
-    ":root{--dga-gold:#a8752a;--dga-gold-soft:#f6ecd8;--dga-blue:#2f6fbf;--dga-green:#2c8a55;--dga-red:#bd4b47;--dga-purple:#6a5cb5;--dga-bar:#8aa4c8;--dga-track:rgba(15,17,21,.08);--dga-el-pyro:#c8551f;--dga-el-hydro:#1a7ab8;--dga-el-anemo:#2f9578;--dga-el-electro:#7d4fa3;--dga-el-cryo:#3f93b8;--dga-el-geo:#b07d10;--dga-el-dendro:#5c8a1e;--dga-el-none:#6b7280}",
-    "body[data-ds-dark-theme]{--dga-gold:#d8b566;--dga-gold-soft:#3a3020;--dga-blue:#6aa8f0;--dga-green:#5ec27f;--dga-red:#e08585;--dga-purple:#9a8ede;--dga-bar:#6f8cb8;--dga-track:rgba(255,255,255,.10);--dga-el-pyro:#ef7938;--dga-el-hydro:#4cc2f1;--dga-el-anemo:#74c2a8;--dga-el-electro:#af8ec1;--dga-el-cryo:#9fd6e3;--dga-el-geo:#fab72e;--dga-el-dendro:#a5c83b;--dga-el-none:#8b93a5}",
+    ":root{--dga-gold:#a8752a;--dga-gold-soft:#f6ecd8;--dga-blue:#2f6fbf;--dga-green:#2c8a55;--dga-red:#bd4b47;--dga-purple:#6a5cb5;--dga-orange:#c9741c;--dga-grey:#8a8f98;--dga-bar:#8aa4c8;--dga-track:rgba(15,17,21,.08);--dga-el-pyro:#c8551f;--dga-el-hydro:#1a7ab8;--dga-el-anemo:#2f9578;--dga-el-electro:#7d4fa3;--dga-el-cryo:#3f93b8;--dga-el-geo:#b07d10;--dga-el-dendro:#5c8a1e;--dga-el-none:#6b7280}",
+    "body[data-ds-dark-theme]{--dga-gold:#d8b566;--dga-gold-soft:#3a3020;--dga-blue:#6aa8f0;--dga-green:#5ec27f;--dga-red:#e08585;--dga-purple:#9a8ede;--dga-orange:#ee9a4e;--dga-grey:#9aa0aa;--dga-bar:#6f8cb8;--dga-track:rgba(255,255,255,.10);--dga-el-pyro:#ef7938;--dga-el-hydro:#4cc2f1;--dga-el-anemo:#74c2a8;--dga-el-electro:#af8ec1;--dga-el-cryo:#9fd6e3;--dga-el-geo:#fab72e;--dga-el-dendro:#a5c83b;--dga-el-none:#8b93a5}",
     ".dga-root{height:100%;display:flex;flex-direction:column;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px}",
     ".dga-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:0 0 auto}",
     ".dga-title{font-size:15px;font-weight:600;margin:0}",
@@ -646,12 +646,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
   /** CV 评级的颜色：灰 → 蓝 → 绿 → 金 → 砖红，越往后越稀罕。 */
   var CV_GRADE_COLOR = {
-    "拉完了": "var(--dsw-alias-label-tertiary)",
-    "及格": "var(--dsw-alias-label-secondary)",
-    "良好": "#7fb2e5",
-    "小毕业": "#7fc9a0",
-    "大毕业": "var(--dga-gold)",
-    "传家宝": "#e8734a",
+    "拉完了": "var(--dga-grey)",
+    "及格": "var(--dga-green)",
+    "良好": "var(--dga-blue)",
+    "小毕业": "var(--dga-purple)",
+    "大毕业": "var(--dga-orange)",
+    "传家宝": "var(--dga-red)",
   };
 
   /** 各部位「传家宝」门槛，用来把卡片进度条归一化（与 lib/score.js、lib/roles.js 同步）。 */
@@ -1155,8 +1155,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             })),
             h("p", { className: "dga-hint" },
               effMode
-                ? "权重评分 = Σ（词条数值 × 官方系数 × 角色权重），只算副词条 + 理之冠主词条。评级线——普通部位 23.3/31/38.8/46.5/54.3，理之冠 85.3/93/100.8/108.5/116.3，五件合计 178.3/217/255.8/294.5/333.3。当前权重：" + weightsLine(c.weights, c.weightsSource)
-                : "CV = 暴击率×2 + 暴击伤害（双暴主词条的理之冠也计入）。评级线——花羽 30/35/40/45/50，沙杯 25/30/35/40/45，冠 50/60/70/80/95；五件套合计 160/190/220/250/285。"))
+                ? "权重评分 = Σ（词条数值 × 官方系数 × 角色权重），只算副词条 + 理之冠主词条。评级线——普通部位 23.3/31/38.8/46.5/54.3，理之冠 85.3/93/100.8/108.5/116.3，五件合计 178.3/217/255.8/294.5/333.3。"
+                : "CV = 暴击率×2 + 暴击伤害（双暴主词条的理之冠也计入）。评级线——花羽 30/35/40/45/50，沙杯 25/30/35/40/45，冠 50/60/70/80/95；五件套合计 160/190/220/250/285。",
+              effMode ? h("br") : null,
+              effMode ? "当前权重：" + weightsLine(c.weights, c.weightsSource) : null))
         : pieces.length
           ? h("div", { className: "dga-block" },
               h("div", { className: "dga-sec" }, "已装备圣遗物"),
@@ -1612,8 +1614,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   var RARITY_HEX = { 5: "#d8b56a", 4: "#a884c9", 3: "#6f95c4", 2: "#6fa87f", 1: "#8b93a5" };
   /** CV 评级的画布配色（CSS 变量在 canvas 里无效）。 */
   var CV_GRADE_HEX = {
-    "拉完了": "#6f8a88", "及格": "#9db4b1", "良好": "#7fb2e5",
-    "小毕业": "#7fc9a0", "大毕业": "#dcbb6f", "传家宝": "#e8734a",
+    "拉完了": "#8e8e93", "及格": "#4fae72", "良好": "#5b93dd",
+    "小毕业": "#9a7ad6", "大毕业": "#e0902f", "传家宝": "#dd5c5c",
   };
   var accountUid = "";
   var POSTER = {
