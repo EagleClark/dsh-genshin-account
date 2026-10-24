@@ -62,11 +62,17 @@ const flower = {
 check('阿蕾奇诺 flower scores 48.3', scorePiece(flower, 'crit') === 48.3, scorePiece(flower, 'crit'))
 check('a zero-weight stat contributes nothing', scoreSub('hp', 4780, 'crit') === 0, scoreSub('hp', 4780, 'crit'))
 
-// 主词条不参与计算：同一个杯子，主词条换了也不影响得分
+// 只有理之冠的主词条计入；其它部位主词条不计
 const gobletA = { slot: 'goblet', main: { key: 'pyro_dmg_', value: 46.6 }, subs: [{ key: 'critRate_', value: 7.4 }] }
 const gobletB = { slot: 'goblet', main: { key: 'def_', value: 58.3 }, subs: [{ key: 'critRate_', value: 7.4 }] }
-check('a main stat does not score', scorePiece(gobletA, 'crit') === 14.8, scorePiece(gobletA, 'crit'))
-check('changing the main stat changes nothing', scorePiece(gobletA, 'crit') === scorePiece(gobletB, 'crit'), [scorePiece(gobletA, 'crit'), scorePiece(gobletB, 'crit')])
+check('a goblet main stat does not score', scorePiece(gobletA, 'crit') === 14.8, scorePiece(gobletA, 'crit'))
+check('changing a goblet main stat changes nothing', scorePiece(gobletA, 'crit') === scorePiece(gobletB, 'crit'), [scorePiece(gobletA, 'crit'), scorePiece(gobletB, 'crit')])
+
+// 理之冠例外：双暴主词条要计入
+const circlet = { slot: 'circlet', main: { key: 'critDMG_', value: 62.2 }, subs: [{ key: 'critRate_', value: 7.8 }] }
+check('a circlet crit-damage main counts', scorePiece(circlet, 'crit') === 77.8, scorePiece(circlet, 'crit'))
+const circletHp = { slot: 'circlet', main: { key: 'hp_', value: 46.6 }, subs: [{ key: 'critRate_', value: 7.8 }] }
+check('a hp circlet main is worth nothing for a crit role', scorePiece(circletHp, 'crit') === 15.6, scorePiece(circletHp, 'crit'))
 
 // 换定位分数会变
 check('the same flower scores lower for a support role', scorePiece(flower, 'support') < scorePiece(flower, 'crit'), [scorePiece(flower, 'support'), scorePiece(flower, 'crit')])
