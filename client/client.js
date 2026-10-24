@@ -566,11 +566,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
    */
   function ArtifactCard(props) {
     var a = props.a;
-    // 两种评分可切换：CV（双暴）或 有效词条（按角色的词条权重）
+    // 两种评分可切换：CV（双暴）或 权重评分（按角色的词条权重）
     var effMode = props.mode === "eff";
     var activeValue = effMode ? a.eff : a.cv;
     var activeGrade = effMode ? a.effGrade : a.cvGrade;
-    var color = gradeColor(a.grade);
+    // 色条 / 进度条 / 数值都用「当前评分模式」的评级色，切换时才一致
+    var color = cvGradeColor(effMode ? a.effGrade : a.cvGrade);
     var isHex = /^#[0-9a-f]{6}$/i.test(color);
     var subs = a.subStats && a.subStats.length ? a.subStats : null;
     var efficiency = Math.max(3, Math.min(100, Number(a.efficiency) || 0));
@@ -612,14 +613,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-artiFoot" },
         h("div", { className: "dga-artiStat" },
           h("span", { className: "dga-artiStatV", style: { color: color } }, String(activeValue)),
-          h("span", { className: "dga-artiStatL" }, effMode ? "有效词条" : "CV")),
+          h("span", { className: "dga-artiStatL" }, effMode ? "权重评分" : "CV")),
         a.initialSubstats
           ? h("div", { className: "dga-artiInit", title: "这件圣遗物初始是 " + a.initialSubstats + " 词条" },
               "初始 ", h("b", null, String(a.initialSubstats)), " 词条")
           : null,
         h("span", {
           className: "dga-gradePill",
-          title: effMode ? "CV " + a.cv + " · 有效词条 " + a.eff : "CV " + a.cv + " · 效率 " + a.efficiency + "%",
+          title: effMode ? "CV " + a.cv + " · 权重评分 " + a.eff : "CV " + a.cv + " · 效率 " + a.efficiency + "%",
           style: {
             color: cvGradeColor(activeGrade),
             border: "1px solid " + cvGradeColor(activeGrade),
@@ -1036,7 +1037,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var pieces = c.equippedPieces || [];
     var scored = c.artifacts || [];
     var color = elementColor(c.elementId || c.element);
-    // 两种评分：CV（双暴）或 有效词条（角色权重）
+    // 两种评分：CV（双暴）或 权重评分（角色权重）
     var modeState = React.useState("cv");
     var scoreMode = modeState[0], setScoreMode = modeState[1];
     var effMode = scoreMode === "eff";
@@ -1064,28 +1065,45 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         ? h("div", { className: "dga-build" },
             h("div", null,
               h("div", { className: "dga-buildGrade", style: { color: cvGradeColor(effMode ? (c.effective && c.effective.grade) : c.buildScore.cvGrade), fontSize: 20 } }, (effMode ? (c.effective && c.effective.grade) : c.buildScore.cvGrade) || "—"),
-              h("div", { className: "dga-buildLabel" }, effMode ? "有效词条总评级" : "CV 总评级")),
+              h("div", { className: "dga-buildLabel" }, effMode ? "权重评分总评级" : "CV 总评级")),
+            h("div", { className: "dga-seg", style: { alignSelf: "center" } },
+              [["cv", "CV"], ["eff", "权重评分"]].map(function (pair) {
+                return h("button", {
+                  key: pair[0],
+                  className: "dga-segBtn" + (scoreMode === pair[0] ? " dga-segBtnOn" : ""),
+                  onClick: function () { setScoreMode(pair[0]); },
+                }, pair[1]);
+              })),
             h("div", { className: "dga-buildStats" },
-              h("div", { className: "dga-buildStat" }, h("b", null, String(effMode ? (c.effective && c.effective.total) : c.buildScore.cv)), effMode ? "有效词条" : "CV 合计"),
+              h("div", { className: "dga-buildStat" }, h("b", null, String(effMode ? (c.effective && c.effective.total) : c.buildScore.cv)), effMode ? "权重评分" : "CV 合计"),
               h("div", { className: "dga-buildStat" }, h("b", null, String(effMode ? ((c.effective && (c.effective.total / Math.max(1, c.effective.count))).toFixed(1)) : c.buildScore.averageCv)), effMode ? "平均每件" : "平均 CV"),
               h("div", { className: "dga-buildStat" }, h("b", null, c.buildScore.count + " 件"), "已读到")),
             h("details", { className: "dga-adv", style: { margin: 0, flex: "0 0 auto", border: "none", padding: 0 } },
               h("summary", null, "评分怎么算"),
-              h("div", { className: "dga-hint", style: { width: 260, marginTop: 8 } },
-                "两种评分可切换：CV（只看双暴）与 有效词条（按角色的词条权重加权）。",
-                h("br"),
-                "CV（暴击值）= 暴击率 × 2 + 暴击伤害。理之冠的主词条是双暴时也计入（暴击率 31.1% 记 62.2）。",
-                h("br"),
-                "单件评级按部位分档：花/羽 30·35·40·45·50，沙/杯 20·25·30·35·40，冠 50·60·70·80·95，",
-                "对应 拉完了 / 及格 / 良好 / 小毕业 / 大毕业 / 传家宝。冠的门槛更高，因为双暴主词条本身就值 62.2。",
-                h("br"),
-                "五件套合计取「五件各自档位下限之和」：150 / 180 / 210 / 240 / 275。",
-                h("br"),
-
-                "注意：CV 只反映暴击，堆满暴击但对角色无用的圣遗物也会得高分；配装还要看套装与角色需求。" +
-                " 有效词条用的是每个角色自己的权重（data/character-weights.json）。")))
+              effMode
+                ? h("div", { className: "dga-hint", style: { width: 300, marginTop: 8 } },
+                    "权重评分 = Σ（词条数值 × 官方系数 × 该角色的权重）。",
+                    h("br"),
+                    "系数：暴击率 ×2 / 暴击伤害 ×1 / 精通 ×0.33 / 充能 ×1.1979 / 大攻击·大生命 ×1.33 / 大防御 ×1.06，",
+                    "小攻击·小生命·小防御另有 0.5 / 0.66 的折扣。一次满档强化 ≈ 7.75 分。",
+                    h("br"),
+                    "只算副词条，外加理之冠的主词条（双暴头的主词条值 62.2，不计会失真）。",
+                    h("br"),
+                    "六档：普通部位 3/4/5/6/7 次有效强化（23.3 / 31 / 38.8 / 46.5 / 54.3），",
+                    "理之冠多算主词条那 8 次，因此是 11/12/13/14/15 次（85.3 / 93 / 100.8 / 108.5 / 116.3），",
+                    "五件合计 178.3 / 217 / 255.8 / 294.5 / 333.3。",
+                    h("br"),
+                    "权重来自 data/character-weights.json（120 个角色），未收录的用通用权重。")
+                : h("div", { className: "dga-hint", style: { width: 300, marginTop: 8 } },
+                    "CV（暴击值）= 暴击率 × 2 + 暴击伤害。理之冠的主词条是双暴时也计入（暴击率 31.1% 记 62.2）。",
+                    h("br"),
+                    "单件评级按部位分档：花/羽 30·35·40·45·50，沙/杯 20·25·30·35·40，冠 50·60·70·80·95，",
+                    "对应 拉完了 / 及格 / 良好 / 小毕业 / 大毕业 / 传家宝。",
+                    h("br"),
+                    "五件套合计取「五件各自档位下限之和」：150 / 180 / 210 / 240 / 275。",
+                    h("br"),
+                    "注意：CV 只反映暴击，堆满暴击但对角色无用的圣遗物也会得高分；配装还要看套装与角色需求。")))
         : null,
-
       statDefs.length
         ? h("div", { className: "dga-statline" }, statDefs.map(function (pair) {
             return h(Stat, { label: pair[0], value: String(pair[1]), key: pair[0] });
@@ -1110,16 +1128,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       scored.length
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-secRow" },
-              h("div", { className: "dga-sec" }, "圣遗物 · 主副词条与评分"),
-              h("div", { className: "dga-seg" },
-                ["cv", "eff"].map(function (key) {
-                  return h("button", {
-                    key: key,
-                    className: "dga-segBtn" + (scoreMode === key ? " dga-segBtnOn" : ""),
-                    onClick: function () { setScoreMode(key); },
-                  }, key === "cv" ? "CV" : "有效词条");
-                }))),
+            h("div", { className: "dga-sec" }, "圣遗物 · 主副词条与评分"),
             h("div", { className: "dga-artiGrid" }, scored.map(function (a, index) {
               return h(ArtifactCard, { key: index, a: a, mode: scoreMode });
             })),
