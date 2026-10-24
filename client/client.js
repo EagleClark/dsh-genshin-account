@@ -575,7 +575,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var isHex = /^#[0-9a-f]{6}$/i.test(color);
     var subs = a.subStats && a.subStats.length ? a.subStats : null;
     var efficiency = Math.max(3, Math.min(100, Number(a.efficiency) || 0));
-    var activeBar = effMode ? Math.max(3, Math.min(100, ((Number(a.eff) || 0) / 70) * 100)) : efficiency;
+    // 进度条 = 当前模式的分数 ÷ 该部位「传家宝」门槛；理之冠的门槛本来就更高
+    var slot = a.slot;
+    var top = effMode ? (slot === "circlet" ? EFF_TOP.circlet : EFF_TOP.piece) : (CV_TOP[slot] || 50);
+    var activeBar = Math.max(3, Math.min(100, ((effMode ? Number(a.eff) : Number(a.cv)) / top) * 100));
     return h("div", { className: "dga-artiCard" },
       h("span", { className: "dga-artiAccent", style: { background: color } }),
       h("div", { className: "dga-artiHead" },
@@ -650,6 +653,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     "大毕业": "var(--dga-gold)",
     "传家宝": "#e8734a",
   };
+
+  /** 各部位「传家宝」门槛，用来把卡片进度条归一化（与 lib/score.js、lib/roles.js 同步）。 */
+  var CV_TOP = { flower: 50, plume: 50, sands: 45, goblet: 45, circlet: 95 };
+  var EFF_TOP = { piece: 54.3, circlet: 116.3 };
 
   function cvGradeColor(grade) {
     return CV_GRADE_COLOR[grade] || "var(--dsw-alias-label-tertiary)";
@@ -1133,7 +1140,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               return h(ArtifactCard, { key: index, a: a, mode: scoreMode });
             })),
             h("p", { className: "dga-hint" },
-              "CV = 暴击率×2 + 暴击伤害（双暴主词条的理之冠也计入）。评级线——花羽 30/35/40/45/50，沙杯 20/25/30/35/40，冠 50/60/70/80/95；五件套合计 150/180/210/240/275。"))
+              effMode
+                ? "权重评分 = Σ（词条数值 × 官方系数 × 角色权重），只算副词条 + 理之冠主词条。评级线——普通部位 23.3/31/38.8/46.5/54.3，理之冠 85.3/93/100.8/108.5/116.3，五件合计 178.3/217/255.8/294.5/333.3。"
+                : "CV = 暴击率×2 + 暴击伤害（双暴主词条的理之冠也计入）。评级线——花羽 30/35/40/45/50，沙杯 25/30/35/40/45，冠 50/60/70/80/95；五件套合计 160/190/220/250/285。"))
         : pieces.length
           ? h("div", { className: "dga-block" },
               h("div", { className: "dga-sec" }, "已装备圣遗物"),

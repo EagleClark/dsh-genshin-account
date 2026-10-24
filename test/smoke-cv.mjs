@@ -46,8 +46,8 @@ check('flower main never counts toward CV', flowerWithMain.cv === 18.7, flowerWi
 const boundaries = [
   ['flower', [29.9, 30, 35, 40, 45, 50], ['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']],
   ['plume', [29.9, 30, 35, 40, 45, 50], ['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']],
-  ['sands', [19.9, 20, 25, 30, 35, 40], ['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']],
-  ['goblet', [19.9, 20, 25, 30, 35, 40], ['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']],
+  ['sands', [24.9, 25, 30, 35, 40, 45], ['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']],
+  ['goblet', [24.9, 25, 30, 35, 40, 45], ['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']],
   ['circlet', [49.9, 50, 60, 70, 80, 95], ['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']],
 ]
 for (const [slot, values, labels] of boundaries) {
@@ -56,7 +56,7 @@ for (const [slot, values, labels] of boundaries) {
 }
 
 // --- 五件套总 CV ------------------------------------------------------------
-const totalBoundaries = [149.9, 150, 180, 210, 240, 275]
+const totalBoundaries = [159.9, 160, 190, 220, 250, 285]
 const totalLabels = ['拉完了', '及格', '良好', '小毕业', '大毕业', '传家宝']
 check('total thresholds match the table', JSON.stringify(totalBoundaries.map(totalCvGradeOf)) === JSON.stringify(totalLabels), JSON.stringify(totalBoundaries.map(totalCvGradeOf)))
 
@@ -69,17 +69,17 @@ const build = scoreBuild([
   { score: piece('circlet', [{ key: 'critDMG_', value: 15 }], { key: 'critRate_', value: 31.1, percent: true }) },
 ])
 check('build CV sums the five pieces', build.cv === 251.2, build.cv)
-check('251.2 total is 大毕业 (240-274)', build.cvGrade === '大毕业', build.cvGrade)
+check('251.2 total is 大毕业 (250-284)', build.cvGrade === '大毕业', build.cvGrade)
 check('build keeps the efficiency grade too', typeof build.grade === 'string' && build.grade.length === 1, build.grade)
 
 
 // 五件都卡在各自档位下限时，总评必须与单件档位一致
 const floors = {
-  '及格': [30, 30, 20, 20, 50],
-  '良好': [35, 35, 25, 25, 60],
-  '小毕业': [40, 40, 30, 30, 70],
-  '大毕业': [45, 45, 35, 35, 80],
-  '传家宝': [50, 50, 40, 40, 95],
+  '及格': [30, 30, 25, 25, 50],
+  '良好': [35, 35, 30, 30, 60],
+  '小毕业': [40, 40, 35, 35, 70],
+  '大毕业': [45, 45, 40, 40, 80],
+  '传家宝': [50, 50, 45, 45, 95],
 }
 for (const [label, pieces] of Object.entries(floors)) {
   const sum = pieces.reduce((a, b) => a + b, 0)
