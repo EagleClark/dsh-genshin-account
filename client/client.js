@@ -574,6 +574,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var color = cvGradeColor(effMode ? a.effGrade : a.cvGrade);
     var isHex = /^#[0-9a-f]{6}$/i.test(color);
     var subs = a.subStats && a.subStats.length ? a.subStats : null;
+    var weights = props.weights || null;
     var efficiency = Math.max(3, Math.min(100, Number(a.efficiency) || 0));
     // 进度条 = 当前模式的分数 ÷ 该部位「传家宝」门槛；理之冠的门槛本来就更高
     var slot = a.slot;
@@ -600,7 +601,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-artiSubs" },
         subs
           ? subs.map(function (sub, index) {
-              var crit = sub.key === "critRate_" || sub.key === "critDMG_";
+              // CV 模式只突出双暴；权重评分模式突出该角色权重 > 0 的所有词条
+              var group = WEIGHT_GROUP_UI[sub.key];
+              var weight = weights ? (weights[group] || 0) : 0;
+              var crit = effMode ? weight > 0 : (sub.key === "critRate_" || sub.key === "critDMG_");
               var shown = statDisplay(sub.label, sub.text, sub.percent);
               return h("div", { className: "dga-artiSub" + (crit ? " dga-artiSubCrit" : ""), key: index },
                 h("span", { className: "dga-artiSubK" }, shown.label),
@@ -652,6 +656,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     "小毕业": "var(--dga-purple)",
     "大毕业": "var(--dga-orange)",
     "传家宝": "var(--dga-red)",
+  };
+
+  /** 词条 → 权重分组（与 lib/roles.js 的 WEIGHT_GROUP 同步）。 */
+  var WEIGHT_GROUP_UI = {
+    critRate_: "critRate", critDMG_: "critDMG", eleMas: "em", enerRech_: "er",
+    atk_: "atk", atk: "atk", hp_: "hp", hp: "hp", def_: "def", def: "def",
+    heal_: "heal", physical_dmg_: "atk",
   };
 
   /** 各部位「传家宝」门槛，用来把卡片进度条归一化（与 lib/score.js、lib/roles.js 同步）。 */
@@ -1151,7 +1162,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         ? h("div", { className: "dga-block" },
             h("div", { className: "dga-sec" }, "圣遗物 · 主副词条与评分"),
             h("div", { className: "dga-artiGrid" }, scored.map(function (a, index) {
-              return h(ArtifactCard, { key: index, a: a, mode: scoreMode });
+              return h(ArtifactCard, { key: index, a: a, mode: scoreMode, weights: c.weights });
             })),
             h("p", { className: "dga-hint" },
               effMode
