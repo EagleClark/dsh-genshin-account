@@ -94,6 +94,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-spinner svg{display:block;width:18px;height:18px}",
     "@keyframes dgaSpin{to{transform:rotate(360deg)}}",
     "@media (prefers-reduced-motion: reduce){.dga-spinner{animation-duration:2.4s}.dga-artiCard:hover{transform:none}.dga-showcaseChip:active{transform:none}}",
+    ".dga-btn,.dga-primary,.dga-ghost{min-height:34px;padding-left:14px;padding-right:14px}",
+    ".dga-tab{min-height:40px}",
+    ".dga-chipBtn{min-height:26px}",
+    ".dga-tab:focus-visible,.dga-btn:focus-visible,.dga-chipBtn:focus-visible,.dga-searcher:focus-visible,.dga-showcaseChip:focus-visible{outline:2px solid var(--dga-gold);outline-offset:2px}",
     ".dga-lockTitle{font-size:13px;font-weight:600;line-height:1.3}",
     ".dga-lockSub{font-size:11.5px;color:var(--dsw-alias-label-tertiary);margin-top:2px}",
     ".dga-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:0 0 auto}",
@@ -206,6 +210,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-heroTags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}",
     ".dga-tagSoft{font-size:11.5px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border-radius:999px;padding:2px 9px;line-height:17px}",
     ".dga-bento{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;align-items:start}",
+    ".dga-overviewGrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px;align-items:stretch}",
+    ".dga-overviewGrid > *{min-width:0}",
+    ".dga-fill{display:flex;flex-direction:column}",
+    ".dga-fillList{display:flex;flex-direction:column;justify-content:space-around;flex:1 1 auto;gap:2px}",
+    ".dga-factList{display:flex;flex-direction:column;flex:1 1 auto;justify-content:space-around}",
+    ".dga-factRow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--dsw-alias-border-l2);font-size:12px}",
+    ".dga-factRow:first-child{border-top:0}",
+    ".dga-factK{color:var(--dsw-alias-label-tertiary);flex:0 0 auto}",
+    ".dga-factV{color:var(--dsw-alias-label-primary);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    "@media (max-width: 900px){.dga-overviewGrid{grid-template-columns:minmax(0,1fr)}}",
     "@media (max-width:900px){.dga-bento{grid-template-columns:1fr}}",
     ".dga-panel{border:1px solid var(--dsw-alias-border-l2);border-radius:14px;padding:16px 18px;background:var(--dsw-alias-bg-layer-1);min-width:0}",
     ".dga-panelQuiet{background:transparent;border-style:dashed}",
@@ -217,7 +231,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-elemList{display:flex;flex-direction:column;gap:2px}",
     ".dga-elemPct{width:38px;text-align:right;font-size:11.5px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}",
     ".dga-progressList{display:flex;flex-direction:column}",
-    ".dga-progressRow{display:flex;align-items:baseline;gap:10px;padding:9px 0;border-top:1px solid var(--dsw-alias-border-l1)}",
+    ".dga-progressRow{display:flex;align-items:baseline;gap:10px;padding:9px 0;border-top:1px solid var(--dsw-alias-border-l2)},.dga-progressRow:first-child{border-top:0}",
     ".dga-progressRow:first-child{border-top:none;padding-top:2px}",
     ".dga-progressK{flex:1;min-width:0;font-size:12px;color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
     ".dga-progressV{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}",
@@ -1118,7 +1132,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     }, []);
 
     return h(ChartCard, {
-      height: Math.max(184, list.length * 36 + 28),
+      height: Math.max(168, list.length * 30 + 20),
       depsKey: list.map(function (entry) { return entry.key + entry.count; }).join(",") + ":" + ready,
       fallback: function () {
         var peak = Math.max.apply(null, list.map(function (entry) { return entry.count; })) || 1;
@@ -1345,8 +1359,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           })));
       })(),
 
-      // ── 分布 + 进度 ──────────────────────────────────────────────────────
-      h("div", { className: "dga-bento" },
+      // ── 分布 / 进度（左：图表，右：清单） ──────────────────────────────
+      h("div", { className: "dga-overviewGrid" },
         list.length
           ? h("section", { className: "dga-panel dga-spanWide" },
               h("header", { className: "dga-panelHead" },
@@ -1363,20 +1377,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           : null,
 
         cards.length
-          ? h("section", { className: "dga-panel" },
+          ? h("section", { className: "dga-panel dga-fill" },
               h("header", { className: "dga-panelHead" },
                 h("h2", { className: "dga-panelTitle" }, "进度"),
                 h("span", { className: "dga-panelMeta" }, cards.length + " 项")),
-              h("div", { className: "dga-progressList" }, cards.map(function (card) {
+              h("div", { className: "dga-fillList" }, cards.map(function (card) {
                 return h("div", { className: "dga-progressRow", key: card.key },
                   h("span", { className: "dga-progressK" }, card.label),
                   h("span", { className: "dga-progressV" }, card.value),
                   card.sub ? h("span", { className: "dga-progressS" }, card.sub) : null);
               })))
-          : null),
+          : null,
 
-      // ── 等级分布 + 数据状态 ──────────────────────────────────────────────
-      h("div", { className: "dga-bento" },
         levelBands
           ? h("section", { className: "dga-panel dga-spanWide" },
               h("header", { className: "dga-panelHead" },
@@ -1441,12 +1453,22 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               }))
           : null,
 
-        h("section", { className: "dga-panel" },
-          h("header", { className: "dga-panelHead" }, h("h2", { className: "dga-panelTitle" }, "数据状态")),
-          h("p", { className: "dga-sub" }, o.noteShort || "暂无说明"),
-          o.fetchedAt
-            ? h("p", { className: "dga-sub" }, "同步于 " + when(o.fetchedAt))
-            : null)));
+        h("section", { className: "dga-panel dga-fill" },
+          h("header", { className: "dga-panelHead" },
+            h("h2", { className: "dga-panelTitle" }, "数据状态"),
+            h("span", { className: "dga-panelMeta" }, "本地快照")),
+          h("div", { className: "dga-factList" },
+            h("div", { className: "dga-factRow" },
+              h("span", { className: "dga-factK" }, "来源"),
+              h("span", { className: "dga-factV" }, o.noteShort || "暂无说明")),
+            o.fetchedAt
+              ? h("div", { className: "dga-factRow" },
+                  h("span", { className: "dga-factK" }, "同步"),
+                  h("span", { className: "dga-factV" }, when(o.fetchedAt)))
+              : null,
+            h("div", { className: "dga-factRow" },
+              h("span", { className: "dga-factK" }, "角色"),
+              h("span", { className: "dga-factV" }, total + " 个 · 展柜 " + showcase + " 个"))))));
   }
 
   // ── about ───────────────────────────────────────────────────────────────
