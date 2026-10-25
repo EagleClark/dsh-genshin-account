@@ -1118,18 +1118,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         return h("section", { className: "dga-panel" },
           h("header", { className: "dga-panelHead" },
             h("h2", { className: "dga-panelTitle" }, "展柜角色"),
-            h("span", { className: "dga-panelMeta" }, "有副词条明细 · 共 " + rows.length + " 个")),
+            h("span", { className: "dga-panelMeta" }, "权重评分评级 · 共 " + rows.length + " 个")),
           h("div", { className: "dga-showcaseRow" }, rows.map(function (c) {
             return h("button", {
               key: c.id || c.name,
               className: "dga-showcaseChip",
               onClick: function () { props.onOpenCharacter(c.name); },
-              title: c.name + " · CV " + c.cv + (c.cvGrade ? " · " + c.cvGrade : ""),
+              title: c.name + " · 权重评分 " + c.eff + (c.effGrade ? " " + c.effGrade : "") + " · CV " + c.cv + (c.cvGrade ? " " + c.cvGrade : ""),
             },
               h(Art, { src: c.icon, alt: c.name, size: 30, rarity: c.rarity, className: "dga-showcaseArt" }),
               h("span", { className: "dga-showcaseName" }, c.name),
-              c.cvGrade
-                ? h("span", { className: "dga-showcaseGrade", style: { color: cvGradeColor(c.cvGrade) } }, c.cvGrade)
+              c.effGrade
+                ? h("span", { className: "dga-showcaseGrade", style: { color: cvGradeColor(c.effGrade) } }, c.effGrade)
                 : null);
           })));
       })(),
@@ -1317,7 +1317,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var scored = c.artifacts || [];
     var color = elementColor(c.elementId || c.element);
     // 两种评分：CV（双暴）或 权重评分（角色权重）
-    var modeState = React.useState("cv");
+    var modeState = React.useState("eff");
     var scoreMode = modeState[0], setScoreMode = modeState[1];
     var effMode = scoreMode === "eff";
 
