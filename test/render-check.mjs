@@ -166,7 +166,7 @@ const analysis = {
 const gachaResult = render('gacha', React.createElement(parts.GachaTab, { analysis, busy: false, status: '', url: '', onUrl: () => {}, onSync: () => {}, onSyncManual: () => {} }))
 check('gacha dashboard renders', gachaResult.error === null, gachaResult.error)
 check('gacha dashboard shows the rarity mix', gachaResult.html.includes('星级分布'), gachaResult.html.slice(0, 200))
-check('gacha dashboard charts months', gachaResult.html.includes('dga-monthChart'), gachaResult.html.slice(0, 200))
+check('gacha dashboard charts months', gachaResult.html.includes('每月抽卡量') && gachaResult.html.includes('dga-chart'), gachaResult.html.slice(0, 200))
 check('gacha dashboard shows pity progress', gachaResult.html.includes('垫了多少') && gachaResult.html.includes('dga-pityFill'), gachaResult.html.slice(0, 200))
 
 const gachaEmpty = render('gacha-empty', React.createElement(parts.GachaTab, { analysis: null, busy: false, status: '', url: '', onUrl: () => {}, onSync: () => {}, onSyncManual: () => {} }))

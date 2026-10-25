@@ -474,8 +474,8 @@ check('wish history no longer reads the game cache', !clientSource.includes('web
 check('wish history takes a pasted url', clientSource.includes('用这段链接同步'), 'manual sync button missing')
 check('wish history documents the clipboard script', clientSource.includes('lelaer.com/cn.ps1') && clientSource.includes('lelaer.com/oc.ps1'), 'powershell fallback missing')
 check('the clipboard script carries a caution', clientSource.includes('插件无法核对它的内容'), 'no third-party warning')
-check('wish history breaks down rarities', clientSource.includes('星级分布') && clientSource.includes('dga-ratioBar'), 'rarity bar missing')
-check('wish history charts months and pity', clientSource.includes('dga-monthChart') && clientSource.includes('垫了多少'), 'charts missing')
+check('wish history breaks down rarities', clientSource.includes('星级分布') && clientSource.includes('type: "donut"'), 'rarity chart missing')
+check('wish history charts months and pity', clientSource.includes('每月抽卡量') && clientSource.includes('垫了多少'), 'charts missing')
 // The gacha state holds the analysis object itself; reading `.analysis` off it
 // once blanked the whole tab, so pin the binding down.
 check('gacha tab receives the analysis object', /analysis: gacha \|\| null/.test(clientSource), 'analysis binding changed')
@@ -486,8 +486,10 @@ check('overview explains the server code', clientSource.includes('SERVER_LABEL')
 // The page opens on 设置, so the `loading && !summary` branch never ran in this
 // test before — which is exactly how a missing skeleton component shipped.
 // 元素分布从横条改成了环形图：弧长按占比，悬停只改透明度
-check('element ring draws proportional arcs', clientSource.includes('(entry.count / total) * C'), 'ring formula')
-check('element ring highlights on hover', clientSource.includes('dga-ringSeg') && clientSource.includes('setHovered'), 'ring hover')
+// 元素分布现在由 ApexCharts 画：断言库的加载与环形配置，而不是手写弧长
+check('charts load apexcharts from the host', clientSource.includes('/asset/apexcharts.js'), 'loader missing')
+check('element ring is an apex donut', clientSource.includes('type: "donut"') && clientSource.includes('plotOptions'), 'donut config missing')
+check('charts follow the theme', clientSource.includes('data-ds-dark-theme') && clientSource.includes('themeColors'), 'theme sync missing')
 check('element bars do not floor at 6%', !clientSource.includes('Math.max(6,'), 'floor removed')
 check('artifact cards show roll counts', clientSource.includes('dga-artiSubRolls'), 'roll chip')
 // Rarity needs the game's own palette: 5★ gold, 4★ purple, 3★ blue (not red).

@@ -199,6 +199,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-progressS{font-size:11px;color:var(--dsw-alias-label-tertiary);min-width:52px;text-align:right}",
     ".dga-levelStrip{display:flex;gap:2px;height:6px;margin-bottom:12px;border-radius:999px;overflow:hidden}",
     ".dga-levelSeg{display:block;min-width:4px;background:var(--dga-bar);border-radius:2px}",
+    ".dga-chart{position:relative}",
+    ".dga-chartCenter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}",
+    ".dga-donutCenter{display:flex;flex-direction:column;align-items:center;gap:2px}",
+    ".dga-donutNum{font-size:26px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary)}",
+    ".dga-donutCap{font-size:11px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-chartFallback{padding:18px 0}",
     ".dga-showcaseRow{display:flex;flex-wrap:wrap;gap:8px}",
     ".dga-showcaseChip{appearance:none;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);transition:transform .12s ease,border-color .12s ease}",
     ".dga-showcaseChip:hover{border-color:var(--dsw-alias-label-dimmed)}",
@@ -322,7 +328,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-ratioSeg{height:100%}",
     ".dga-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
     ".dga-legendDot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}",
-    ".dga-ringWrap{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}",
+    ".dga-ringWrap{display:grid;grid-template-columns:minmax(200px,232px) 1fr;gap:20px;align-items:center}",
+    ".dga-ringChart{position:relative}",
+
     "@media (max-width:760px){.dga-ringWrap{grid-template-columns:1fr}}",
     ".dga-ringBox{position:relative;width:168px;height:168px;display:grid;place-items:center}",
     ".dga-ring{width:168px;height:168px;animation:dgaRingIn .5s cubic-bezier(.22,.61,.36,1) both}",
@@ -331,7 +339,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-ringNum{font-size:26px;font-weight:700;fill:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}",
     ".dga-ringCap{font-size:11px;fill:var(--dsw-alias-label-tertiary)}",
     ".dga-ringCenterHint{position:absolute;bottom:-4px;left:0;right:0;text-align:center;font-size:11px;color:var(--dsw-alias-label-secondary);min-height:15px}",
-    ".dga-ringLegend{display:flex;flex-direction:column;gap:2px;min-width:0}",
+    ".dga-ringLegend{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:340px}",
+    ".dga-ringDot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}",
     ".dga-ringLegendRow{appearance:none;font:inherit;cursor:pointer;display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:8px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);transition:background .12s ease}",
     ".dga-ringLegendRow:hover,.dga-ringLegendOn{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}",
     ".dga-ringLegendRow:focus-visible{outline:2px solid var(--dga-gold);outline-offset:-2px}",
@@ -1023,69 +1032,161 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     }, parts);
   }
 
+  /** 元素色，浅色 / 深色各一套（与 :root 的 --dga-el-* 对齐）。
+   *  注意：海报那边另有一个扁平版 ELEMENT_HEX（canvas 用），这里改名避免互相覆盖。*/
+  var ELEMENT_CHART_HEX = {
+    light: { pyro: "#c8551f", hydro: "#1a7ab8", anemo: "#2f9578", electro: "#7d4fa3", cryo: "#3f93b8", geo: "#b07d10", dendro: "#5c8a1e", none: "#6b7280" },
+    dark: { pyro: "#ef7938", hydro: "#4cc2f1", anemo: "#74c2a8", electro: "#af8ec1", cryo: "#9fd6e3", geo: "#fab72e", dendro: "#a5c83b", none: "#8b93a5" },
+  };
+
+  // ── charts (ApexCharts) ─────────────────────────────────────────────────
   /**
-   * 元素分布环形图。
-   *
-   * 手写 SVG：每段用 circle + stroke-dasharray 画出弧长，悬停只改透明度，
-   * 入场只动 transform/opacity，符合项目的动效约束。
+   * 懒加载 ApexCharts：host 在 /asset/apexcharts.js 把库文件发过来，
+   * 页面不打包任何第三方代码。加载一次后缓存 Promise。
    */
+  var apexPromise = null;
+  function loadApexCharts() {
+    if (window.ApexCharts) return Promise.resolve(window.ApexCharts);
+    if (apexPromise) return apexPromise;
+    apexPromise = new Promise(function (resolve, reject) {
+      var script = document.createElement("script");
+      script.src = "/dsh-genshin-account/asset/apexcharts.js";
+      script.async = true;
+      script.onload = function () {
+        if (window.ApexCharts) resolve(window.ApexCharts);
+        else reject(new Error("ApexCharts 未挂到 window"));
+      };
+      script.onerror = function () { reject(new Error("ApexCharts 加载失败")); };
+      document.head.appendChild(script);
+    });
+    return apexPromise;
+  }
+
+  /** 读主题 token，供图表配色使用（深浅色切换后要重建实例）。 */
+  var THEME_FALLBACK = {
+    dark: true, text: "#e8eaed", muted: "#8b93a5", line: "rgba(255,255,255,.12)",
+    gold: "#d8b566", green: "#5ec27f", blue: "#6aa8f0", purple: "#9a8ede", orange: "#ee9a4e", red: "#e08585",
+  };
+
+  function themeColors() {
+    // 静态渲染（renderToStaticMarkup）时没有 document，给一套深色兜底
+    if (typeof document === "undefined" || typeof getComputedStyle !== "function") {
+      return Object.assign({}, THEME_FALLBACK);
+    }
+    var styles = getComputedStyle(document.documentElement);
+    var read = function (name, fallback) {
+      var value = styles.getPropertyValue(name);
+      return value && value.trim() ? value.trim() : fallback;
+    };
+    var dark = document.body.hasAttribute("data-ds-dark-theme");
+    return {
+      dark: dark,
+      text: read("--dsw-alias-label-primary", dark ? "#e8eaed" : "#1f2328"),
+      muted: read("--dsw-alias-label-tertiary", dark ? "#8b93a5" : "#6b7280"),
+      line: read("--dsw-alias-border-l2", dark ? "rgba(255,255,255,.12)" : "rgba(15,17,21,.12)"),
+      gold: read("--dga-gold", dark ? "#d8b566" : "#a8752a"),
+      green: read("--dga-green", dark ? "#5ec27f" : "#2c8a55"),
+      blue: read("--dga-blue", dark ? "#6aa8f0" : "#2f6fbf"),
+      purple: read("--dga-purple", dark ? "#9a8ede" : "#6a5cb5"),
+      orange: read("--dga-orange", dark ? "#ee9a4e" : "#c9741c"),
+      red: read("--dga-red", dark ? "#e08585" : "#bd4b47"),
+    };
+  }
+
+  /**
+   * 一个薄封装：挂载时建图，options 变化时更新，卸载时销毁。
+   * 主题切换会让图表重建（ApexCharts 的颜色是初始配置里的静态值）。
+   */
+  function ApexChart(props) {
+    var boxRef = React.useRef(null);
+    var chartRef = React.useRef(null);
+    var modeState = React.useState(themeColors().dark ? "dark" : "light");
+    var themeMode = modeState[0], setThemeMode = modeState[1];
+    var failedState = React.useState(false);
+    var failed = failedState[0], setFailed = failedState[1];
+
+    React.useEffect(function () {
+      var observer = new MutationObserver(function () {
+        setThemeMode(document.body.hasAttribute("data-ds-dark-theme") ? "dark" : "light");
+      });
+      observer.observe(document.body, { attributes: true, attributeFilter: ["data-ds-dark-theme"] });
+      return function () { observer.disconnect(); };
+    }, []);
+
+    React.useEffect(function () {
+      var disposed = false;
+      loadApexCharts().then(function (Apex) {
+        if (disposed || !boxRef.current) return;
+        var options = props.options(themeColors());
+        if (chartRef.current) {
+          chartRef.current.updateOptions(options, false, true);
+        } else {
+          chartRef.current = new Apex(boxRef.current, options);
+          chartRef.current.render();
+        }
+      }).catch(function () { if (!disposed) setFailed(true); });
+      return function () {
+        disposed = true;
+        if (chartRef.current) {
+          chartRef.current.destroy();
+          chartRef.current = null;
+        }
+      };
+    }, [themeMode, props.depsKey]);
+
+    return h("div", { className: "dga-chart" + (props.className ? " " + props.className : "") },
+      failed
+        ? h("div", { className: "dga-chartFallback" }, h("span", { className: "dga-sub" }, "图表加载失败，稍后重试"))
+        : null,
+      h("div", { ref: boxRef, style: { minHeight: props.height || 220 } }),
+      props.center ? h("div", { className: "dga-chartCenter", style: props.centerStyle || null }, props.center) : null);
+  }
+
+  /** 元素分布：ApexCharts 环形图 + 自绘列式图例。 */
   function ElementRing(props) {
     var list = (props.list || []).filter(function (entry) { return entry.count > 0; });
     var total = props.total || list.reduce(function (sum, entry) { return sum + entry.count; }, 0) || 1;
     var hoverState = React.useState("");
     var hovered = hoverState[0], setHovered = hoverState[1];
 
-    var R = 58;
-    var C = 2 * Math.PI * R;
-    var gap = 2.2;
-    var cursor = 0;
-    var segments = list.map(function (entry) {
-      var len = (entry.count / total) * C;
-      var segment = { key: entry.key, from: cursor, len: len, entry: entry };
-      cursor += len;
-      return segment;
-    });
-
     return h("div", { className: "dga-ringWrap" },
-      h("div", { className: "dga-ringBox" },
-        h("svg", { className: "dga-ring", viewBox: "0 0 140 140", role: "img", "aria-label": "角色元素分布" },
-          h("circle", { cx: 70, cy: 70, r: R, fill: "none", stroke: "var(--dsw-alias-bg-layer-3)", strokeWidth: 18 }),
-          segments.map(function (segment, index) {
-            var active = !hovered || hovered === segment.key;
-            return h("circle", {
-              key: segment.key,
-              cx: 70,
-              cy: 70,
-              r: R,
-              fill: "none",
-              stroke: elementColor(segment.key),
-              strokeWidth: hovered === segment.key ? 21 : 18,
-              strokeDasharray: Math.max(1.5, segment.len - gap) + " " + (C - Math.max(1.5, segment.len - gap)),
-              strokeDashoffset: -segment.from,
-              strokeLinecap: "butt",
-              transform: "rotate(-90 70 70)",
-              opacity: active ? 1 : 0.28,
-              className: "dga-ringSeg",
-              style: { transitionDelay: index * 18 + "ms" },
-              onMouseEnter: function () { setHovered(segment.key); },
-              onMouseLeave: function () { setHovered(""); },
-            });
-          }),
-          h("text", { x: 70, y: 66, textAnchor: "middle", className: "dga-ringNum" }, String(total)),
-          h("text", { x: 70, y: 84, textAnchor: "middle", className: "dga-ringCap" }, "角色")),
-        h("div", { className: "dga-ringCenterHint" },
-          hovered
-            ? h("span", null, list.filter(function (entry) { return entry.key === hovered; })[0].zh + " " + list.filter(function (entry) { return entry.key === hovered; })[0].count)
-            : null)),
+      h("div", { className: "dga-ringChart" },
+        h(ApexChart, {
+          height: 268,
+          depsKey: list.map(function (entry) { return entry.key + entry.count; }).join(","),
+          center: h("div", { className: "dga-donutCenter" },
+            h("span", { className: "dga-donutNum" }, String(total)),
+            h("span", { className: "dga-donutCap" }, "角色")),
+          options: function (c) {
+            var palette = ELEMENT_CHART_HEX[c.dark ? "dark" : "light"];
+            return {
+              chart: {
+                type: "donut",
+                height: 268,
+                fontFamily: "inherit",
+                background: "transparent",
+                toolbar: { show: false },
+                animations: { enabled: true, speed: 620, animateGradually: { enabled: true, delay: 60 } },
+              },
+              series: list.map(function (entry) { return entry.count; }),
+              labels: list.map(function (entry) { return entry.key === "none" ? "其他" : entry.zh; }),
+              colors: list.map(function (entry) { return palette[entry.key] || palette.none; }),
+              stroke: { width: 2, colors: ["transparent"] },
+              dataLabels: { enabled: false },
+              legend: { show: false },
+              plotOptions: { pie: { donut: { size: "64%", labels: { show: false } } } },
+              tooltip: { theme: c.dark ? "dark" : "light", y: { formatter: function (value) { return value + " 个"; } } },
+              states: { hover: { filter: { type: "lighten", value: 0.08 } }, active: { filter: { type: "none" } } },
+            };
+          },
+        })),
       h("div", { className: "dga-ringLegend" }, list.map(function (entry) {
         var pct = Math.round((entry.count / total) * 100);
-        return h("button", {
+        return h("div", {
           key: entry.key,
           className: "dga-ringLegendRow" + (hovered === entry.key ? " dga-ringLegendOn" : ""),
           onMouseEnter: function () { setHovered(entry.key); },
           onMouseLeave: function () { setHovered(""); },
-          onFocus: function () { setHovered(entry.key); },
-          onBlur: function () { setHovered(""); },
         },
           h(ElementGlyph, { element: entry.key, size: 16 }),
           h("span", { className: "dga-ringName" }, entry.key === "none" ? "其他" : entry.zh),
@@ -1268,24 +1369,37 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               h("header", { className: "dga-panelHead" },
                 h("h2", { className: "dga-panelTitle" }, "等级分布"),
                 h("span", { className: "dga-panelMeta" }, "满级 " + (levelBands[1].count + levelBands[0].count) + " 个")),
-              h("div", { className: "dga-levelStrip" }, levelBands.map(function (band) {
-                return h("span", {
-                  key: "strip-" + band.key,
-                  className: "dga-levelSeg",
-                  style: { flex: band.count, opacity: 1 - 0.14 * levelBands.indexOf(band) },
-                  title: band.label + " · " + band.count + " 个",
-                });
-              })),
-              h("div", { className: "dga-bars" }, levelBands.map(function (band) {
-                return h("div", { className: "dga-barRow", key: band.key },
-                  h("span", { className: "dga-barLabel", style: { width: 62 } }, band.label),
-                  h("span", { className: "dga-barTrack" },
-                    h("span", {
-                      className: "dga-barFill",
-                      style: { width: Math.max(3, Math.round((band.count / maxBand) * 100)) + "%", background: "var(--dga-bar)" },
-                    })),
-                  h("span", { className: "dga-barValue" }, String(band.count)));
-              })))
+              h(ApexChart, {
+                height: 250,
+                depsKey: levelBands.map(function (band) { return band.key + band.count; }).join(","),
+                options: function (c) {
+                  return {
+                    chart: {
+                      type: "bar",
+                      height: 250,
+                      fontFamily: "inherit",
+                      background: "transparent",
+                      toolbar: { show: false },
+                      animations: { enabled: true, speed: 560, animateGradually: { enabled: true, delay: 40 } },
+                    },
+                    series: [{ name: "角色数", data: levelBands.map(function (band) { return band.count; }) }],
+                    xaxis: {
+                      categories: levelBands.map(function (band) { return band.label; }),
+                      axisBorder: { show: false },
+                      axisTicks: { show: false },
+                      labels: { style: { colors: c.muted, fontSize: "11.5px" } },
+                    },
+                    yaxis: { labels: { style: { colors: c.muted, fontSize: "11px" } } },
+                    grid: { borderColor: c.line, strokeDashArray: 4, padding: { left: 8, right: 8 } },
+                    plotOptions: { bar: { horizontal: true, barHeight: "58%", borderRadius: 5, borderRadiusApplication: "end" } },
+                    colors: [c.blue],
+                    fill: { type: "gradient", gradient: { shadeIntensity: 0.4, opacityFrom: 1, opacityTo: 0.6, stops: [0, 100] } },
+                    dataLabels: { enabled: true, style: { colors: [c.text], fontSize: "11px", fontWeight: 600 }, offsetX: 4 },
+                    tooltip: { theme: c.dark ? "dark" : "light", y: { formatter: function (value) { return value + " 个角色"; } } },
+                    states: { hover: { filter: { type: "lighten", value: 0.12 } } },
+                  };
+                },
+              }))
           : null,
 
         h("section", { className: "dga-panel" },
@@ -1891,15 +2005,50 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-block" }, guide, manual),
 
       h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, "星级分布"),
-        h("div", { className: "dga-ratioBar" },
-          h("span", { className: "dga-ratioSeg", style: { width: pct(a.five) + "%", background: "var(--dga-gold)" } }),
-          h("span", { className: "dga-ratioSeg", style: { width: pct(a.four) + "%", background: "var(--dga-purple)" } }),
-          h("span", { className: "dga-ratioSeg", style: { width: pct(three) + "%", background: "var(--dsw-alias-bg-layer-3)" } })),
-        h("div", { className: "dga-legend" },
-          h(LegendItem, { color: "var(--dga-gold)", label: "五星 " + a.five + "（" + (a.total ? (pct(a.five)).toFixed(1) : "0") + "%）" }),
-          h(LegendItem, { color: "var(--dga-purple)", label: "四星 " + a.four + "（" + (a.total ? (pct(a.four)).toFixed(1) : "0") + "%）" }),
-          h(LegendItem, { color: "var(--dsw-alias-label-dimmed)", label: "三星 " + three }))),
+        h("div", { className: "dga-secRow" },
+          h("div", { className: "dga-sec" }, "星级分布"),
+          h("span", { className: "dga-panelMeta" }, a.total + " 抽")),
+        h("div", { className: "dga-ringWrap" },
+          h("div", { className: "dga-ringChart" },
+            h(ApexChart, {
+              height: 236,
+              depsKey: [a.five, a.four, three].join("-"),
+              center: h("div", { className: "dga-donutCenter" },
+                h("span", { className: "dga-donutNum" }, String(a.total)),
+                h("span", { className: "dga-donutCap" }, "总抽数")),
+              options: function (c) {
+                return {
+                  chart: {
+                    type: "donut",
+                    height: 236,
+                    fontFamily: "inherit",
+                    background: "transparent",
+                    toolbar: { show: false },
+                    animations: { enabled: true, speed: 600, animateGradually: { enabled: true, delay: 60 } },
+                  },
+                  series: [a.five, a.four, three],
+                  labels: ["五星", "四星", "三星"],
+                  colors: [c.gold, c.purple, c.dark ? "#5b6272" : "#c6cad2"],
+                  stroke: { width: 2, colors: ["transparent"] },
+                  dataLabels: { enabled: false },
+                  legend: { show: false },
+                  plotOptions: { pie: { donut: { size: "64%", labels: { show: false } } } },
+                  tooltip: { theme: c.dark ? "dark" : "light", y: { formatter: function (value) { return value + " 个"; } } },
+                };
+              },
+            })),
+          h("div", { className: "dga-ringLegend" }, [
+            { key: "five", label: "五星", count: a.five, color: "var(--dga-gold)" },
+            { key: "four", label: "四星", count: a.four, color: "var(--dga-purple)" },
+            { key: "three", label: "三星", count: three, color: "var(--dsw-alias-label-dimmed)" },
+          ].map(function (row) {
+            var pct = a.total ? ((row.count / a.total) * 100).toFixed(1) : "0";
+            return h("div", { className: "dga-ringLegendRow", key: row.key },
+              h("span", { className: "dga-ringDot", style: { background: row.color } }),
+              h("span", { className: "dga-ringName" }, row.label),
+              h("span", { className: "dga-ringPct" }, pct + "%"),
+              h("span", { className: "dga-ringCount" }, String(row.count)));
+          })))),
 
       h("div", { className: "dga-block" },
         h("div", { className: "dga-sec" }, "各祈愿池 · 垫了多少"),
@@ -1936,18 +2085,38 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             h("div", { className: "dga-secRow" },
               h("div", { className: "dga-sec" }, "每月抽卡量"),
               h("span", { className: "dga-panelMeta" }, "峰值 " + maxMonth + " 抽 · " + a.monthly.length + " 个月")),
-            h("div", { className: "dga-monthChart" }, a.monthly.map(function (row, index) {
-              var ratio = maxMonth ? row.pulls / maxMonth : 0;
-              return h("div", { className: "dga-monthCol", key: row.month, title: row.month + " · " + row.pulls + " 抽" },
-                h("span", { className: "dga-monthVal" }, String(row.pulls)),
-                h("span", { className: "dga-monthSlot" },
-                  h("span", {
-                    className: "dga-monthBar",
-                    style: { height: Math.max(3, Math.round(ratio * 100)) + "%", animationDelay: index * 45 + "ms" },
-                  })),
-                h("span", { className: "dga-monthLabel" }, row.month.slice(2)));
-            })),
-            h("p", { className: "dga-hint" }, "柱子按当月抽数占总峰值的比例绘制；悬停看具体数字。"))
+            h(ApexChart, {
+              height: 244,
+              depsKey: a.monthly.map(function (row) { return row.month + row.pulls; }).join(","),
+              options: function (c) {
+                return {
+                  chart: {
+                    type: "bar",
+                    height: 244,
+                    fontFamily: "inherit",
+                    background: "transparent",
+                    toolbar: { show: false },
+                    animations: { enabled: true, speed: 620, animateGradually: { enabled: true, delay: 45 } },
+                  },
+                  series: [{ name: "抽数", data: a.monthly.map(function (row) { return row.pulls; }) }],
+                  xaxis: {
+                    categories: a.monthly.map(function (row) { return row.month.slice(2); }),
+                    axisBorder: { show: false },
+                    axisTicks: { show: false },
+                    labels: { style: { colors: c.muted, fontSize: "11px" } },
+                  },
+                  yaxis: { labels: { style: { colors: c.muted, fontSize: "11px" } } },
+                  grid: { borderColor: c.line, strokeDashArray: 4, padding: { left: 8, right: 8 } },
+                  plotOptions: { bar: { columnWidth: "54%", borderRadius: 5, borderRadiusApplication: "end" } },
+                  colors: [c.gold],
+                  fill: { type: "gradient", gradient: { shadeIntensity: 0.45, opacityFrom: 1, opacityTo: 0.55, stops: [0, 100] } },
+                  dataLabels: { enabled: false },
+                  tooltip: { theme: c.dark ? "dark" : "light", y: { formatter: function (value) { return value + " 抽"; } } },
+                  states: { hover: { filter: { type: "lighten", value: 0.12 } } },
+                };
+              },
+            }),
+            h("p", { className: "dga-hint" }, "悬停柱子看当月抽数；柱子越高抽得越多。"))
         : null,
 
       a.fiveStars.length
@@ -2001,16 +2170,42 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       a.pityBuckets && a.five
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "五星出货区间"),
-            h("div", { className: "dga-pityTrack" }, a.pityBuckets.map(function (bucket) {
-              return h("div", { className: "dga-pityLine", key: bucket.label },
-                h("span", { style: { width: 64, flex: "0 0 auto", color: "var(--dsw-alias-label-secondary)" } }, bucket.label),
-                h("span", { className: "dga-pityBar", style: { flex: 1, width: "auto" } },
-                  h("span", { className: "dga-pityFill", style: { width: Math.max(2, Math.round((bucket.count / maxBucket) * 100)) + "%", background: "var(--dga-gold)" } })),
-                h("span", { className: "dga-num", style: { width: 26, textAlign: "right", color: "var(--dsw-alias-label-tertiary)" } }, String(bucket.count)));
-            })),
+            h("div", { className: "dga-secRow" },
+              h("div", { className: "dga-sec" }, "五星出货区间"),
+              h("span", { className: "dga-panelMeta" }, a.five + " 个五星")),
+            h(ApexChart, {
+              height: 230,
+              depsKey: a.pityBuckets.map(function (bucket) { return bucket.label + bucket.count; }).join(","),
+              options: function (c) {
+                return {
+                  chart: {
+                    type: "bar",
+                    height: 230,
+                    fontFamily: "inherit",
+                    background: "transparent",
+                    toolbar: { show: false },
+                    animations: { enabled: true, speed: 580, animateGradually: { enabled: true, delay: 45 } },
+                  },
+                  series: [{ name: "五星数", data: a.pityBuckets.map(function (bucket) { return bucket.count; }) }],
+                  xaxis: {
+                    categories: a.pityBuckets.map(function (bucket) { return bucket.label; }),
+                    axisBorder: { show: false },
+                    axisTicks: { show: false },
+                    labels: { style: { colors: c.muted, fontSize: "11.5px" } },
+                  },
+                  yaxis: { labels: { style: { colors: c.muted, fontSize: "11px" } } },
+                  grid: { borderColor: c.line, strokeDashArray: 4, padding: { left: 8, right: 8 } },
+                  plotOptions: { bar: { columnWidth: "46%", borderRadius: 5, borderRadiusApplication: "end" } },
+                  colors: [c.orange],
+                  fill: { type: "gradient", gradient: { shadeIntensity: 0.4, opacityFrom: 1, opacityTo: 0.58, stops: [0, 100] } },
+                  dataLabels: { enabled: true, style: { colors: [c.text], fontSize: "11px", fontWeight: 600 } },
+                  tooltip: { theme: c.dark ? "dark" : "light", y: { formatter: function (value) { return value + " 个五星"; } } },
+                };
+              },
+            }),
             h("p", { className: "dga-hint" },
-              "基础出率 1.6%，折算约 " + a.expectedAverage + " 抽一个五星；欧非比 >1 表示比基础出率更欧。"))
+              "横轴是出金时垫了多少抽；74 抽后进入软保底，所以右侧区间通常更粗。" +
+                " 基础出率 1.6%，折算约 " + a.expectedAverage + " 抽一个五星；欧非比 >1 表示比基础出率更欧。"))
         : null);
   }
 
