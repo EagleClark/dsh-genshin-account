@@ -67,7 +67,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-root{position:relative;height:100%;display:flex;flex-direction:column;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px}",
     ".dga-lock{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-start;justify-content:center;padding-top:88px;background:color-mix(in srgb, var(--dsw-alias-bg-base) 60%, transparent);backdrop-filter:blur(2px);cursor:progress}",
     ".dga-lockCard{display:flex;align-items:center;gap:12px;padding:13px 18px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);box-shadow:0 10px 30px rgba(0,0,0,.16)}",
-    ".dga-spinner{width:18px;height:18px;flex:0 0 18px;box-sizing:border-box;aspect-ratio:1/1;border-radius:999px;border:2px solid color-mix(in srgb, var(--dga-gold) 28%, transparent);border-top-color:var(--dga-gold);animation:dgaSpin .8s linear infinite}",
+    ".dga-spinner{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 18px;color:var(--dga-gold);animation:dgaSpin .9s linear infinite}",
+    ".dga-spinner svg{display:block;width:18px;height:18px}",
     "@keyframes dgaSpin{to{transform:rotate(360deg)}}",
     "@media (prefers-reduced-motion: reduce){.dga-spinner{animation-duration:2.4s}.dga-artiCard:hover{transform:none}.dga-showcaseChip:active{transform:none}}",
     ".dga-lockTitle{font-size:13px;font-weight:600;line-height:1.3}",
@@ -3581,7 +3582,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       syncing || loading
         ? h("div", { className: "dga-lock", "aria-busy": "true" },
             h("div", { className: "dga-lockCard", role: "status" },
-              h("span", { className: "dga-spinner", "aria-hidden": "true" }),
+              h("span", { className: "dga-spinner", "aria-hidden": "true" },
+                h("svg", { viewBox: "0 0 20 20", width: 18, height: 18 },
+                  h("circle", { cx: 10, cy: 10, r: 8, fill: "none", stroke: "currentColor", strokeOpacity: 0.25, strokeWidth: 2 }),
+                  h("path", {
+                    d: "M10 2a8 8 0 0 1 8 8",
+                    fill: "none",
+                    stroke: "currentColor",
+                    strokeWidth: 2,
+                    strokeLinecap: "round",
+                  }))),
               h("div", null,
                 h("div", { className: "dga-lockTitle" }, loading && !syncing ? "正在读取账号数据" : "正在同步账号数据"),
                 h("div", { className: "dga-lockSub" }, loading && !syncing ? "读取本地快照，稍等一下" : "从米游社与展柜镜像拉取，通常几秒"))))
