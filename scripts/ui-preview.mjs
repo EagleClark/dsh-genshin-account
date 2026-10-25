@@ -17,6 +17,7 @@ import { spawn } from 'node:child_process'
 import { createServer } from 'node:http'
 import { existsSync as fileExists } from 'node:fs'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -323,15 +324,22 @@ await send('Page.enable')
 const MIME = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.js': 'text/javascript' }
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1')
-  if (url.pathname.endsWith('/asset/amcharts5.js')) {
-    const vendor = join(root, 'client', 'vendor', 'amcharts5.js')
-    if (!fileExists(vendor)) {
+  if (url.pathname.endsWith('/asset/chart.js')) {
+    const file = (() => {
+      try {
+        const req = createRequire(import.meta.url)
+        return join(dirname(req.resolve('chart.js')), 'chart.umd.js')
+      } catch {
+        return ''
+      }
+    })()
+    if (!file || !fileExists(file)) {
       res.writeHead(404)
-      res.end('no amcharts bundle')
+      res.end('no chart.js')
       return
     }
     res.writeHead(200, { 'content-type': 'application/javascript; charset=utf-8' })
-    res.end(readFileSync(vendor))
+    res.end(readFileSync(file))
     return
   }
   let target = null
