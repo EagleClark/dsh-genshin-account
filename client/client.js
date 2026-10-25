@@ -1038,8 +1038,40 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     }, parts);
   }
 
-﻿  /** 用 SVG 路径在 canvas 上画元素图标（图片资源是空的，图形来自 ELEMENT_ART）。 */
+﻿﻿  /** 官方元素图标：模块内缓存，首次画图时惰性预载（data URL，不需要网络）。 */
+  var ELEMENT_ICON_IMAGES = {};
+  var elementIconReady = false;
+  function preloadElementIcons(done) {
+    if (typeof Image === "undefined") { if (done) done(); return; }
+    if (elementIconReady) { if (done) done(); return; }
+    var keys = Object.keys(ELEMENT_ICON_DATA || {});
+    if (!keys.length) { if (done) done(); return; }
+    var pending = keys.length;
+    var settle = function () {
+      pending -= 1;
+      if (pending <= 0) {
+        elementIconReady = true;
+        if (done) done();
+      }
+    };
+    keys.forEach(function (key) {
+      var src = ELEMENT_ICON_DATA[key];
+      if (!src) { settle(); return; }
+      var img = new Image();
+      img.onload = settle;
+      img.onerror = settle;
+      img.src = src;
+      ELEMENT_ICON_IMAGES[key] = img;
+    });
+  }
+
+  /** 画元素图标：优先官方 PNG，没加载好就退回 SVG 路径兜底。 */
   function drawElementGlyph(ctx, key, x, y, size, color) {
+    var img = ELEMENT_ICON_IMAGES[key];
+    if (img && img.complete && img.naturalWidth) {
+      ctx.drawImage(img, x, y, size, size);
+      return;
+    }
     var art = ELEMENT_ART[key] || ELEMENT_ART.none;
     if (!art || typeof Path2D === "undefined") return;
     var scale = size / 24;
@@ -1068,18 +1100,26 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   }
 
   /**
-   * 元素分布：横向条形图（Chart.js）。
+   * 元素分布：横向条形图（Chart.js），左侧保留官方元素图标。
    *
-   * 左侧图标保留：Chart.js 的刻度是画布内容，所以关掉默认的 y 轴文字，
-   * 由 afterDraw 插件自己画「图标 + 元素名」，并给左侧留出固定宽度。
+   * 图标是打包在 client.js 里的官方 96px PNG（ELEMENT_ICON_DATA）。
+   * 图片是异步解码的，所以加载完会触发一次重绘，把图标画上去。
    */
   function ElementChart(props) {
     var list = (props.list || []).filter(function (entry) { return entry.count > 0; });
     var total = props.total || list.reduce(function (sum, entry) { return sum + entry.count; }, 0) || 1;
+    var readyState = React.useState(elementIconReady ? 1 : 0);
+    var ready = readyState[0], setReady = readyState[1];
+
+    React.useEffect(function () {
+      preloadElementIcons(function () {
+        setReady(function (value) { return value + 1; });
+      });
+    }, []);
 
     return h(ChartCard, {
-      height: Math.max(180, list.length * 36 + 26),
-      depsKey: list.map(function (entry) { return entry.key + entry.count; }).join(","),
+      height: Math.max(184, list.length * 36 + 28),
+      depsKey: list.map(function (entry) { return entry.key + entry.count; }).join(",") + ":" + ready,
       fallback: function () {
         var peak = Math.max.apply(null, list.map(function (entry) { return entry.count; })) || 1;
         return h("div", { className: "dga-bars" }, list.map(function (entry) {
