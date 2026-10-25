@@ -1689,8 +1689,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     { key: "weapon", label: "武器" },
     { key: "standard", label: "常驻" },
   ];
-  var FIVE_POOL = { "100": "standard", "200": "standard", "301": "character", "302": "weapon", "400": "chronicled", "500": "chronicled" };
-  var FIVE_POOL_LABEL = { character: "角色活动", weapon: "武器活动", standard: "常驻", chronicled: "集录" };
+  // host 已经算好每条的 pool（400 = 角色活动第二条线，与 301 同池）
+  var FIVE_POOL = { "100": "newbie", "200": "standard", "301": "character", "302": "weapon", "400": "character", "500": "chronicled" };
+  var FIVE_POOL_LABEL = { newbie: "新手", character: "角色活动", weapon: "武器活动", standard: "常驻", chronicled: "集录" };
   var FIVE_TIER_COLOR = {
     lucky: "var(--dga-gold)",
     good: "var(--dga-green)",
@@ -1701,11 +1702,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   };
 
   function fivePoolOf(item) {
+    if (item && item.pool) return item.pool;
     return FIVE_POOL[String(item && item.bannerType ? item.bannerType : "")] || "standard";
   }
 
   function fivePoolLabel(item) {
-    return FIVE_POOL_LABEL[fivePoolOf(item)] || "";
+    return (item && item.banner) || FIVE_POOL_LABEL[fivePoolOf(item)] || "";
   }
 
   function GachaTab(props) {
