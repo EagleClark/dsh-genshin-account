@@ -322,30 +322,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-ratioSeg{height:100%}",
     ".dga-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
     ".dga-legendDot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}",
-    ".dga-ringWrap{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}",
-    "@media (max-width:760px){.dga-ringWrap{grid-template-columns:1fr}}",
-    ".dga-ringBox{position:relative;width:168px;height:168px;display:grid;place-items:center}",
-    ".dga-ring{width:168px;height:168px;animation:dgaRingIn .5s cubic-bezier(.22,.61,.36,1) both}",
-    "@keyframes dgaRingIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}",
-    ".dga-ringSeg{transition:opacity .16s ease,stroke-width .16s ease;cursor:pointer}",
-    ".dga-ringNum{font-size:26px;font-weight:700;fill:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}",
-    ".dga-ringCap{font-size:11px;fill:var(--dsw-alias-label-tertiary)}",
-    ".dga-ringCenterHint{position:absolute;bottom:-4px;left:0;right:0;text-align:center;font-size:11px;color:var(--dsw-alias-label-secondary);min-height:15px}",
-    ".dga-ringLegend{display:flex;flex-direction:column;gap:2px;min-width:0}",
-    ".dga-ringLegendRow{appearance:none;font:inherit;cursor:pointer;display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:8px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);transition:background .12s ease}",
-    ".dga-ringLegendRow:hover,.dga-ringLegendOn{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}",
-    ".dga-ringLegendRow:focus-visible{outline:2px solid var(--dga-gold);outline-offset:-2px}",
-    ".dga-ringDot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}",
-    ".dga-ringName{font-size:12px;min-width:28px}",
-    ".dga-ringPct{margin-left:auto;font-size:11.5px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}",
-    ".dga-ringCount{width:24px;text-align:right;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}",
-    ".dga-monthChart{display:flex;align-items:flex-end;gap:8px;height:150px;padding:6px 0 0}",
-    ".dga-monthCol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%}",
-    ".dga-monthSlot{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}",
-    ".dga-monthBar{width:100%;max-width:34px;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,var(--dga-gold),color-mix(in srgb,var(--dga-gold) 42%,transparent));transform-origin:bottom center;animation:dgaGrow .5s cubic-bezier(.22,.61,.36,1) both;transition:filter .14s ease}",
-    ".dga-monthCol:hover .dga-monthBar{filter:brightness(1.18)}",
-    "@keyframes dgaGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}",
+    ".dga-monthChart{display:flex;align-items:flex-end;gap:8px;height:132px;padding:6px 0 0}",
+    ".dga-monthCol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%}",
     ".dga-monthVal{font-size:10.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}",
+    ".dga-monthBar{width:100%;max-width:38px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg, var(--dga-gold), color-mix(in srgb, var(--dga-gold) 55%, transparent));min-height:3px}",
     ".dga-monthLabel{font-size:10px;color:var(--dsw-alias-label-tertiary);white-space:nowrap}",
     ".dga-fiveRow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);margin-bottom:6px}",
     ".dga-fiveName{flex:1;min-width:0;font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
@@ -1023,77 +1003,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     }, parts);
   }
 
-  /**
-   * 元素分布环形图。
-   *
-   * 手写 SVG：每段用 circle + stroke-dasharray 画出弧长，悬停只改透明度，
-   * 入场只动 transform/opacity，符合项目的动效约束。
-   */
-  function ElementRing(props) {
-    var list = (props.list || []).filter(function (entry) { return entry.count > 0; });
-    var total = props.total || list.reduce(function (sum, entry) { return sum + entry.count; }, 0) || 1;
-    var hoverState = React.useState("");
-    var hovered = hoverState[0], setHovered = hoverState[1];
-
-    var R = 58;
-    var C = 2 * Math.PI * R;
-    var gap = 2.2;
-    var cursor = 0;
-    var segments = list.map(function (entry) {
-      var len = (entry.count / total) * C;
-      var segment = { key: entry.key, from: cursor, len: len, entry: entry };
-      cursor += len;
-      return segment;
-    });
-
-    return h("div", { className: "dga-ringWrap" },
-      h("div", { className: "dga-ringBox" },
-        h("svg", { className: "dga-ring", viewBox: "0 0 140 140", role: "img", "aria-label": "角色元素分布" },
-          h("circle", { cx: 70, cy: 70, r: R, fill: "none", stroke: "var(--dsw-alias-bg-layer-3)", strokeWidth: 18 }),
-          segments.map(function (segment, index) {
-            var active = !hovered || hovered === segment.key;
-            return h("circle", {
-              key: segment.key,
-              cx: 70,
-              cy: 70,
-              r: R,
-              fill: "none",
-              stroke: elementColor(segment.key),
-              strokeWidth: hovered === segment.key ? 21 : 18,
-              strokeDasharray: Math.max(1.5, segment.len - gap) + " " + (C - Math.max(1.5, segment.len - gap)),
-              strokeDashoffset: -segment.from,
-              strokeLinecap: "butt",
-              transform: "rotate(-90 70 70)",
-              opacity: active ? 1 : 0.28,
-              className: "dga-ringSeg",
-              style: { transitionDelay: index * 18 + "ms" },
-              onMouseEnter: function () { setHovered(segment.key); },
-              onMouseLeave: function () { setHovered(""); },
-            });
-          }),
-          h("text", { x: 70, y: 66, textAnchor: "middle", className: "dga-ringNum" }, String(total)),
-          h("text", { x: 70, y: 84, textAnchor: "middle", className: "dga-ringCap" }, "角色")),
-        h("div", { className: "dga-ringCenterHint" },
-          hovered
-            ? h("span", null, list.filter(function (entry) { return entry.key === hovered; })[0].zh + " " + list.filter(function (entry) { return entry.key === hovered; })[0].count)
-            : null)),
-      h("div", { className: "dga-ringLegend" }, list.map(function (entry) {
-        var pct = Math.round((entry.count / total) * 100);
-        return h("button", {
-          key: entry.key,
-          className: "dga-ringLegendRow" + (hovered === entry.key ? " dga-ringLegendOn" : ""),
-          onMouseEnter: function () { setHovered(entry.key); },
-          onMouseLeave: function () { setHovered(""); },
-          onFocus: function () { setHovered(entry.key); },
-          onBlur: function () { setHovered(""); },
-        },
-          h(ElementGlyph, { element: entry.key, size: 16 }),
-          h("span", { className: "dga-ringName" }, entry.key === "none" ? "其他" : entry.zh),
-          h("span", { className: "dga-ringPct" }, pct + "%"),
-          h("span", { className: "dga-ringCount" }, String(entry.count)));
-      })));
-  }
-
   function OverviewTab(props) {
     var o = props.overview;
     var player = o.player || {};
@@ -1242,7 +1151,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               h("header", { className: "dga-panelHead" },
                 h("h2", { className: "dga-panelTitle" }, "角色元素分布"),
                 h("span", { className: "dga-panelMeta" }, list.length + " 种元素 · 共 " + total + " 个角色")),
-              h(ElementRing, { list: list, total: total }),
+              h("div", { className: "dga-elemList" }, list.map(function (entry) {
+                return h("div", { className: "dga-elemRow", key: entry.key },
+                  h(ElementGlyph, { element: entry.key, size: 20 }),
+                  h("span", { className: "dga-elemName" }, entry.key === "none" ? "其他" : entry.zh),
+                  h("span", { className: "dga-barTrack" },
+                    h("span", {
+                      className: "dga-barFill",
+                      style: { width: Math.max(2, Math.round((entry.count / peak) * 100)) + "%", background: elementColor(entry.key) },
+                    })),
+                  h("span", { className: "dga-elemPct" }, pct(entry.count) + "%"),
+                  h("span", { className: "dga-elemCount" }, String(entry.count)));
+              })),
               list.some(function (e) { return e.key === "none"; })
                 ? h("p", { className: "dga-hint dga-panelFoot" }, "「其他」是元素随形态变化的旅行者与「奇偶」这类没有固定元素的角色。")
                 : null)
@@ -1933,21 +1853,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       a.monthly.length
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-secRow" },
-              h("div", { className: "dga-sec" }, "每月抽卡量"),
-              h("span", { className: "dga-panelMeta" }, "峰值 " + maxMonth + " 抽 · " + a.monthly.length + " 个月")),
-            h("div", { className: "dga-monthChart" }, a.monthly.map(function (row, index) {
-              var ratio = maxMonth ? row.pulls / maxMonth : 0;
-              return h("div", { className: "dga-monthCol", key: row.month, title: row.month + " · " + row.pulls + " 抽" },
+            h("div", { className: "dga-sec" }, "每月抽卡量"),
+            h("div", { className: "dga-monthChart" }, a.monthly.map(function (row) {
+              return h("div", { className: "dga-monthCol", key: row.month },
                 h("span", { className: "dga-monthVal" }, String(row.pulls)),
-                h("span", { className: "dga-monthSlot" },
-                  h("span", {
-                    className: "dga-monthBar",
-                    style: { height: Math.max(3, Math.round(ratio * 100)) + "%", animationDelay: index * 45 + "ms" },
-                  })),
+                h("span", { className: "dga-monthBar", style: { height: Math.max(3, Math.round((row.pulls / maxMonth) * 100)) + "%" } }),
                 h("span", { className: "dga-monthLabel" }, row.month.slice(2)));
-            })),
-            h("p", { className: "dga-hint" }, "柱子按当月抽数占总峰值的比例绘制；悬停看具体数字。"))
+            })))
         : null,
 
       a.fiveStars.length
