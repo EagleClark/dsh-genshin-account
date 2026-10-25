@@ -609,6 +609,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     return ELEMENT_COLOR[element] || ELEMENT_COLOR.none;
   }
 
+  /** 元素色 HEX（canvas 里不能用 CSS 变量）。 */
+  var ELEMENT_CHART_HEX = {
+    light: { pyro: "#c8551f", hydro: "#1a7ab8", anemo: "#2f9578", electro: "#7d4fa3", cryo: "#3f93b8", geo: "#b07d10", dendro: "#5c8a1e", none: "#6b7280" },
+    dark: { pyro: "#ef7938", hydro: "#4cc2f1", anemo: "#74c2a8", electro: "#af8ec1", cryo: "#9fd6e3", geo: "#fab72e", dendro: "#a5c83b", none: "#8b93a5" },
+  };
+
   /** Grade → colour, so a card's CV, accent bar and pill all agree. */
   var GRADE_COLOR = {
     极品: "var(--dga-gold)",
@@ -1032,6 +1038,132 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     }, parts);
   }
 
+﻿  /** 用 SVG 路径在 canvas 上画元素图标（图片资源是空的，图形来自 ELEMENT_ART）。 */
+  function drawElementGlyph(ctx, key, x, y, size, color) {
+    var art = ELEMENT_ART[key] || ELEMENT_ART.none;
+    if (!art || typeof Path2D === "undefined") return;
+    var scale = size / 24;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    if (art.fill) {
+      ctx.fillStyle = color;
+      ctx.fill(new Path2D(art.fill));
+    }
+    if (art.stroke) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.7;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke(new Path2D(art.stroke));
+    }
+    if (art.inner) {
+      ctx.strokeStyle = "rgba(255,255,255,0.72)";
+      ctx.lineWidth = 1.2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke(new Path2D(art.inner));
+    }
+    ctx.restore();
+  }
+
+  /**
+   * 元素分布：横向条形图（Chart.js）。
+   *
+   * 左侧图标保留：Chart.js 的刻度是画布内容，所以关掉默认的 y 轴文字，
+   * 由 afterDraw 插件自己画「图标 + 元素名」，并给左侧留出固定宽度。
+   */
+  function ElementChart(props) {
+    var list = (props.list || []).filter(function (entry) { return entry.count > 0; });
+    var total = props.total || list.reduce(function (sum, entry) { return sum + entry.count; }, 0) || 1;
+
+    return h(ChartCard, {
+      height: Math.max(180, list.length * 36 + 26),
+      depsKey: list.map(function (entry) { return entry.key + entry.count; }).join(","),
+      fallback: function () {
+        var peak = Math.max.apply(null, list.map(function (entry) { return entry.count; })) || 1;
+        return h("div", { className: "dga-bars" }, list.map(function (entry) {
+          return h("div", { className: "dga-barRow", key: entry.key },
+            h(ElementGlyph, { element: entry.key, size: 20 }),
+            h("span", { className: "dga-barLabel", style: { width: 34 } }, entry.key === "none" ? "其他" : entry.zh),
+            h("span", { className: "dga-barTrack" },
+              h("span", { className: "dga-barFill", style: { width: Math.max(2, Math.round((entry.count / peak) * 100)) + "%", background: elementColor(entry.key) } })),
+            h("span", { className: "dga-barValue" }, String(entry.count)));
+        }));
+      },
+      build: function (Chart, c, canvas) {
+        var hex = ELEMENT_CHART_HEX[c.dark ? "dark" : "light"];
+        var labels = list.map(function (entry) { return entry.key === "none" ? "其他" : entry.zh; });
+        var keys = list.map(function (entry) { return entry.key; });
+        var iconPlugin = {
+          id: "dgaElementGlyphs",
+          afterDraw: function (chart) {
+            var scale = chart.scales.y;
+            if (!scale) return;
+            var ctx = chart.ctx;
+            ctx.save();
+            ctx.font = "500 11.5px system-ui, sans-serif";
+            ctx.textBaseline = "middle";
+            keys.forEach(function (key, index) {
+              var y = scale.getPixelForTick(index);
+              if (y == null) return;
+              drawElementGlyph(ctx, key, 2, y - 9, 18, hex[key] || c.muted);
+              ctx.fillStyle = c.text;
+              ctx.textAlign = "left";
+              ctx.fillText(key === "none" ? "其他" : labels[index], 24, y);
+            });
+            ctx.restore();
+          },
+        };
+        return new Chart(canvas, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [{
+              data: list.map(function (entry) { return entry.count; }),
+              backgroundColor: list.map(function (entry) { return hex[entry.key] || c.muted; }),
+              borderRadius: 3,
+              barPercentage: 0.64,
+            }],
+          },
+          options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 520 },
+            layout: { padding: { left: 62, right: 34 } },
+            scales: {
+              x: {
+                beginAtZero: true,
+                grid: { color: c.grid, drawTicks: false },
+                ticks: { color: c.muted, font: { size: 10 }, precision: 0 },
+                border: { display: false },
+              },
+              y: {
+                grid: { display: false },
+                ticks: { display: false },
+                border: { display: false },
+              },
+            },
+            plugins: {
+              legend: { display: false },
+              dgaValueLabels: { enabled: true, color: c.text, align: "end" },
+              tooltip: {
+                callbacks: {
+                  label: function (item) {
+                    var count = item.parsed.x;
+                    return count + " 个 · " + Math.round((count / total) * 100) + "%";
+                  },
+                },
+              },
+            },
+          },
+          plugins: [iconPlugin, valueLabelPlugin],
+        });
+      },
+    });
+  }
+
   function OverviewTab(props) {
     var o = props.overview;
     var player = o.player || {};
@@ -1180,18 +1312,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               h("header", { className: "dga-panelHead" },
                 h("h2", { className: "dga-panelTitle" }, "角色元素分布"),
                 h("span", { className: "dga-panelMeta" }, list.length + " 种元素 · 共 " + total + " 个角色")),
-              h("div", { className: "dga-elemList" }, list.map(function (entry) {
-                return h("div", { className: "dga-elemRow", key: entry.key },
-                  h(ElementGlyph, { element: entry.key, size: 20 }),
-                  h("span", { className: "dga-elemName" }, entry.key === "none" ? "其他" : entry.zh),
-                  h("span", { className: "dga-barTrack" },
-                    h("span", {
-                      className: "dga-barFill",
-                      style: { width: Math.max(2, Math.round((entry.count / peak) * 100)) + "%", background: elementColor(entry.key) },
-                    })),
-                  h("span", { className: "dga-elemPct" }, pct(entry.count) + "%"),
-                  h("span", { className: "dga-elemCount" }, String(entry.count)));
-              })),
+              h(ElementChart, {
+                list: list,
+                total: total,
+                depsKey: list.map(function (entry) { return entry.key + entry.count; }).join(","),
+              }),
               list.some(function (e) { return e.key === "none"; })
                 ? h("p", { className: "dga-hint dga-panelFoot" }, "「其他」是元素随形态变化的旅行者与「奇偶」这类没有固定元素的角色。")
                 : null)
@@ -1217,24 +1342,63 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               h("header", { className: "dga-panelHead" },
                 h("h2", { className: "dga-panelTitle" }, "等级分布"),
                 h("span", { className: "dga-panelMeta" }, "满级 " + (levelBands[1].count + levelBands[0].count) + " 个")),
-              h("div", { className: "dga-levelStrip" }, levelBands.map(function (band) {
-                return h("span", {
-                  key: "strip-" + band.key,
-                  className: "dga-levelSeg",
-                  style: { flex: band.count, opacity: 1 - 0.14 * levelBands.indexOf(band) },
-                  title: band.label + " · " + band.count + " 个",
-                });
-              })),
-              h("div", { className: "dga-bars" }, levelBands.map(function (band) {
-                return h("div", { className: "dga-barRow", key: band.key },
-                  h("span", { className: "dga-barLabel", style: { width: 62 } }, band.label),
-                  h("span", { className: "dga-barTrack" },
-                    h("span", {
-                      className: "dga-barFill",
-                      style: { width: Math.max(3, Math.round((band.count / maxBand) * 100)) + "%", background: "var(--dga-bar)" },
-                    })),
-                  h("span", { className: "dga-barValue" }, String(band.count)));
-              })))
+﻿              h(ChartCard, {
+                height: 250,
+                depsKey: levelBands.map(function (band) { return band.key + band.count; }).join(","),
+                fallback: function () {
+                  return h("div", { className: "dga-bars" }, levelBands.map(function (band) {
+                    return h("div", { className: "dga-barRow", key: band.key },
+                      h("span", { className: "dga-barLabel", style: { width: 52 } }, band.label),
+                      h("span", { className: "dga-barTrack" },
+                        h("span", { className: "dga-barFill", style: { width: Math.max(3, Math.round((band.count / maxBand) * 100)) + "%", background: "var(--dga-bar)" } })),
+                      h("span", { className: "dga-barValue" }, String(band.count)));
+                  }));
+                },
+                build: function (Chart, c, canvas) {
+                  return new Chart(canvas, {
+                    type: "bar",
+                    data: {
+                      labels: levelBands.map(function (band) { return band.label; }),
+                      datasets: [{
+                        data: levelBands.map(function (band) { return band.count; }),
+                        backgroundColor: c.blue,
+                        borderRadius: 3,
+                        barPercentage: 0.62,
+                      }],
+                    },
+                    options: {
+                      indexAxis: "y",
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      animation: { duration: 520 },
+                      layout: { padding: { right: 30 } },
+                      scales: {
+                        x: {
+                          beginAtZero: true,
+                          grid: { color: c.grid, drawTicks: false },
+                          ticks: { color: c.muted, font: { size: 10 }, precision: 0 },
+                          border: { display: false },
+                        },
+                        y: {
+                          grid: { display: false },
+                          ticks: { color: c.text, font: { size: 11.5 }, padding: 6 },
+                          border: { display: false },
+                        },
+                      },
+                      plugins: {
+                        legend: { display: false },
+                        dgaValueLabels: { enabled: true, color: c.text, align: "end" },
+                        tooltip: {
+                          callbacks: {
+                            label: function (item) { return item.parsed.x + " 个角色"; },
+                          },
+                        },
+                      },
+                    },
+                    plugins: [valueLabelPlugin],
+                  });
+                },
+              }))
           : null,
 
         h("section", { className: "dga-panel" },
@@ -2001,6 +2165,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     afterDatasetsDraw: function (chart, args, opts) {
       if (!opts || !opts.enabled) return;
       var ctx = chart.ctx;
+      var atEnd = opts.align === "end";
       ctx.save();
       ctx.font = "600 11px system-ui, sans-serif";
       ctx.fillStyle = opts.color || "#fff";
@@ -2011,6 +2176,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         meta.data.forEach(function (element, i) {
           var value = dataset.data[i];
           if (value == null) return;
+          if (atEnd && element.horizontal) {
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(String(value), Math.max(element.base, element.x) + 6, element.y);
+            return;
+          }
           var position = element.tooltipPosition();
           ctx.textAlign = "center";
           ctx.textBaseline = "bottom";

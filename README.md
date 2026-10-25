@@ -221,8 +221,10 @@ dsh plugin --profile web add <仓库绝对路径>
 
 - host 通过 `/dsh-genshin-account/asset/chart.js` 把 `chart.js/dist/chart.umd.js` 发给页面，
   客户端用 `<script>` 加载，不打包第三方代码。
-- 星级分布 = 单行横向堆叠柱；每月抽卡量 = 柱 + 折线双轴；出货区间 = 柱 + 数值标签
+- 抽卡页：星级分布 = 单行横向堆叠柱；每月抽卡量 = 柱 + 折线双轴；出货区间 = 柱 + 数值标签
   （标签由页面内的小插件绘制，Chart.js 本身不带数据标签）。
+- 概览页：角色元素分布、等级分布 = 横向条形；元素图标用 ELEMENT_ART 的 SVG 路径
+  在 canvas 上重绘（afterDraw 插件），所以左侧图标保留。
 - 深/浅色切换时销毁重建实例。
 
 ## 随包数据与更新
