@@ -46,6 +46,12 @@ A DeepSeek Harness plugin that reads your Genshin Impact account into one snapsh
 ## 安装
 
 ```sh
+dsh plugin --profile web add dsh-genshin-account
+```
+
+也可以直接从 GitHub 装（源码最新）：
+
+```sh
 dsh plugin --profile web add github:EagleClark/dsh-genshin-account
 ```
 
