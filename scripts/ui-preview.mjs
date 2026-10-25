@@ -324,7 +324,7 @@ await send('Page.enable')
 const MIME = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.js': 'text/javascript' }
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1')
-  if (url.pathname.endsWith('/asset/chart.js')) {
+  if (url.pathname.endsWith('/chartlib') || url.pathname.endsWith('/asset/chart.js')) {
     const file = (() => {
       try {
         const req = createRequire(import.meta.url)

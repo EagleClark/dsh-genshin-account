@@ -1940,7 +1940,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     if (chartLibPromise) return chartLibPromise;
     chartLibPromise = new Promise(function (resolve, reject) {
       var script = document.createElement("script");
-      script.src = "/dsh-genshin-account/asset/chart.js";
+      // 不带扩展名：DSH 的静态中间件会先拦掉 .js 路径
+      script.src = "/dsh-genshin-account/chartlib";
       script.async = true;
       script.onload = function () {
         if (window.Chart) resolve(window.Chart);
