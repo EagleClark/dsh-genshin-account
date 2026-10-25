@@ -1,7 +1,7 @@
 {
   "name": "dsh-genshin-account",
   "description": "读取原神账号的角色、武器、圣遗物与抽卡记录：米游社扫码登录 + 游戏内角色展柜，提供 6 个 agent 工具与「原神启动」浏览页。 / Read your Genshin account (characters, weapons, artifacts, wish history) with agent tools and a browsing page.",
-  "version": "0.56.1",
+  "version": "0.56.2",
   "type": "module",
   "main": "lib/index.js",
   "license": "MIT",
@@ -20,9 +20,9 @@
     "dsh-plugin",
     "genshin",
     "genshin-impact",
-    "good",
     "enka",
-    "artifacts"
+    "artifacts",
+    "wish-history"
   ],
   "dsh": {
     "bundle": {
@@ -42,6 +42,7 @@
     "lib",
     "client",
     "data",
+    "docs",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"
@@ -60,5 +61,6 @@
   "dependencies": {
     "@deepseek-ai/schemastery": "^3.18.4",
     "chart.js": "^4.4.7"
-  }
+  },
+  "engines": {}
 }

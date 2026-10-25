@@ -6,6 +6,26 @@ A DeepSeek Harness plugin that reads your Genshin Impact account into one snapsh
 
 ---
 
+## 截图
+
+概览：账号主卡、展柜角色评分一览、元素分布与进度。
+
+![概览](docs/overview.jpg)
+
+角色页：完整练度、五件圣遗物与逐条副词条评分。
+
+![角色](docs/character.jpg)
+
+抽卡页：星级分布、各池保底进度、每月抽卡量（柱 + 折线）。
+
+![抽卡](docs/gacha.jpg)
+
+五星记录与出货区间：欧非分档、「歪」标记、区间分布。
+
+![五星记录](docs/gacha-records.jpg)
+
+---
+
 ## 能做什么
 
 侧边栏「原神启动」六个页签：
