@@ -222,6 +222,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-fact:first-child{border-top:none;padding-top:0}",
     ".dga-fact dt{flex:0 0 68px;margin:0;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
     ".dga-fact dd{margin:0;font-size:12px;line-height:1.55;color:var(--dsw-alias-label-secondary);min-width:0}",
+    ".dga-cmdList{display:flex;flex-direction:column;gap:6px;margin:2px 0 12px 28px}",
+    ".dga-cmdRow{display:flex;align-items:center;gap:8px;min-width:0}",
+    ".dga-cmdTag{flex:0 0 auto;font-size:11px;color:var(--dsw-alias-label-tertiary);min-width:36px}",
+    ".dga-cmd{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);border-radius:7px;padding:5px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".dga-cmdCopy{flex:0 0 auto;min-height:30px;padding:4px 10px;font-size:12px}",
     ".dga-linkList{display:flex;flex-direction:column}",
     ".dga-linkRow{display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--dsw-alias-border-l1)}",
     ".dga-linkRow:first-child{border-top:none;padding-top:0}",
@@ -1675,6 +1680,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   function GachaTab(props) {
     var a = props.analysis;
     var busy = props.busy;
+    var copiedState = React.useState("");
+    var copiedCmd = copiedState[0], setCopiedCmd = copiedState[1];
+
+    function copyText(text, key) {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+      navigator.clipboard.writeText(text).then(function () {
+        setCopiedCmd(key);
+        setTimeout(function () { setCopiedCmd(""); }, 1600);
+      }).catch(function () {});
+    }
     var manual = h("div", { className: "dga-block" },
       h("div", { className: "dga-sec" }, "祈愿历史链接"),
       h("p", { className: "dga-hint", style: { marginTop: 0 } },
@@ -1697,16 +1712,31 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("span", { className: "dga-hint" }, props.status || "")));
 
     var guideOpen = !a || !a.total;
+    var shellCommands = [
+      { key: "cn", label: "国服", code: "iex(irm 'https://www.lelaer.com/cn.ps1')" },
+      { key: "os", label: "国际服", code: "iex(irm 'https://www.lelaer.com/oc.ps1')" },
+    ];
     var guide = h("details", { className: "dga-guide", open: guideOpen },
       h("summary", { className: "dga-guideSummary" }, "怎么拿到祈愿历史链接"),
       h(GuideStep, { n: 1 }, h("span", null,
-        "打开游戏 → ", h("b", null, "祈愿"), " → ", h("b", null, "历史记录"), "，随便翻一页。",
-        "这一步让游戏生成一条带 authkey 的地址。")),
+        "游戏内按 ", h("b", null, "ESC"), " → ", h("b", null, "祈愿"), " → ", h("b", null, "历史记录"),
+        "，进入页面后多翻几页，让游戏把带 authkey 的地址准备好。")),
       h(GuideStep, { n: 2 }, h("span", null,
-        "把那条地址复制出来：游戏内页面看不到地址栏，可以用浏览器的开发者工具（F12 → 网络）打开祈愿历史，",
-        "找到 ", h("b", null, "getGachaLog"), " 请求，右键复制整条地址；抓包工具或第三方导出工具也可以。")),
+        "按 ", h("b", null, "Win+R"), " 打开运行框，输入 ", h("b", null, "powershell"), " 回车，把下面这条命令粘进去运行。")),
+      h("div", { className: "dga-cmdList" }, shellCommands.map(function (item) {
+        return h("div", { className: "dga-cmdRow", key: item.key },
+          h("span", { className: "dga-cmdTag" }, item.label),
+          h("code", { className: "dga-cmd" }, item.code),
+          h("button", {
+            className: "dga-btn dga-cmdCopy",
+            onClick: function () { copyText(item.code, "gacha-" + item.key); },
+          }, copiedCmd === "gacha-" + item.key ? "已复制" : "复制"));
+      })),
       h(GuideStep, { n: 3 }, h("span", null,
-        "粘贴到下面的输入框，点 ", h("b", null, "用这段链接同步"), "。")),
+        "命令跑完链接会自动进剪贴板，回到这里按 ", h("b", null, "Ctrl+V"), " 粘到下面输入框，点「用这段链接同步」。")),
+      h("p", { className: "dga-hint" },
+        "上面这个脚本来自第三方站点 lelaer.com，插件无法核对它的内容，运行前请自行判断。",
+        "不想运行脚本的话，也可以用浏览器开发者工具（F12 → 网络）打开祈愿历史，复制 ", h("b", null, "getGachaLog"), " 那条请求的地址。"),
       h("p", { className: "dga-hint" },
         "authkey 约 24 小时过期；过期后重新走一遍上面三步。记录只存在本机，插件不会上传。" +
           "如果提示「没有新记录」但你知道刚抽过卡，请确认复制的是当前账号的祈愿历史。"));

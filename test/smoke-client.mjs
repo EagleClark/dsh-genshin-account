@@ -472,6 +472,8 @@ check('wish history explains how to get the link', clientSource.includes('怎么
 // 自动读缓存的路径已经移除：缓存里的 authkey 往往是几天前的，必然 -101
 check('wish history no longer reads the game cache', !clientSource.includes('webCaches') && !clientSource.includes('自动在游戏安装目录'), 'cache guidance still present')
 check('wish history takes a pasted url', clientSource.includes('用这段链接同步'), 'manual sync button missing')
+check('wish history documents the clipboard script', clientSource.includes('lelaer.com/cn.ps1') && clientSource.includes('lelaer.com/oc.ps1'), 'powershell fallback missing')
+check('the clipboard script carries a caution', clientSource.includes('插件无法核对它的内容'), 'no third-party warning')
 check('wish history breaks down rarities', clientSource.includes('星级分布') && clientSource.includes('dga-ratioBar'), 'rarity bar missing')
 check('wish history charts months and pity', clientSource.includes('dga-monthChart') && clientSource.includes('垫了多少'), 'charts missing')
 // The gacha state holds the analysis object itself; reading `.analysis` off it
