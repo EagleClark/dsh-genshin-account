@@ -182,7 +182,9 @@ check('weapons ok', weaponsResult.value.ok === true, JSON.stringify(weaponsResul
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-check('routes mounted', routePaths.length === 15, routePaths.join(','))
+// 16 = 原来的 15 条 + 图表库静态文件（/asset/amcharts5.js）
+check('routes mounted', routePaths.length === 16, routePaths.join(','))
+check('chart library route is served', routePaths.includes('/dsh-genshin-account/asset/amcharts5.js'), routePaths.join(','))
 
 function fakeRes() {
   return {

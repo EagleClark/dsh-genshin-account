@@ -199,6 +199,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-progressS{font-size:11px;color:var(--dsw-alias-label-tertiary);min-width:52px;text-align:right}",
     ".dga-levelStrip{display:flex;gap:2px;height:6px;margin-bottom:12px;border-radius:999px;overflow:hidden}",
     ".dga-levelSeg{display:block;min-width:4px;background:var(--dga-bar);border-radius:2px}",
+    ".dga-chart{position:relative}",
+    ".dga-chartNarrow{max-width:640px}",
+    ".dga-chartFallback{padding:12px 0}",
     ".dga-showcaseRow{display:flex;flex-wrap:wrap;gap:8px}",
     ".dga-showcaseChip{appearance:none;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);transition:transform .12s ease,border-color .12s ease}",
     ".dga-showcaseChip:hover{border-color:var(--dsw-alias-label-dimmed)}",
@@ -1811,15 +1814,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-block" }, guide, manual),
 
       h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, "星级分布"),
-        h("div", { className: "dga-ratioBar" },
-          h("span", { className: "dga-ratioSeg", style: { width: pct(a.five) + "%", background: "var(--dga-gold)" } }),
-          h("span", { className: "dga-ratioSeg", style: { width: pct(a.four) + "%", background: "var(--dga-purple)" } }),
-          h("span", { className: "dga-ratioSeg", style: { width: pct(three) + "%", background: "var(--dsw-alias-bg-layer-3)" } })),
-        h("div", { className: "dga-legend" },
-          h(LegendItem, { color: "var(--dga-gold)", label: "五星 " + a.five + "（" + (a.total ? (pct(a.five)).toFixed(1) : "0") + "%）" }),
-          h(LegendItem, { color: "var(--dga-purple)", label: "四星 " + a.four + "（" + (a.total ? (pct(a.four)).toFixed(1) : "0") + "%）" }),
-          h(LegendItem, { color: "var(--dsw-alias-label-dimmed)", label: "三星 " + three }))),
+        h("div", { className: "dga-secRow" },
+          h("div", { className: "dga-sec" }, "星级分布"),
+          h("span", { className: "dga-panelMeta" }, a.total + " 抽")),
+        h(RarityChart, { five: a.five, four: a.four, three: three, total: a.total })),
 
       h("div", { className: "dga-block" },
         h("div", { className: "dga-sec" }, "各祈愿池 · 垫了多少"),
@@ -1853,13 +1851,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       a.monthly.length
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "每月抽卡量"),
-            h("div", { className: "dga-monthChart" }, a.monthly.map(function (row) {
-              return h("div", { className: "dga-monthCol", key: row.month },
-                h("span", { className: "dga-monthVal" }, String(row.pulls)),
-                h("span", { className: "dga-monthBar", style: { height: Math.max(3, Math.round((row.pulls / maxMonth) * 100)) + "%" } }),
-                h("span", { className: "dga-monthLabel" }, row.month.slice(2)));
-            })))
+            h("div", { className: "dga-secRow" },
+              h("div", { className: "dga-sec" }, "每月抽卡量"),
+              h("span", { className: "dga-panelMeta" }, "峰值 " + maxMonth + " 抽 · " + a.monthly.length + " 个月")),
+            h(MonthChart, {
+              max: maxMonth,
+              rows: a.monthly.map(function (row) { return { month: row.month.slice(2), pulls: row.pulls }; }),
+            }),
+            h("p", { className: "dga-hint" }, "悬停柱子看当月抽数；柱子越高抽得越多。"))
         : null,
 
       a.fiveStars.length
@@ -1913,17 +1912,252 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       a.pityBuckets && a.five
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "五星出货区间"),
-            h("div", { className: "dga-pityTrack" }, a.pityBuckets.map(function (bucket) {
-              return h("div", { className: "dga-pityLine", key: bucket.label },
-                h("span", { style: { width: 64, flex: "0 0 auto", color: "var(--dsw-alias-label-secondary)" } }, bucket.label),
-                h("span", { className: "dga-pityBar", style: { flex: 1, width: "auto" } },
-                  h("span", { className: "dga-pityFill", style: { width: Math.max(2, Math.round((bucket.count / maxBucket) * 100)) + "%", background: "var(--dga-gold)" } })),
-                h("span", { className: "dga-num", style: { width: 26, textAlign: "right", color: "var(--dsw-alias-label-tertiary)" } }, String(bucket.count)));
-            })),
+            h("div", { className: "dga-secRow" },
+              h("div", { className: "dga-sec" }, "五星出货区间"),
+              h("span", { className: "dga-panelMeta" }, a.five + " 个五星")),
+            h(PityChart, { buckets: a.pityBuckets }),
             h("p", { className: "dga-hint" },
-              "基础出率 1.6%，折算约 " + a.expectedAverage + " 抽一个五星；欧非比 >1 表示比基础出率更欧。"))
+              "横轴是出金时垫了多少抽；74 抽后进入软保底，所以右侧区间通常更粗。" +
+                " 基础出率 1.6%，折算约 " + a.expectedAverage + " 抽一个五星；欧非比 >1 表示比基础出率更欧。"))
         : null);
+  }
+
+  // ── charts (amCharts 5) ─────────────────────────────────────────────────
+  /**
+   * amCharts 5 是 ESM，host 把它打成单文件后从 /asset/amcharts5.js 发过来。
+   * 只在真的要画图时才 import，避免每打开面板都付一次解析成本。
+   */
+  var chartLibPromise = null;
+  function loadChartLib() {
+    if (!chartLibPromise) {
+      chartLibPromise = import("/dsh-genshin-account/asset/amcharts5.js").catch(function (error) {
+        chartLibPromise = null;
+        throw error;
+      });
+    }
+    return chartLibPromise;
+  }
+
+  /** 主题色：amCharts 要具体颜色值，直接读 CSS 变量。 */
+  function chartTheme() {
+    var fallback = {
+      dark: true, text: "#e8eaed", muted: "#8b93a5",
+      line: "#2a3038", surface: "#12171d",
+      gold: "#d8b566", green: "#5ec27f", blue: "#6aa8f0",
+      purple: "#9a8ede", orange: "#ee9a4e", red: "#e08585",
+    };
+    if (typeof document === "undefined" || typeof getComputedStyle !== "function") return fallback;
+    var styles = getComputedStyle(document.documentElement);
+    var read = function (name, backup) {
+      var value = styles.getPropertyValue(name);
+      return value && value.trim() ? value.trim() : backup;
+    };
+    var dark = document.body.hasAttribute("data-ds-dark-theme");
+    return {
+      dark: dark,
+      text: read("--dsw-alias-label-primary", dark ? "#e8eaed" : "#1f2328"),
+      muted: read("--dsw-alias-label-tertiary", dark ? "#8b93a5" : "#6b7280"),
+      // am5.color() 只认 hex / 命名色，rgba() 会解析失败，这里固定给一档线条色
+      line: dark ? "#2a3038" : "#e3e6ea",
+      surface: read("--dsw-alias-bg-layer-1", dark ? "#12171d" : "#ffffff"),
+      gold: read("--dga-gold", dark ? "#d8b566" : "#a8752a"),
+      green: read("--dga-green", dark ? "#5ec27f" : "#2c8a55"),
+      blue: read("--dga-blue", dark ? "#6aa8f0" : "#2f6fbf"),
+      purple: read("--dga-purple", dark ? "#9a8ede" : "#6a5cb5"),
+      orange: read("--dga-orange", dark ? "#ee9a4e" : "#c9741c"),
+      red: read("--dga-red", dark ? "#e08585" : "#bd4b47"),
+    };
+  }
+
+  /**
+   * 图表容器：挂载时建图，依赖变化时销毁重建，主题切换自动跟随。
+   * build(am5, root, colors) 负责把图表挂到 root 上。
+   */
+  function AmChart(props) {
+    var boxRef = React.useRef(null);
+    var rootRef = React.useRef(null);
+    var modeState = React.useState(chartTheme().dark ? "dark" : "light");
+    var themeMode = modeState[0], setThemeMode = modeState[1];
+    var failedState = React.useState("");
+    var failed = failedState[0], setFailed = failedState[1];
+
+    React.useEffect(function () {
+      if (typeof MutationObserver === "undefined") return undefined;
+      var observer = new MutationObserver(function () {
+        setThemeMode(document.body.hasAttribute("data-ds-dark-theme") ? "dark" : "light");
+      });
+      observer.observe(document.body, { attributes: true, attributeFilter: ["data-ds-dark-theme"] });
+      return function () { observer.disconnect(); };
+    }, []);
+
+    React.useEffect(function () {
+      var disposed = false;
+      loadChartLib().then(function (am5) {
+        if (disposed || !boxRef.current) return;
+        if (rootRef.current) {
+          rootRef.current.dispose();
+          rootRef.current = null;
+        }
+        var root = am5.am5.Root.new(boxRef.current);
+        rootRef.current = root;
+        root.setThemes([am5.am5themes_Animated.new(root)]);
+        // amCharts 的 linkware 要求保留品牌链接，所以这里不动 root._logo
+        props.build({ am5: am5.am5, am5xy: am5.am5xy, am5percent: am5.am5percent }, root, chartTheme());
+      }).catch(function (error) {
+        if (!disposed) setFailed(String((error && error.message) || error));
+      });
+      return function () {
+        disposed = true;
+        if (rootRef.current) {
+          rootRef.current.dispose();
+          rootRef.current = null;
+        }
+      };
+    }, [themeMode, props.depsKey]);
+
+    return h("div", { className: "dga-chart" + (props.narrow ? " dga-chartNarrow" : "") },
+      failed ? h("div", { className: "dga-chartFallback" }, h("span", { className: "dga-sub" }, "图表加载失败：" + failed)) : null,
+      h("div", { ref: boxRef, style: { width: "100%", height: (props.height || 240) + "px" } }));
+  }
+
+  /** 抽卡页：每月抽卡量柱状图。 */
+  function MonthChart(props) {
+    var rows = props.rows || [];
+    var max = props.max || 1;
+    return h(AmChart, {
+      height: 250,
+      depsKey: rows.map(function (row) { return row.month + row.pulls; }).join(","),
+      build: function (lib, root, c) {
+        var am5 = lib.am5, am5xy = lib.am5xy, am5percent = lib.am5percent;
+        var chart = root.container.children.push(
+          am5xy.XYChart.new(root, { panX: false, panY: false, wheelX: "none", wheelY: "none" }),
+        );
+        var xAxis = chart.xAxes.push(
+          am5xy.CategoryAxis.new(root, {
+            categoryField: "month",
+            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 28, strokeOpacity: 0 }),
+          }),
+        );
+        xAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
+        var yAxis = chart.yAxes.push(
+          am5xy.ValueAxis.new(root, {
+            renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0 }),
+            max: Math.max(10, Math.ceil((max * 1.25) / 10) * 10),
+          }),
+        );
+        yAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
+        yAxis.get("renderer").grid.template.setAll({ stroke: am5.color(c.line), strokeOpacity: 0.5, strokeDasharray: [4, 4] });
+        var series = chart.series.push(
+          am5xy.ColumnSeries.new(root, {
+            name: "抽数", xAxis: xAxis, yAxis: yAxis,
+            valueYField: "pulls", categoryXField: "month",
+            tooltip: am5.Tooltip.new(root, { labelText: "{categoryX} · {valueY} 抽" }),
+          }),
+        );
+        series.columns.template.setAll({
+          cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0, width: am5.percent(52),
+          fill: am5.color(c.gold),
+        });
+        series.data.setAll(rows);
+        xAxis.data.setAll(rows);
+        series.appear(600, 60);
+        chart.appear(600, 80);
+      },
+    });
+  }
+
+  /** 抽卡页：星级分布环形图。 */
+  function RarityChart(props) {
+    var five = props.five || 0;
+    var four = props.four || 0;
+    var three = props.three || 0;
+    return h(AmChart, {
+      height: 260,
+      narrow: true,
+      depsKey: [five, four, three].join("-"),
+      build: function (lib, root, c) {
+        var am5 = lib.am5, am5xy = lib.am5xy, am5percent = lib.am5percent;
+        var chart = root.container.children.push(
+          am5percent.PieChart.new(root, { innerRadius: am5.percent(64), layout: root.horizontalLayout }),
+        );
+        var series = chart.series.push(
+          am5percent.PieSeries.new(root, { valueField: "value", categoryField: "name" }),
+        );
+        series.slices.template.set("strokeOpacity", 0);
+        series.set("colors", am5.ColorSet.new(root, {
+          colors: [am5.color(c.gold), am5.color(c.purple), am5.color(c.dark ? "#5b6272" : "#c6cad2")],
+        }));
+        series.data.setAll([
+          { name: "五星", value: five },
+          { name: "四星", value: four },
+          { name: "三星", value: three },
+        ]);
+        series.slices.template.setAll({
+          tooltipText: "{category} · {value} 个（{valuePercentTotal.formatNumber('0.0')}%）",
+        });
+        series.set("legendValueText", "{value} 个");
+        series.labels.template.set("forceHidden", true);
+        series.ticks.template.set("forceHidden", true);
+        var legend = chart.children.push(
+          am5.Legend.new(root, { centerY: am5.percent(50), y: am5.percent(50), layout: root.verticalLayout }),
+        );
+        legend.labels.template.setAll({ fill: am5.color(c.text), fontSize: 12 });
+        legend.valueLabels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
+        legend.data.setAll(series.dataItems);
+        series.appear(600, 80);
+      },
+    });
+  }
+
+  /** 抽卡页：五星出货区间柱状图。 */
+  function PityChart(props) {
+    var buckets = props.buckets || [];
+    return h(AmChart, {
+      height: 230,
+      depsKey: buckets.map(function (b) { return b.label + b.count; }).join(","),
+      build: function (lib, root, c) {
+        var am5 = lib.am5, am5xy = lib.am5xy, am5percent = lib.am5percent;
+        var chart = root.container.children.push(
+          am5xy.XYChart.new(root, { panX: false, panY: false, wheelX: "none", wheelY: "none" }),
+        );
+        var xAxis = chart.xAxes.push(
+          am5xy.CategoryAxis.new(root, {
+            categoryField: "label",
+            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 24, strokeOpacity: 0 }),
+          }),
+        );
+        xAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
+        var yAxis = chart.yAxes.push(
+          am5xy.ValueAxis.new(root, { renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0 }), min: 0 }),
+        );
+        yAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
+        yAxis.get("renderer").grid.template.setAll({ stroke: am5.color(c.line), strokeOpacity: 0.5, strokeDasharray: [4, 4] });
+        var series = chart.series.push(
+          am5xy.ColumnSeries.new(root, {
+            name: "五星数", xAxis: xAxis, yAxis: yAxis,
+            valueYField: "count", categoryXField: "label",
+            tooltip: am5.Tooltip.new(root, { labelText: "{categoryX} 抽 · {valueY} 个" }),
+          }),
+        );
+        series.columns.template.setAll({
+          cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0, width: am5.percent(46),
+          fill: am5.color(c.orange),
+        });
+        series.data.setAll(buckets);
+        xAxis.data.setAll(buckets);
+        series.bullets.push(function () {
+          return am5.Bullet.new(root, {
+            locationY: 1,
+            sprite: am5.Label.new(root, {
+              text: "{valueY}", fill: am5.color(c.text),
+              centerX: am5.percent(50), centerY: am5.percent(100), fontSize: 11, dy: -4,
+            }),
+          });
+        });
+        series.appear(560, 50);
+        chart.appear(600, 80);
+      },
+    });
   }
 
   // ── shareable character image ───────────────────────────────────────────

@@ -323,6 +323,17 @@ await send('Page.enable')
 const MIME = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.js': 'text/javascript' }
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1')
+  if (url.pathname.endsWith('/asset/amcharts5.js')) {
+    const vendor = join(root, 'client', 'vendor', 'amcharts5.js')
+    if (!fileExists(vendor)) {
+      res.writeHead(404)
+      res.end('no amcharts bundle')
+      return
+    }
+    res.writeHead(200, { 'content-type': 'application/javascript; charset=utf-8' })
+    res.end(readFileSync(vendor))
+    return
+  }
   let target = null
   const asset = url.pathname.match(/^\/dsh-genshin-account\/asset\/element\/([a-z]+\.webp)$/)
   if (asset) target = join(root, 'data', 'element-icons', asset[1])
