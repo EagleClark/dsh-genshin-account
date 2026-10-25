@@ -182,9 +182,9 @@ check('weapons ok', weaponsResult.value.ok === true, JSON.stringify(weaponsResul
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-// 16 = 原来的 15 条 + 图表库静态文件（/asset/amcharts5.js）
-check('routes mounted', routePaths.length === 16, routePaths.join(','))
-check('chart library route is served', routePaths.includes('/dsh-genshin-account/chartlib'), routePaths.join(','))
+// 图表库已内联进客户端，不再单独注册路由
+check('routes mounted', routePaths.length === 15, routePaths.join(','))
+check('no chart asset route', !routePaths.some((p) => p.includes('chartlib') || p.includes('chart.js')), routePaths.join(','))
 
 function fakeRes() {
   return {
