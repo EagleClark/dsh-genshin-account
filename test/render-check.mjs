@@ -170,7 +170,8 @@ check('gacha dashboard charts months', gachaResult.html.includes('dga-monthChart
 check('gacha dashboard shows pity progress', gachaResult.html.includes('垫了多少') && gachaResult.html.includes('dga-pityFill'), gachaResult.html.slice(0, 200))
 
 const gachaEmpty = render('gacha-empty', React.createElement(parts.GachaTab, { analysis: null, busy: false, status: '', url: '', onUrl: () => {}, onSync: () => {}, onSyncManual: () => {} }))
-check('empty wish history renders the guide', gachaEmpty.error === null && gachaEmpty.html.includes('怎么拿到祈愿记录'), gachaEmpty.error || gachaEmpty.html.slice(0, 160))
+check('empty wish history renders the guide', gachaEmpty.error === null && gachaEmpty.html.includes('怎么拿到祈愿历史链接'), gachaEmpty.error || gachaEmpty.html.slice(0, 160))
+check('empty wish history offers the manual paste', gachaEmpty.html.includes('用这段链接同步'), gachaEmpty.html.slice(0, 200))
 check('guide mentions authkey', gachaEmpty.html.includes('authkey'), 'no authkey hint')
 
 const roster = { characters: [

@@ -468,7 +468,10 @@ check('artifact cards replace the table', clientSource.includes('dga-artiGrid') 
 check('cards colour the crit rolls', clientSource.includes('dga-artiSubCrit'), 'no crit highlight')
 check('showcase characters sort first', clientSource.includes('byShowcase'), 'no showcase priority in the sort')
 check('showcase rows carry a badge', clientSource.includes('dga-showcaseTag'), 'no showcase badge')
-check('wish history explains how to get the link', clientSource.includes('怎么拿到祈愿记录') && clientSource.includes('authkey'), 'guide missing')
+check('wish history explains how to get the link', clientSource.includes('怎么拿到祈愿历史链接') && clientSource.includes('authkey'), 'guide missing')
+// 自动读缓存的路径已经移除：缓存里的 authkey 往往是几天前的，必然 -101
+check('wish history no longer reads the game cache', !clientSource.includes('webCaches') && !clientSource.includes('自动在游戏安装目录'), 'cache guidance still present')
+check('wish history takes a pasted url', clientSource.includes('用这段链接同步'), 'manual sync button missing')
 check('wish history breaks down rarities', clientSource.includes('星级分布') && clientSource.includes('dga-ratioBar'), 'rarity bar missing')
 check('wish history charts months and pity', clientSource.includes('dga-monthChart') && clientSource.includes('垫了多少'), 'charts missing')
 // The gacha state holds the analysis object itself; reading `.analysis` off it

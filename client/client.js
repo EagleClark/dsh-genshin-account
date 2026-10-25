@@ -1675,45 +1675,46 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   function GachaTab(props) {
     var a = props.analysis;
     var busy = props.busy;
-    var manual = h("details", { className: "dga-adv" },
-      h("summary", null, "找不到链接？手动粘贴祈愿历史地址"),
-      h("div", { style: { marginTop: 10 } },
-        h("p", { className: "dga-hint", style: { marginTop: 0 } },
-          "在游戏里打开「祈愿 → 历史记录」后，那个网页的地址栏里有一整段很长的链接，" +
-          "把整段复制过来（重点是 authkey= 后面那一长串）。authkey 约 24 小时过期，过期就再打开一次历史记录。"),
-        h("textarea", {
-          className: "dga-input dga-textarea",
-          placeholder: "https://webstatic.mihoyo.com/hk4e/event/e20190909gacha-.../index.html?...&authkey=...#/log",
-          value: props.url,
-          onChange: function (event) { props.onUrl(event.target.value); },
-        }),
-        h("div", { className: "dga-fileRow", style: { marginTop: 8 } },
-          h("button", { className: "dga-btn", onClick: props.onSyncManual, disabled: busy || !String(props.url || "").trim() },
-            "用这段链接同步"))));
+    var manual = h("div", { className: "dga-block" },
+      h("div", { className: "dga-sec" }, "祈愿历史链接"),
+      h("p", { className: "dga-hint", style: { marginTop: 0 } },
+        "把带 authkey 的那段地址整段粘贴进来。authkey 约 24 小时过期，过期就重新取一次。"),
+      h("textarea", {
+        className: "dga-input dga-textarea",
+        placeholder: "https://public-operation-hk4e.mihoyo.com/gacha_info/api/getGachaLog?...&authkey=...#/log",
+        value: props.url,
+        onChange: function (event) { props.onUrl(event.target.value); },
+      }),
+      h("div", { className: "dga-fileRow", style: { marginTop: 8 } },
+        h("button", {
+          className: "dga-btn dga-btn-primary",
+          onClick: props.onSyncManual,
+          disabled: busy || !String(props.url || "").trim(),
+        }, busy ? "同步中…" : "用这段链接同步"),
+        props.hasSavedUrl
+          ? h("button", { className: "dga-btn", onClick: props.onSync, disabled: busy }, "用上次的链接同步")
+          : null,
+        h("span", { className: "dga-hint" }, props.status || "")));
 
     var guideOpen = !a || !a.total;
     var guide = h("details", { className: "dga-guide", open: guideOpen },
-      h("summary", { className: "dga-guideSummary" }, "怎么拿到祈愿记录"),
+      h("summary", { className: "dga-guideSummary" }, "怎么拿到祈愿历史链接"),
       h(GuideStep, { n: 1 }, h("span", null,
-        "打开游戏 → ", h("b", null, "祈愿"), " → ", h("b", null, "历史记录"),
-        "，随便翻一页。这一步会让游戏把一条带 authkey 的链接写进本地缓存，插件就是从那里读的。")),
+        "打开游戏 → ", h("b", null, "祈愿"), " → ", h("b", null, "历史记录"), "，随便翻一页。",
+        "这一步让游戏生成一条带 authkey 的地址。")),
       h(GuideStep, { n: 2 }, h("span", null,
-        "回到这里点 ", h("b", null, "同步抽卡"), "。插件会自动在游戏安装目录的 webCaches 里找最新那条链接，不需要你复制任何东西。")),
+        "把那条地址复制出来：游戏内页面看不到地址栏，可以用浏览器的开发者工具（F12 → 网络）打开祈愿历史，",
+        "找到 ", h("b", null, "getGachaLog"), " 请求，右键复制整条地址；抓包工具或第三方导出工具也可以。")),
       h(GuideStep, { n: 3 }, h("span", null,
-        "如果提示找不到链接，就展开下面的「手动粘贴」，从游戏里打开的祈愿历史页地址栏整段复制过来。")),
+        "粘贴到下面的输入框，点 ", h("b", null, "用这段链接同步"), "。")),
       h("p", { className: "dga-hint" },
-        "authkey 约 24 小时过期；过期后重新打开一次历史记录再同步即可。记录只存在本机，插件不会上传。" +
-          "如果提示「没有新记录」但你知道刚抽过卡，请确认打开的是当前账号的祈愿历史。"));
+        "authkey 约 24 小时过期；过期后重新走一遍上面三步。记录只存在本机，插件不会上传。" +
+          "如果提示「没有新记录」但你知道刚抽过卡，请确认复制的是当前账号的祈愿历史。"));
 
     if (!a || !a.total) {
       return h("div", { className: "dga-scroll" },
         h("div", { className: "dga-block" }, guide),
-        h("div", { className: "dga-block" },
-          h("div", { className: "dga-fileRow" },
-            h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSync, disabled: busy },
-              busy ? "同步中…" : "同步抽卡")),
-          h("p", { className: "dga-hint" }, props.status || ""),
-          manual));
+        manual);
     }
 
     var three = Math.max(0, a.total - a.five - a.four);
@@ -1742,13 +1743,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 h("div", { className: "dga-tileLabel" }, "欧非等级"))
             : null)),
 
-      h("div", { className: "dga-block" },
-        h("div", { className: "dga-fileRow" },
-          h("button", { className: "dga-btn dga-btn-primary", onClick: props.onSync, disabled: busy },
-            busy ? "同步中…" : "同步抽卡"),
-          h("span", { className: "dga-hint" }, props.status || "")),
-        guide,
-        manual),
+      h("div", { className: "dga-block" }, guide, manual),
 
       h("div", { className: "dga-block" },
         h("div", { className: "dga-sec" }, "星级分布"),
@@ -3148,8 +3143,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         status: gachaStatus,
         url: gachaUrl,
         onUrl: setGachaUrl,
+        // 自动读缓存那条路已经删了：缓存里通常是几天前的链接，必然 authkey timeout
         onSync: function () { runGachaSync(); },
         onSyncManual: function () { runGachaSync(gachaUrl); },
+        hasSavedUrl: Boolean(state && state.config && state.config.hasGachaUrl),
       });
     } else {
       body = h(WeaponsTab, { rows: weapons, loading: weaponsLoading });

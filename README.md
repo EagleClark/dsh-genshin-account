@@ -266,7 +266,7 @@ node scripts/build-element-icons.mjs    # 改了元素母图后重跑，会就�
 | `lib/sources/miyoushe-extras.js` | 名片 / 幻想真境剧诗 / 幽境危战（均不受验证码管控） |
 | `lib/sources/miyoushe.js` | DS2 签名、设备指纹、`x-rpc-challenge` 持有与附加、战绩接口解析 |
 | `lib/sources/miyoushe-login.js` | 扫码登录：`createQRLogin` / `queryQRLoginStatus`，从 `Set-Cookie` 取会话 |
-| `lib/sources/miyoushe-gacha.js` | 祈愿：从游戏缓存找 authkey、增量同步、分析 |
+| `lib/sources/miyoushe-gacha.js` | 祈愿：手动粘贴祈愿历史链接（缓存自动读取已移除：缓存里的 authkey 常年过期，必然 -101）
 | `lib/qr.js` | 自带的二维码编码器（无第三方依赖，逐格对齐参考实现） |
 | `lib/model.js` / `lib/score.js` | 统一快照、查询、CV 与词条效率 |
 | `client/client.js` | `window.__ModuleLoader__.load` 包；`main` + `sidebar.panellist` 两个槽位；样式走 `--dsw-*` 主题变量 |
