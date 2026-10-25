@@ -2053,8 +2053,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       };
     }, [themeMode, props.depsKey]);
 
+    if (failed) {
+      // 图表库没加载成功（例如面板与 host 版本不同步）时退回纯 CSS 版本
+      return h("div", { className: "dga-chart" + (props.narrow ? " dga-chartNarrow" : "") },
+        props.fallback ? props.fallback() : h("div", { className: "dga-chartFallback" }, h("span", { className: "dga-sub" }, "图表加载失败：" + failed)));
+    }
     return h("div", { className: "dga-chart" + (props.narrow ? " dga-chartNarrow" : "") },
-      failed ? h("div", { className: "dga-chartFallback" }, h("span", { className: "dga-sub" }, "图表加载失败：" + failed)) : null,
       h("div", { className: "dga-chartCanvas", style: { height: (props.height || 240) + "px" } },
         h("canvas", { ref: canvasRef })));
   }
@@ -2064,9 +2068,21 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var five = props.five || 0;
     var four = props.four || 0;
     var three = props.three || 0;
+    var total = Math.max(1, five + four + three);
     return h(ChartCard, {
       height: 118,
       depsKey: [five, four, three].join("-"),
+      fallback: function () {
+        return h("div", null,
+          h("div", { className: "dga-ratioBar" },
+            h("span", { className: "dga-ratioSeg", style: { width: (five / total) * 100 + "%", background: "var(--dga-gold)" } }),
+            h("span", { className: "dga-ratioSeg", style: { width: (four / total) * 100 + "%", background: "var(--dga-purple)" } }),
+            h("span", { className: "dga-ratioSeg", style: { width: (three / total) * 100 + "%", background: "var(--dsw-alias-bg-layer-3)" } })),
+          h("div", { className: "dga-legend" },
+            h(LegendItem, { color: "var(--dga-gold)", label: "五星 " + five }),
+            h(LegendItem, { color: "var(--dga-purple)", label: "四星 " + four }),
+            h(LegendItem, { color: "var(--dsw-alias-label-dimmed)", label: "三星 " + three })));
+      },
       build: function (Chart, c, canvas) {
         return new Chart(canvas, {
           type: "bar",
@@ -2105,8 +2121,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   /** 抽卡页：每月抽卡量（柱 = 抽数，折线 = 五星数，双轴）。 */
   function MonthChart(props) {
     var rows = props.rows || [];
+    var peak = rows.reduce(function (best, row) { return Math.max(best, row.pulls); }, 1) || 1;
     return h(ChartCard, {
       height: 268,
+      fallback: function () {
+        return h("div", { className: "dga-bars" }, rows.map(function (row) {
+          return h("div", { className: "dga-barRow", key: row.month },
+            h("span", { className: "dga-barLabel", style: { width: 46 } }, row.month),
+            h("span", { className: "dga-barTrack" },
+              h("span", { className: "dga-barFill", style: { width: Math.max(3, Math.round((row.pulls / peak) * 100)) + "%", background: "var(--dga-gold)" } })),
+            h("span", { className: "dga-barValue" }, String(row.pulls)));
+        }));
+      },
       depsKey: rows.map(function (row) { return row.month + row.pulls + row.five; }).join(","),
       build: function (Chart, c, canvas) {
         return new Chart(canvas, {
@@ -2182,8 +2208,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   /** 抽卡页：五星出货区间（柱 + 数值标签）。 */
   function PityChart(props) {
     var buckets = props.buckets || [];
+    var peakBucket = buckets.reduce(function (best, b) { return Math.max(best, b.count); }, 1) || 1;
     return h(ChartCard, {
       height: 240,
+      fallback: function () {
+        return h("div", { className: "dga-bars" }, buckets.map(function (b) {
+          return h("div", { className: "dga-barRow", key: b.label },
+            h("span", { className: "dga-barLabel", style: { width: 52 } }, b.label),
+            h("span", { className: "dga-barTrack" },
+              h("span", { className: "dga-barFill", style: { width: Math.max(3, Math.round((b.count / peakBucket) * 100)) + "%", background: "var(--dga-orange)" } })),
+            h("span", { className: "dga-barValue" }, String(b.count)));
+        }));
+      },
       depsKey: buckets.map(function (b) { return b.label + b.count; }).join(","),
       build: function (Chart, c, canvas) {
         return new Chart(canvas, {
