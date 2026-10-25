@@ -1,0 +1,8 @@
+{
+  "screenshots": [
+    { "path": "docs/overview.jpg", "caption": "概览：账号主卡、展柜角色评分、元素与等级分布" },
+    { "path": "docs/character.jpg", "caption": "角色：完整练度与五件圣遗物评分" },
+    { "path": "docs/gacha.jpg", "caption": "抽卡：星级分布、保底进度、每月抽卡量" },
+    { "path": "docs/gacha-records.jpg", "caption": "五星记录与出货区间" }
+  ]
+}
