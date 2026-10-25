@@ -65,8 +65,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ":root{--dga-gold:#a8752a;--dga-gold-soft:#f6ecd8;--dga-blue:#2f6fbf;--dga-green:#2c8a55;--dga-red:#bd4b47;--dga-purple:#6a5cb5;--dga-orange:#c9741c;--dga-grey:#8a8f98;--dga-bar:#8aa4c8;--dga-track:rgba(15,17,21,.08);--dga-el-pyro:#c8551f;--dga-el-hydro:#1a7ab8;--dga-el-anemo:#2f9578;--dga-el-electro:#7d4fa3;--dga-el-cryo:#3f93b8;--dga-el-geo:#b07d10;--dga-el-dendro:#5c8a1e;--dga-el-none:#6b7280}",
     "body[data-ds-dark-theme]{--dga-gold:#d8b566;--dga-gold-soft:#3a3020;--dga-blue:#6aa8f0;--dga-green:#5ec27f;--dga-red:#e08585;--dga-purple:#9a8ede;--dga-orange:#ee9a4e;--dga-grey:#9aa0aa;--dga-bar:#6f8cb8;--dga-track:rgba(255,255,255,.10);--dga-el-pyro:#ef7938;--dga-el-hydro:#4cc2f1;--dga-el-anemo:#74c2a8;--dga-el-electro:#af8ec1;--dga-el-cryo:#9fd6e3;--dga-el-geo:#fab72e;--dga-el-dendro:#a5c83b;--dga-el-none:#8b93a5}",
     ".dga-root{position:relative;height:100%;display:flex;flex-direction:column;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px}",
-    ".dga-lock{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-start;justify-content:center;padding-top:96px;background:color-mix(in srgb, var(--dsw-alias-bg-base) 62%, transparent);cursor:progress}",
-    ".dga-lockChip{font-size:12px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:999px;padding:5px 14px}",
+    ".dga-lock{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-start;justify-content:center;padding-top:88px;background:color-mix(in srgb, var(--dsw-alias-bg-base) 60%, transparent);backdrop-filter:blur(2px);cursor:progress}",
+    ".dga-lockCard{display:flex;align-items:center;gap:12px;padding:13px 18px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);box-shadow:0 10px 30px rgba(0,0,0,.16)}",
+    ".dga-spinner{width:18px;height:18px;flex:0 0 auto;border-radius:50%;border:2px solid color-mix(in srgb, var(--dga-gold) 28%, transparent);border-top-color:var(--dga-gold);animation:dgaSpin .8s linear infinite}",
+    "@keyframes dgaSpin{to{transform:rotate(360deg)}}",
+    "@media (prefers-reduced-motion: reduce){.dga-spinner{animation-duration:2.4s}}",
+    ".dga-lockTitle{font-size:13px;font-weight:600;line-height:1.3}",
+    ".dga-lockSub{font-size:11.5px;color:var(--dsw-alias-label-tertiary);margin-top:2px}",
     ".dga-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:0 0 auto}",
     ".dga-title{font-size:15px;font-weight:600;margin:0}",
     ".dga-sub{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.5}",
@@ -2931,7 +2936,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       // 同步期间盖住整个面板：按钮、页签、卡片都点不到
       syncing || loading
         ? h("div", { className: "dga-lock", "aria-busy": "true" },
-            h("span", { className: "dga-lockChip" }, loading && !syncing ? "读取中…" : "同步中…"))
+            h("div", { className: "dga-lockCard", role: "status" },
+              h("span", { className: "dga-spinner", "aria-hidden": "true" }),
+              h("div", null,
+                h("div", { className: "dga-lockTitle" }, loading && !syncing ? "正在读取账号数据" : "正在同步账号数据"),
+                h("div", { className: "dga-lockSub" }, loading && !syncing ? "读取本地快照，稍等一下" : "从米游社与展柜镜像拉取，通常几秒"))))
         : null);
   }
 
