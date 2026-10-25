@@ -1903,19 +1903,29 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       panel(ctx, scoreX, y, scoreW, 74, 12, build ? POSTER.gold : null);
       if (build) {
         var buildGradeColor = CV_GRADE_HEX[build.grade] || POSTER.gold;
-        text(ctx, build.grade || "—", scoreX + 22, y + 46, {
+        var gradeText = build.grade || "—";
+        text(ctx, gradeText, scoreX + 22, y + 42, {
           size: 22, weight: "800", color: buildGradeColor,
         });
-        text(ctx, build.name, scoreX + 22, y + 66, { size: 11, color: POSTER.soft });
+        text(ctx, build.name, scoreX + 22, y + 60, { size: 11, color: POSTER.soft });
+
+        // 评级块占多宽就留多宽，指标从这里开始等距排开，避免数字挤到标签上
+        ctx.font = "800 22px system-ui, sans-serif";
+        var gradeW = ctx.measureText(gradeText).width;
+        ctx.font = "11px system-ui, sans-serif";
+        gradeW = Math.max(gradeW, ctx.measureText(build.name).width);
+
         var metrics = [
           [build.totalLabel, String(build.total)],
           [build.avgLabel, String(build.avg)],
           ["已读到", build.count + " 件"],
         ];
+        var metricsX = scoreX + 22 + gradeW + 26;
+        var metricsW = scoreX + scoreW - 22 - metricsX;
         metrics.forEach(function (pair, index) {
-          var mx = scoreX + 104 + index * ((scoreW - 120) / 3);
-          text(ctx, pair[1], mx, y + 44, { size: 19, weight: "700", color: POSTER.text });
-          text(ctx, pair[0], mx, y + 62, { size: 11, color: POSTER.dim });
+          var mx = metricsX + index * (metricsW / metrics.length);
+          text(ctx, pair[1], mx, y + 42, { size: 19, weight: "700", color: POSTER.text });
+          text(ctx, pair[0], mx, y + 60, { size: 11, color: POSTER.dim });
         });
       } else {
         text(ctx, "圣遗物详情只对游戏内「角色展柜」中的角色开放", scoreX + 22, y + 44, {
@@ -2904,9 +2914,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         return h("button", {
           key: item.id,
           className: "dga-tab" + (tab === item.id ? " dga-tab-on" : ""),
-          disabled: syncing,
+          disabled: syncing || loading,
           onClick: function () {
-            if (syncing) return;
+            if (syncing || loading) return;
             tabTouched.current = true;
             setTab(item.id);
           },
@@ -2919,7 +2929,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         : null,
       body,
       // 同步期间盖住整个面板：按钮、页签、卡片都点不到
-      syncing ? h("div", { className: "dga-lock", "aria-busy": "true" }, h("span", { className: "dga-lockChip" }, "同步中…")) : null);
+      syncing || loading
+        ? h("div", { className: "dga-lock", "aria-busy": "true" },
+            h("span", { className: "dga-lockChip" }, loading && !syncing ? "读取中…" : "同步中…"))
+        : null);
   }
 
   // ── sidebar icon ────────────────────────────────────────────────────────
