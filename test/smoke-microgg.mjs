@@ -6,7 +6,7 @@
  * The fixture below is trimmed from a real `profile.microgg.cn` response.
  */
 import { fetchShowcase, mergeShowcase } from '../lib/sources/microgg.js'
-import { buildSnapshot, carryForwardShowcase, characterView, listWeapons, overview } from '../lib/model.js'
+import { buildSnapshot, carryForwardShowcase, characterView, iconAltOf, listWeapons, makeArtifact, overview } from '../lib/model.js'
 
 let failures = 0
 let checks = 0
@@ -216,6 +216,17 @@ const mergedWeapons = mergeShowcase(weaponSnapshot, showcase)
 check('showcase refinement lands on the weapon list', mergedWeapons.weapons[0].refinement === 5, JSON.stringify(mergedWeapons.weapons[0]))
 check('the equipped weapon keeps its refinement', mergedWeapons.characters[0].equippedWeapon.refinement === 5, mergedWeapons.characters[0].equippedWeapon && mergedWeapons.characters[0].equippedWeapon.refinement)
 check('listWeapons exposes the refinement', listWeapons(mergedWeapons, { limit: 10 })[0].refinement === 5, JSON.stringify(listWeapons(mergedWeapons, { limit: 10 })[0]))
+
+
+// 新套装的图标：官方 CDN 对未收录的图标回 1200×1200 占位图，所以要带 Enka 备用地址
+{
+  const sample = 'https://upload-bbs.mihoyo.com/game_record/genshin/equip/UI_RelicIcon_15041_4.png'
+  check('iconAlt derives the enka url', iconAltOf(sample) === 'https://enka.network/ui/UI_RelicIcon_15041_4.png', iconAltOf(sample))
+  check('iconAlt of an empty icon is empty', iconAltOf('') === '', iconAltOf(''))
+  const piece = makeArtifact({ setKey: 'crimson_witch_of_flames', slot: 'flower', icon: sample })
+  check('makeArtifact adds iconAlt', piece.iconAlt === 'https://enka.network/ui/UI_RelicIcon_15041_4.png', piece.iconAlt)
+  check('publicArtifact shape keeps the alt url', piece.iconAlt === 'https://enka.network/ui/UI_RelicIcon_15041_4.png', piece.iconAlt)
+}
 
 globalThis.fetch = realFetch
 

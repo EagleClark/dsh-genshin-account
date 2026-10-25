@@ -592,6 +592,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-artiHead" },
         h(Art, {
           src: a.icon,
+          altSrc: a.iconAlt,
           alt: a.setName,
           size: 42,
           className: "dga-artiIcon",
@@ -711,6 +712,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     // placeholder as a missing one instead of leaving an empty square.
     var brokenState = React.useState(false);
     var broken = brokenState[0], setBroken = brokenState[1];
+    // 官方 CDN 对新套装的图标回 1200×1200 占位图（HTTP 200），
+    // 这里识别尺寸后换到备用源（Enka），避免整块图标消失。
+    var altState = React.useState(props.altSrc && props.altSrc !== props.src ? "idle" : "done");
+    var altStatus = altState[0], setAltStatus = altState[1];
     var fallbackNode = props.fallback
       ? props.fallback
       : (props.alt || "?").slice(0, 1);
@@ -721,19 +726,31 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         title: props.alt || "",
       }, fallbackNode);
     }
+    var usingAlt = altStatus === "using";
     return h("img", {
       className: "dga-art" + (props.className ? " " + props.className : ""),
-      src: props.src,
+      src: usingAlt ? props.altSrc : props.src,
       alt: props.alt || "",
       title: props.alt || "",
       loading: "lazy",
       style: style,
-      onError: function () { setBroken(true); },
+      onError: function () {
+        // 官方源挂了或备用源也挂了：有备用源就换一次，否则落到槽位图形
+        if (altStatus === "idle") setAltStatus("using");
+        else setBroken(true);
+      },
       // The artwork CDN answers 200 with a 1200x1200 placeholder for icons it does
       // not have (new artifact sets), so `onError` alone would never fire.
       onLoad: function (event) {
         var img = event && event.currentTarget;
-        if (img && img.naturalWidth >= 512) setBroken(true);
+        if (!img) return;
+        if (img.naturalWidth >= 512) {
+          // 占位图 → 换 Enka 同名资源
+          if (altStatus === "idle") setAltStatus("using");
+          else setBroken(true);
+        } else if (altStatus === "idle") {
+          setAltStatus("done");
+        }
       },
     });
   }
@@ -1182,7 +1199,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               h("div", { className: "dga-sec" }, "已装备圣遗物"),
               h("div", { className: "dga-pieceRow" }, pieces.map(function (piece) {
                 return h("div", { className: "dga-pieceCard", key: piece.slot },
-                  h(Art, { src: piece.icon, alt: piece.name, size: 48 }),
+                  h(Art, { src: piece.icon, altSrc: piece.iconAlt, alt: piece.name, size: 48 }),
                   h("div", { className: "dga-pieceName" }, piece.name),
                   h("div", { className: "dga-sub" }, SLOT_ZH[piece.slot] + " · +" + (piece.level == null ? "-" : piece.level)));
               })),
@@ -1596,16 +1613,22 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   }
 
   // ── shareable character image ───────────────────────────────────────────
-  function loadArt(src) {
-    return new Promise(function (resolve) {
-      if (!src) { resolve(null); return; }
-      var img = new Image();
-      // The miHoYo CDN echoes our Origin, so this keeps the canvas untainted.
-      img.crossOrigin = "anonymous";
-      img.onload = function () { resolve(img); };
-      img.onerror = function () { resolve(null); };
-      img.src = src;
-    });
+  function loadArt(src, altSrc) {
+    function once(url) {
+      return new Promise(function (resolve) {
+        if (!url) { resolve(null); return; }
+        var img = new Image();
+        // The miHoYo CDN echoes our Origin, so this keeps the canvas untainted.
+        img.crossOrigin = "anonymous";
+        img.onload = function () {
+          // 1200×1200 是官方 CDN 的占位图，说明这套圣遗物没有图标
+          resolve(altSrc && img.naturalWidth >= 512 ? null : img);
+        };
+        img.onerror = function () { resolve(null); };
+        img.src = url;
+      });
+    }
+    return once(src).then(function (img) { return img || (altSrc ? once(altSrc) : null); });
   }
 
   function roundRect(ctx, x, y, w, h, r) {
@@ -1838,8 +1861,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     var iconSize = 150;
     var images = [loadArt(c.icon), loadArt(weapon && weapon.icon)];
-    artifacts.forEach(function (a) { images.push(loadArt(a.icon)); });
-    pieces.forEach(function (p) { images.push(loadArt(p.icon)); });
+    artifacts.forEach(function (a) { images.push(loadArt(a.icon, a.iconAlt)); });
+    pieces.forEach(function (p) { images.push(loadArt(p.icon, p.iconAlt)); });
 
     Promise.all(images).then(function (loaded) {
       var avatar = loaded[0];
