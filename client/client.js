@@ -67,7 +67,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-root{position:relative;height:100%;display:flex;flex-direction:column;min-height:0;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px}",
     ".dga-lock{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-start;justify-content:center;padding-top:88px;background:color-mix(in srgb, var(--dsw-alias-bg-base) 60%, transparent);backdrop-filter:blur(2px);cursor:progress}",
     ".dga-lockCard{display:flex;align-items:center;gap:12px;padding:13px 18px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);box-shadow:0 10px 30px rgba(0,0,0,.16)}",
-    ".dga-spinner{width:18px;height:18px;flex:0 0 auto;border-radius:50%;border:2px solid color-mix(in srgb, var(--dga-gold) 28%, transparent);border-top-color:var(--dga-gold);animation:dgaSpin .8s linear infinite}",
+    ".dga-spinner{width:18px;height:18px;flex:0 0 18px;box-sizing:border-box;aspect-ratio:1/1;border-radius:999px;border:2px solid color-mix(in srgb, var(--dga-gold) 28%, transparent);border-top-color:var(--dga-gold);animation:dgaSpin .8s linear infinite}",
     "@keyframes dgaSpin{to{transform:rotate(360deg)}}",
     "@media (prefers-reduced-motion: reduce){.dga-spinner{animation-duration:2.4s}.dga-artiCard:hover{transform:none}.dga-showcaseChip:active{transform:none}}",
     ".dga-lockTitle{font-size:13px;font-weight:600;line-height:1.3}",
@@ -1817,7 +1817,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("div", { className: "dga-secRow" },
           h("div", { className: "dga-sec" }, "星级分布"),
           h("span", { className: "dga-panelMeta" }, a.total + " 抽")),
-        h(RarityChart, { five: a.five, four: a.four, three: three, total: a.total })),
+        h(RarityChart, { five: a.five, four: a.four, three: three, total: a.total }),
+        h("div", { className: "dga-legend" },
+          h(LegendItem, { color: "var(--dga-gold)", label: "五星 " + a.five + "（" + (a.total ? ((a.five / a.total) * 100).toFixed(1) : "0") + "%）" }),
+          h(LegendItem, { color: "var(--dga-purple)", label: "四星 " + a.four + "（" + (a.total ? ((a.four / a.total) * 100).toFixed(1) : "0") + "%）" }),
+          h(LegendItem, { color: "var(--dsw-alias-label-dimmed)", label: "三星 " + three }))),
 
       h("div", { className: "dga-block" },
         h("div", { className: "dga-sec" }, "各祈愿池 · 垫了多少"),
@@ -1856,7 +1860,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               h("span", { className: "dga-panelMeta" }, "峰值 " + maxMonth + " 抽 · " + a.monthly.length + " 个月")),
             h(MonthChart, {
               max: maxMonth,
-              rows: a.monthly.map(function (row) { return { month: row.month.slice(2), pulls: row.pulls }; }),
+              rows: a.monthly.map(function (row) { return { month: row.month.slice(2), pulls: row.pulls, five: row.five }; }),
             }),
             h("p", { className: "dga-hint" }, "悬停柱子看当月抽数；柱子越高抽得越多。"))
         : null,
@@ -2020,137 +2024,268 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { ref: boxRef, style: { width: "100%", height: (props.height || 240) + "px" } }));
   }
 
-  /** 抽卡页：每月抽卡量柱状图。 */
+﻿  /** 抽卡页：每月抽卡量（柱 + 折线混合：柱=抽数，线=五星数）。 */
   function MonthChart(props) {
     var rows = props.rows || [];
     var max = props.max || 1;
+    var maxFive = rows.reduce(function (best, row) { return Math.max(best, Number(row.five) || 0); }, 1);
     return h(AmChart, {
-      height: 250,
-      depsKey: rows.map(function (row) { return row.month + row.pulls; }).join(","),
+      height: 270,
+      depsKey: rows.map(function (row) { return row.month + row.pulls + row.five; }).join(","),
       build: function (lib, root, c) {
-        var am5 = lib.am5, am5xy = lib.am5xy, am5percent = lib.am5percent;
+        var am5 = lib.am5, am5xy = lib.am5xy;
         var chart = root.container.children.push(
           am5xy.XYChart.new(root, { panX: false, panY: false, wheelX: "none", wheelY: "none" }),
         );
+        var cursor = am5xy.XYCursor.new(root, { behavior: "none" });
+        cursor.lineY.set("visible", false);
+        chart.set("cursor", cursor);
+
         var xAxis = chart.xAxes.push(
           am5xy.CategoryAxis.new(root, {
             categoryField: "month",
-            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 28, strokeOpacity: 0 }),
+            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 26, strokeOpacity: 0 }),
+          }),
+        );
+        xAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
+
+        // 左轴：抽数
+        var yAxis = chart.yAxes.push(
+          am5xy.ValueAxis.new(root, {
+            renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0 }),
+            max: Math.max(10, Math.ceil((max * 1.2) / 10) * 10),
+            numberFormat: "#a",
+          }),
+        );
+        yAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
+        yAxis.get("renderer").grid.template.setAll({ stroke: am5.color(c.line), strokeOpacity: 0.7, strokeDasharray: [4, 4] });
+
+        // 右轴：五星数
+        var yAxisFive = chart.yAxes.push(
+          am5xy.ValueAxis.new(root, {
+            renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0, opposite: true }),
+            min: 0,
+            max: Math.max(2, Math.ceil(maxFive * 1.6)),
+            numberFormat: "#a",
+            syncWithAxis: yAxis,
+          }),
+        );
+        yAxisFive.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
+        yAxisFive.get("renderer").grid.template.setAll({ visible: false });
+
+        // 柱：每月抽数
+        var columns = chart.series.push(
+          am5xy.ColumnSeries.new(root, {
+            name: "抽数",
+            xAxis: xAxis,
+            yAxis: yAxis,
+            valueYField: "pulls",
+            categoryXField: "month",
+          }),
+        );
+        columns.columns.template.setAll({
+          cornerRadiusTL: 5,
+          cornerRadiusTR: 5,
+          strokeOpacity: 0,
+          width: am5.percent(52),
+          fill: am5.color(c.gold),
+          tooltipText: "{categoryX} · {valueY} 抽",
+        });
+        columns.columns.template.set("tooltip", am5.Tooltip.new(root, {}));
+        columns.data.setAll(rows);
+
+        // 线：每月五星数
+        var line = chart.series.push(
+          am5xy.LineSeries.new(root, {
+            name: "五星数",
+            xAxis: xAxis,
+            yAxis: yAxisFive,
+            valueYField: "five",
+            categoryXField: "month",
+            tooltipText: "{categoryX} · 五星 {valueY} 个",
+          }),
+        );
+        line.strokes.template.setAll({ strokeWidth: 2, stroke: am5.color(c.blue) });
+        line.strokes.template.set("tooltip", am5.Tooltip.new(root, {}));
+        line.fills.template.setAll({ visible: false });
+        line.bullets.push(function () {
+          return am5.Bullet.new(root, {
+            sprite: am5.Circle.new(root, {
+              radius: 3.5,
+              fill: am5.color(c.blue),
+              stroke: am5.color(c.surface),
+              strokeWidth: 2,
+            }),
+          });
+        });
+        line.data.setAll(rows);
+
+        xAxis.data.setAll(rows);
+
+        var legend = chart.children.push(
+          am5.Legend.new(root, { centerX: am5.percent(50), x: am5.percent(50), layout: root.horizontalLayout, marginTop: 4 }),
+        );
+        legend.labels.template.setAll({ fill: am5.color(c.text), fontSize: 11 });
+        legend.valueLabels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
+
+        columns.appear(600, 60);
+        line.appear(600, 120);
+        chart.appear(600, 80);
+      },
+    });
+  }
+
+﻿  /** 抽卡页：星级分布（单行横向堆叠条，五星在最左、三星在最右）。 */
+  function RarityChart(props) {
+    var rows = [
+      { key: "five", label: "五星", count: props.five || 0, color: "gold" },
+      { key: "four", label: "四星", count: props.four || 0, color: "purple" },
+      { key: "three", label: "三星", count: props.three || 0, color: "grey" },
+    ];
+    return h(AmChart, {
+      height: 178,
+      depsKey: rows.map(function (row) { return row.key + row.count; }).join("-"),
+      build: function (lib, root, c) {
+        var am5 = lib.am5, am5xy = lib.am5xy;
+        var palette = { gold: c.gold, purple: c.purple, grey: c.dark ? "#5b6272" : "#c6cad2" };
+
+        var chart = root.container.children.push(
+          am5xy.XYChart.new(root, { paddingTop: 0, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 }),
+        );
+        var cursor = am5xy.XYCursor.new(root, { behavior: "none" });
+        cursor.lineY.set("visible", false);
+        chart.set("cursor", cursor);
+
+        // 横向：值轴在 X，类目轴在 Y
+        var valueAxis = chart.xAxes.push(
+          am5xy.ValueAxis.new(root, {
+            stacked: true,
+            renderer: am5xy.AxisRendererX.new(root, { strokeOpacity: 0 }),
+            min: 0,
+          }),
+        );
+        valueAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 10 });
+        valueAxis.get("renderer").grid.template.setAll({ stroke: am5.color(c.line), strokeOpacity: 0.6, strokeDasharray: [4, 4] });
+
+        var categoryAxis = chart.yAxes.push(
+          am5xy.CategoryAxis.new(root, {
+            categoryField: "category",
+            renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0 }),
+          }),
+        );
+        categoryAxis.get("renderer").labels.template.setAll({ forceHidden: true });
+        categoryAxis.get("renderer").grid.template.setAll({ visible: false });
+
+        rows.forEach(function (row, index) {
+          var series = chart.series.push(
+            am5xy.ColumnSeries.new(root, {
+              name: row.label,
+              stacked: true,
+              xAxis: valueAxis,
+              yAxis: categoryAxis,
+              valueXField: "value",
+              categoryYField: "category",
+              fill: am5.color(palette[row.color]),
+            }),
+          );
+          series.columns.template.setAll({
+            strokeOpacity: 0,
+            height: am5.percent(64),
+            tooltipText: row.label + " · {valueX} 个",
+          });
+          series.columns.template.set("tooltip", am5.Tooltip.new(root, {}));
+          series.data.setAll([{ category: "合计", value: row.count }]);
+          series.set("legendLabelText", row.label);
+          series.set("legendValueText", "{valueX} 个");
+          series.bullets.push(function () {
+            return am5.Bullet.new(root, {
+              locationX: 0.5,
+              sprite: am5.Label.new(root, {
+                text: "{valueX}",
+                populateText: true,
+                fill: am5.color("#ffffff"),
+                fontSize: 11,
+                fontWeight: "600",
+                centerX: am5.percent(50),
+                centerY: am5.percent(50),
+                oversizedBehavior: "hide",
+              }),
+            });
+          });
+          series.appear(500, 40 + index * 40);
+        });
+
+        categoryAxis.data.setAll([{ category: "合计" }]);
+
+        chart.appear(500, 60);
+      },
+    });
+  }
+
+  /** 抽卡页：五星出货区间（柱状 + 顶部数值）。 */
+  function PityChart(props) {
+    var buckets = props.buckets || [];
+    return h(AmChart, {
+      height: 250,
+      depsKey: buckets.map(function (b) { return b.label + b.count; }).join(","),
+      build: function (lib, root, c) {
+        var am5 = lib.am5, am5xy = lib.am5xy;
+        var chart = root.container.children.push(
+          am5xy.XYChart.new(root, { panX: false, panY: false, wheelX: "none", wheelY: "none" }),
+        );
+        var cursor = am5xy.XYCursor.new(root, { behavior: "none" });
+        cursor.lineY.set("visible", false);
+        chart.set("cursor", cursor);
+
+        var xAxis = chart.xAxes.push(
+          am5xy.CategoryAxis.new(root, {
+            categoryField: "label",
+            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 20, strokeOpacity: 0 }),
           }),
         );
         xAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
         var yAxis = chart.yAxes.push(
           am5xy.ValueAxis.new(root, {
             renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0 }),
-            max: Math.max(10, Math.ceil((max * 1.25) / 10) * 10),
+            min: 0,
+            extraMax: 0.15,
           }),
         );
         yAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
-        yAxis.get("renderer").grid.template.setAll({ stroke: am5.color(c.line), strokeOpacity: 0.5, strokeDasharray: [4, 4] });
+        yAxis.get("renderer").grid.template.setAll({ stroke: am5.color(c.line), strokeOpacity: 0.7, strokeDasharray: [4, 4] });
+
         var series = chart.series.push(
           am5xy.ColumnSeries.new(root, {
-            name: "抽数", xAxis: xAxis, yAxis: yAxis,
-            valueYField: "pulls", categoryXField: "month",
-            tooltip: am5.Tooltip.new(root, { labelText: "{categoryX} · {valueY} 抽" }),
+            name: "五星数",
+            xAxis: xAxis,
+            yAxis: yAxis,
+            valueYField: "count",
+            categoryXField: "label",
           }),
         );
         series.columns.template.setAll({
-          cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0, width: am5.percent(52),
-          fill: am5.color(c.gold),
-        });
-        series.data.setAll(rows);
-        xAxis.data.setAll(rows);
-        series.appear(600, 60);
-        chart.appear(600, 80);
-      },
-    });
-  }
-
-  /** 抽卡页：星级分布环形图。 */
-  function RarityChart(props) {
-    var five = props.five || 0;
-    var four = props.four || 0;
-    var three = props.three || 0;
-    return h(AmChart, {
-      height: 260,
-      narrow: true,
-      depsKey: [five, four, three].join("-"),
-      build: function (lib, root, c) {
-        var am5 = lib.am5, am5xy = lib.am5xy, am5percent = lib.am5percent;
-        var chart = root.container.children.push(
-          am5percent.PieChart.new(root, { innerRadius: am5.percent(64), layout: root.horizontalLayout }),
-        );
-        var series = chart.series.push(
-          am5percent.PieSeries.new(root, { valueField: "value", categoryField: "name" }),
-        );
-        series.slices.template.set("strokeOpacity", 0);
-        series.set("colors", am5.ColorSet.new(root, {
-          colors: [am5.color(c.gold), am5.color(c.purple), am5.color(c.dark ? "#5b6272" : "#c6cad2")],
-        }));
-        series.data.setAll([
-          { name: "五星", value: five },
-          { name: "四星", value: four },
-          { name: "三星", value: three },
-        ]);
-        series.slices.template.setAll({
-          tooltipText: "{category} · {value} 个（{valuePercentTotal.formatNumber('0.0')}%）",
-        });
-        series.set("legendValueText", "{value} 个");
-        series.labels.template.set("forceHidden", true);
-        series.ticks.template.set("forceHidden", true);
-        var legend = chart.children.push(
-          am5.Legend.new(root, { centerY: am5.percent(50), y: am5.percent(50), layout: root.verticalLayout }),
-        );
-        legend.labels.template.setAll({ fill: am5.color(c.text), fontSize: 12 });
-        legend.valueLabels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
-        legend.data.setAll(series.dataItems);
-        series.appear(600, 80);
-      },
-    });
-  }
-
-  /** 抽卡页：五星出货区间柱状图。 */
-  function PityChart(props) {
-    var buckets = props.buckets || [];
-    return h(AmChart, {
-      height: 230,
-      depsKey: buckets.map(function (b) { return b.label + b.count; }).join(","),
-      build: function (lib, root, c) {
-        var am5 = lib.am5, am5xy = lib.am5xy, am5percent = lib.am5percent;
-        var chart = root.container.children.push(
-          am5xy.XYChart.new(root, { panX: false, panY: false, wheelX: "none", wheelY: "none" }),
-        );
-        var xAxis = chart.xAxes.push(
-          am5xy.CategoryAxis.new(root, {
-            categoryField: "label",
-            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 24, strokeOpacity: 0 }),
-          }),
-        );
-        xAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
-        var yAxis = chart.yAxes.push(
-          am5xy.ValueAxis.new(root, { renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0 }), min: 0 }),
-        );
-        yAxis.get("renderer").labels.template.setAll({ fill: am5.color(c.muted), fontSize: 11 });
-        yAxis.get("renderer").grid.template.setAll({ stroke: am5.color(c.line), strokeOpacity: 0.5, strokeDasharray: [4, 4] });
-        var series = chart.series.push(
-          am5xy.ColumnSeries.new(root, {
-            name: "五星数", xAxis: xAxis, yAxis: yAxis,
-            valueYField: "count", categoryXField: "label",
-            tooltip: am5.Tooltip.new(root, { labelText: "{categoryX} 抽 · {valueY} 个" }),
-          }),
-        );
-        series.columns.template.setAll({
-          cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0, width: am5.percent(46),
+          cornerRadiusTL: 5,
+          cornerRadiusTR: 5,
+          strokeOpacity: 0,
+          width: am5.percent(48),
           fill: am5.color(c.orange),
+          tooltipText: "{categoryX} 抽 · {valueY} 个五星",
         });
+        series.columns.template.set("tooltip", am5.Tooltip.new(root, {}));
         series.data.setAll(buckets);
         xAxis.data.setAll(buckets);
         series.bullets.push(function () {
           return am5.Bullet.new(root, {
             locationY: 1,
             sprite: am5.Label.new(root, {
-              text: "{valueY}", fill: am5.color(c.text),
-              centerX: am5.percent(50), centerY: am5.percent(100), fontSize: 11, dy: -4,
+              text: "{valueY}",
+              populateText: true,
+              fill: am5.color(c.text),
+              fontSize: 11,
+              fontWeight: "600",
+              centerX: am5.percent(50),
+              centerY: am5.percent(100),
+              dy: -4,
             }),
           });
         });
