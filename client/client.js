@@ -69,21 +69,21 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-lockCard{display:flex;align-items:center;gap:12px;padding:13px 18px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);box-shadow:0 10px 30px rgba(0,0,0,.16)}",
     ".dga-spinner{width:18px;height:18px;flex:0 0 auto;border-radius:50%;border:2px solid color-mix(in srgb, var(--dga-gold) 28%, transparent);border-top-color:var(--dga-gold);animation:dgaSpin .8s linear infinite}",
     "@keyframes dgaSpin{to{transform:rotate(360deg)}}",
-    "@media (prefers-reduced-motion: reduce){.dga-spinner{animation-duration:2.4s}}",
+    "@media (prefers-reduced-motion: reduce){.dga-spinner{animation-duration:2.4s}.dga-artiCard:hover{transform:none}.dga-showcaseChip:active{transform:none}}",
     ".dga-lockTitle{font-size:13px;font-weight:600;line-height:1.3}",
     ".dga-lockSub{font-size:11.5px;color:var(--dsw-alias-label-tertiary);margin-top:2px}",
     ".dga-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:0 0 auto}",
     ".dga-title{font-size:15px;font-weight:600;margin:0}",
     ".dga-sub{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.5}",
     ".dga-grow{flex:1;min-width:0}",
-    ".dga-btn{appearance:none;font:inherit;cursor:pointer;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-secondary);border-radius:8px;padding:6px 14px;min-height:32px;font-size:13px;line-height:1.5;transition:transform .12s ease,color .12s ease,border-color .12s ease}",
+    ".dga-btn{appearance:none;font:inherit;cursor:pointer;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-secondary);border-radius:8px;padding:8px 14px;min-height:36px;font-size:13px;line-height:1.5;transition:transform .12s ease,color .12s ease,border-color .12s ease}",
     ".dga-btn:active:not(:disabled){transform:translateY(1px)}",
     ".dga-btn:focus-visible{outline:2px solid var(--dga-gold);outline-offset:2px}",
     ".dga-btn:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}",
     ".dga-btn:disabled{opacity:.45;cursor:default}",
     ".dga-btn-primary{background:var(--dsw-alias-label-primary);color:var(--dsw-alias-bg-layer-3);border-color:transparent}",
     ".dga-tabs{display:flex;gap:4px;padding:10px 20px 0;flex:0 0 auto;border-bottom:1px solid var(--dsw-alias-border-l2)}",
-    ".dga-tab{appearance:none;font:inherit;cursor:pointer;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dsw-alias-label-tertiary);padding:8px 12px 9px;min-height:36px;font-size:13px;transition:color .12s ease}",
+    ".dga-tab{appearance:none;font:inherit;cursor:pointer;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dsw-alias-label-tertiary);padding:10px 12px 11px;min-height:40px;font-size:13px;transition:color .12s ease}",
     ".dga-tab:focus-visible{outline:2px solid var(--dga-gold);outline-offset:-2px}",
     ".dga-tab:hover{color:var(--dsw-alias-label-primary)}",
     ".dga-tab-on{color:var(--dsw-alias-label-primary);border-bottom-color:var(--dsw-alias-brand-primary)}",
@@ -173,6 +173,65 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-art-ph{color:var(--dsw-alias-label-tertiary);font-weight:600;font-size:18px}",
     ".dga-hero{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 20px;margin:0 0 20px;border:1px solid var(--dsw-alias-border-l2);border-radius:16px;background:linear-gradient(135deg,var(--dsw-alias-bg-layer-2),var(--dsw-alias-bg-base))}",
     ".dga-heroMain{flex:1;min-width:190px}",
+    ".dga-scrollV2{display:flex;flex-direction:column;gap:16px}",
+    ".dga-heroV2{display:block;padding:0;overflow:hidden;margin:0;background:linear-gradient(150deg,var(--dsw-alias-bg-layer-2),var(--dsw-alias-bg-base) 62%)}",
+    ".dga-heroRibbon{display:flex;height:4px}",
+    ".dga-ribbonSeg{display:block;min-width:6px}",
+    ".dga-heroBody{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:18px 20px}",
+    ".dga-heroTags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}",
+    ".dga-tagSoft{font-size:11.5px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border-radius:999px;padding:2px 9px;line-height:17px}",
+    ".dga-bento{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;align-items:start}",
+    "@media (max-width:900px){.dga-bento{grid-template-columns:1fr}}",
+    ".dga-panel{border:1px solid var(--dsw-alias-border-l2);border-radius:14px;padding:16px 18px;background:var(--dsw-alias-bg-layer-1);min-width:0}",
+    ".dga-panelQuiet{background:transparent;border-style:dashed}",
+    ".dga-panelHead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}",
+    ".dga-panelTitle{margin:0;font-size:13px;font-weight:600;letter-spacing:.01em}",
+    ".dga-panelMeta{font-size:11.5px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}",
+    ".dga-panelFoot{margin:10px 0 0}",
+    ".dga-spanWide{min-width:0}",
+    ".dga-elemList{display:flex;flex-direction:column;gap:2px}",
+    ".dga-elemPct{width:38px;text-align:right;font-size:11.5px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}",
+    ".dga-progressList{display:flex;flex-direction:column}",
+    ".dga-progressRow{display:flex;align-items:baseline;gap:10px;padding:9px 0;border-top:1px solid var(--dsw-alias-border-l1)}",
+    ".dga-progressRow:first-child{border-top:none;padding-top:2px}",
+    ".dga-progressK{flex:1;min-width:0;font-size:12px;color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".dga-progressV{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}",
+    ".dga-progressS{font-size:11px;color:var(--dsw-alias-label-tertiary);min-width:52px;text-align:right}",
+    ".dga-levelStrip{display:flex;gap:2px;height:6px;margin-bottom:12px;border-radius:999px;overflow:hidden}",
+    ".dga-levelSeg{display:block;min-width:4px;background:var(--dga-bar);border-radius:2px}",
+    ".dga-showcaseRow{display:flex;flex-wrap:wrap;gap:8px}",
+    ".dga-showcaseChip{appearance:none;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);transition:transform .12s ease,border-color .12s ease}",
+    ".dga-showcaseChip:hover{border-color:var(--dsw-alias-label-dimmed)}",
+    ".dga-showcaseChip:active{transform:translateY(1px)}",
+    ".dga-showcaseChip:focus-visible{outline:2px solid var(--dga-gold);outline-offset:2px}",
+    ".dga-showcaseArt{border-radius:999px!important}",
+    ".dga-showcaseName{font-size:12px}",
+    ".dga-showcaseGrade{font-size:11px;font-weight:600}",
+    ".dga-aboutHero{display:flex;flex-direction:column;gap:8px;padding:22px 22px 20px;border:1px solid var(--dsw-alias-border-l2);border-radius:16px;background:linear-gradient(150deg,color-mix(in srgb,var(--dga-gold) 12%,transparent),transparent 58%),var(--dsw-alias-bg-layer-1)}",
+    ".dga-aboutTitle{display:flex;align-items:center;gap:10px}",
+    ".dga-aboutName{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em}",
+    ".dga-versionChip{font-size:11.5px;color:var(--dga-gold);border:1px solid color-mix(in srgb,var(--dga-gold) 42%,transparent);border-radius:999px;padding:1px 8px;line-height:18px;font-variant-numeric:tabular-nums}",
+    ".dga-aboutLead{margin:0;font-size:13px;line-height:1.65;color:var(--dsw-alias-label-secondary);max-width:62ch}",
+    ".dga-aboutLeadDim{color:var(--dsw-alias-label-tertiary);font-size:12px}",
+    ".dga-featureGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px 18px}",
+    ".dga-feature{display:flex;flex-direction:column;gap:3px;padding-left:10px;border-left:2px solid color-mix(in srgb,var(--dga-gold) 34%,transparent)}",
+    ".dga-featureK{font-size:12.5px;font-weight:600}",
+    ".dga-featureV{font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-facts{margin:0;display:flex;flex-direction:column}",
+    ".dga-fact{display:flex;gap:12px;padding:8px 0;border-top:1px solid var(--dsw-alias-border-l1)}",
+    ".dga-fact:first-child{border-top:none;padding-top:0}",
+    ".dga-fact dt{flex:0 0 68px;margin:0;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-fact dd{margin:0;font-size:12px;line-height:1.55;color:var(--dsw-alias-label-secondary);min-width:0}",
+    ".dga-linkList{display:flex;flex-direction:column}",
+    ".dga-linkRow{display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--dsw-alias-border-l1)}",
+    ".dga-linkRow:first-child{border-top:none;padding-top:0}",
+    ".dga-linkText{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}",
+    ".dga-linkK{font-size:12.5px;font-weight:600}",
+    ".dga-linkV{font-size:12px;color:var(--dga-blue);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".dga-linkV:hover{text-decoration:underline}",
+    ".dga-linkNote{font-size:11px;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-linkCopy{flex:0 0 auto;min-height:32px}",
+
     ".dga-heroName{font-size:22px;font-weight:650;margin-bottom:4px}",
     ".dga-heroMeta{color:var(--dsw-alias-label-tertiary);font-size:12px}",
     ".dga-heroStats{display:flex;gap:10px;flex-wrap:wrap}",
@@ -302,6 +361,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-secRow .dga-sec{margin-bottom:0}",
     ".dga-seg{display:inline-flex;padding:2px;border-radius:999px;border:1px solid var(--dga-line);background:var(--dsw-alias-bg-layer-2)}",
     ".dga-segBtn{appearance:none;font:inherit;cursor:pointer;border:none;background:transparent;color:var(--dsw-alias-label-tertiary);font-size:11.5px;padding:3px 10px;border-radius:999px;transition:color .12s ease,background .12s ease}",
+    ".dga-segBtn:focus-visible{outline:2px solid var(--dga-gold);outline-offset:2px}",
     ".dga-segBtnOn{color:var(--dsw-alias-label-primary);background:color-mix(in srgb, var(--dga-gold) 22%, transparent)}",
     ".dga-buildStat{font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
     ".dga-buildStat b{display:block;font-size:15px;color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}",
@@ -990,84 +1050,249 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       cards.push({ key: "fetter", label: "好感角色", value: String(progress.fetterCount), sub: "" });
     }
 
-    return h("div", { className: "dga-scroll" },
-      h("div", { className: "dga-hero" },
-        h("div", { className: "dga-heroMain" },
-          h("div", { className: "dga-heroName" }, player.nickname || "旅行者"),
-          h("div", { className: "dga-heroMeta" },
-            [
-              o.uid ? "UID " + o.uid : "",
-              player.level ? "冒险等级 " + player.level : "",
-              player.worldLevel ? "世界等级 " + player.worldLevel : "",
-            ].filter(Boolean).join(" · ")),
-          serverText
-            ? h("div", { className: "dga-heroMeta", style: { marginTop: 4 } },
-                h("span", { className: "dga-serverTag", title: "游戏服务器：1/2 开头为天空岛，5 开头为世界树" }, "服务器 " + serverText))
-            : null),
-        h("div", { className: "dga-heroStats" },
-          h(StatTile, { value: String(counts.characters || 0), label: "角色" }),
-          h(StatTile, { value: String(five), label: "五星" }),
-          h(StatTile, { value: String(four), label: "四星" }),
-          h(StatTile, { value: String(showcase), label: "展柜" }))),
+    var pct = function (count) { return Math.round((count / total) * 100); };
+    var levelBands = (function () {
+      if (!all.length) return null;
+      var bands = [
+        { key: "90+", label: "Lv.90+", count: 0 },
+        { key: "90", label: "Lv.90", count: 0 },
+        { key: "80", label: "80-89", count: 0 },
+        { key: "70", label: "70-79", count: 0 },
+        { key: "low", label: "1-69", count: 0 },
+      ];
+      all.forEach(function (c) {
+        if (c.level > 90) bands[0].count += 1;
+        else if (c.level >= 90) bands[1].count += 1;
+        else if (c.level >= 80) bands[2].count += 1;
+        else if (c.level >= 70) bands[3].count += 1;
+        else bands[4].count += 1;
+      });
+      return bands;
+    })();
+    var maxBand = levelBands ? Math.max.apply(null, levelBands.map(function (b) { return b.count; })) || 1 : 1;
+    // 最高产的元素：用来给 hero 的副标题一句人话，而不是把 9 行都读完
+    var topElement = list.reduce(function (best, entry) { return !best || entry.count > best.count ? entry : best; }, null);
 
-      list.length
-        ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "角色元素分布"),
-            h("div", { className: "dga-bars" }, list.map(function (entry) {
-              return h("div", { className: "dga-elemRow", key: entry.key },
-                h(ElementGlyph, { element: entry.key, size: 22 }),
-                h("span", { className: "dga-elemName" }, entry.key === "none" ? "其他" : entry.zh),
-                h("span", { className: "dga-barTrack" },
-                  h("span", {
-                    className: "dga-barFill",
-                    style: { width: Math.max(2, Math.round((entry.count / peak) * 100)) + "%", background: elementColor(entry.key) },
-                  })),
-                h("span", { className: "dga-elemCount" }, String(entry.count)));
-            })),
-            list.some(function (e) { return e.key === "none"; })
-              ? h("p", { className: "dga-hint" }, "「其他」是元素随形态变化的旅行者与「奇偶」这类没有固定元素的角色。")
-              : null)
-        : null,
+    return h("div", { className: "dga-scroll dga-scrollV2" },
+      // ── hero ────────────────────────────────────────────────────────────
+      h("div", { className: "dga-hero dga-heroV2" },
+        h("div", { className: "dga-heroRibbon" }, list.length
+          ? list.map(function (entry) {
+              return h("span", {
+                key: entry.key,
+                className: "dga-ribbonSeg",
+                style: { flex: entry.count, background: elementColor(entry.key) },
+                title: (entry.key === "none" ? "其他" : entry.zh) + " " + entry.count + " 个 · " + pct(entry.count) + "%",
+              });
+            })
+          : null),
+        h("div", { className: "dga-heroBody" },
+          h("div", { className: "dga-heroMain" },
+            h("div", { className: "dga-heroName" }, player.nickname || "旅行者"),
+            h("div", { className: "dga-heroMeta" },
+              [
+                o.uid ? "UID " + o.uid : "",
+                player.level ? "冒险等级 " + player.level : "",
+                player.worldLevel ? "世界等级 " + player.worldLevel : "",
+              ].filter(Boolean).join(" · ")),
+            h("div", { className: "dga-heroTags" },
+              serverText
+                ? h("span", { className: "dga-serverTag", title: "游戏服务器：1/2 开头为天空岛，5 开头为世界树" }, "服务器 " + serverText)
+                : null,
+              topElement
+                ? h("span", { className: "dga-tagSoft" }, "主力元素 " + (topElement.key === "none" ? "其他" : topElement.zh) + " " + pct(topElement.count) + "%")
+                : null)),
+          h("div", { className: "dga-heroStats" },
+            h(StatTile, { value: String(counts.characters || 0), label: "角色" }),
+            h(StatTile, { value: String(five), label: "五星" }),
+            h(StatTile, { value: String(four), label: "四星" }),
+            h(StatTile, { value: String(showcase), label: "展柜" })))),
 
-      cards.length
-        ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "进度"),
-            h("div", { className: "dga-progressGrid" }, cards.map(function (card) {
-              return h("div", { className: "dga-progressCard", key: card.key },
-                h("div", { className: "dga-progressK" }, card.label),
-                h("div", { className: "dga-progressV" }, card.value),
-                card.sub ? h("div", { className: "dga-progressS" }, card.sub) : null);
-            })))
-        : null,
-
+      // ── 展柜角色 ────────────────────────────────────────────────────────
       (function () {
-        if (!all.length) return null;
-        var bands = { "90+": 0, "90": 0, "80-89": 0, "70-79": 0, "1-69": 0 };
-        all.forEach(function (c) {
-          if (c.level > 90) bands["90+"] += 1;
-          else if (c.level >= 90) bands["90"] += 1;
-          else if (c.level >= 80) bands["80-89"] += 1;
-          else if (c.level >= 70) bands["70-79"] += 1;
-          else bands["1-69"] += 1;
-        });
-        var maxBand = Math.max.apply(null, Object.keys(bands).map(function (k) { return bands[k]; })) || 1;
-        return h("div", { className: "dga-block" },
-          h("div", { className: "dga-sec" }, "等级分布"),
-          h("div", { className: "dga-bars" }, ["90+", "90", "80-89", "70-79", "1-69"].map(function (band) {
-            return h("div", { className: "dga-barRow", key: band },
-              h("span", { className: "dga-barLabel", style: { width: 56 } }, band === "90" ? "Lv.90" : band === "90+" ? "Lv.90+" : band),
-              h("span", { className: "dga-barTrack" },
-                h("span", {
-                  className: "dga-barFill",
-                  style: { width: Math.max(3, Math.round((bands[band] / maxBand) * 100)) + "%", background: "var(--dga-bar)" },
-                })),
-              h("span", { className: "dga-barValue" }, String(bands[band])));
+        // 只列真正有副词条明细的角色（有些展柜角色只有主词条，CV 是 0）
+        var rows = all.filter(function (c) { return c.showcase && c.cv > 0; })
+          .sort(function (a, b) { return b.cv - a.cv; })
+          .slice(0, 12);
+        if (!rows.length || !props.onOpenCharacter) return null;
+        return h("section", { className: "dga-panel" },
+          h("header", { className: "dga-panelHead" },
+            h("h2", { className: "dga-panelTitle" }, "展柜角色"),
+            h("span", { className: "dga-panelMeta" }, "有副词条明细 · 共 " + rows.length + " 个")),
+          h("div", { className: "dga-showcaseRow" }, rows.map(function (c) {
+            return h("button", {
+              key: c.id || c.name,
+              className: "dga-showcaseChip",
+              onClick: function () { props.onOpenCharacter(c.name); },
+              title: c.name + " · CV " + c.cv + (c.cvGrade ? " · " + c.cvGrade : ""),
+            },
+              h(Art, { src: c.icon, alt: c.name, size: 30, rarity: c.rarity, className: "dga-showcaseArt" }),
+              h("span", { className: "dga-showcaseName" }, c.name),
+              c.cvGrade
+                ? h("span", { className: "dga-showcaseGrade", style: { color: cvGradeColor(c.cvGrade) } }, c.cvGrade)
+                : null);
           })));
       })(),
 
-      h("div", { className: "dga-block" },
-        h("div", { className: "dga-sec" }, "数据状态"),
-        h("div", { className: "dga-sub" }, o.noteShort || "")));
+      // ── 分布 + 进度 ──────────────────────────────────────────────────────
+      h("div", { className: "dga-bento" },
+        list.length
+          ? h("section", { className: "dga-panel dga-spanWide" },
+              h("header", { className: "dga-panelHead" },
+                h("h2", { className: "dga-panelTitle" }, "角色元素分布"),
+                h("span", { className: "dga-panelMeta" }, list.length + " 种元素 · 共 " + total + " 个角色")),
+              h("div", { className: "dga-elemList" }, list.map(function (entry) {
+                return h("div", { className: "dga-elemRow", key: entry.key },
+                  h(ElementGlyph, { element: entry.key, size: 20 }),
+                  h("span", { className: "dga-elemName" }, entry.key === "none" ? "其他" : entry.zh),
+                  h("span", { className: "dga-barTrack" },
+                    h("span", {
+                      className: "dga-barFill",
+                      style: { width: Math.max(2, Math.round((entry.count / peak) * 100)) + "%", background: elementColor(entry.key) },
+                    })),
+                  h("span", { className: "dga-elemPct" }, pct(entry.count) + "%"),
+                  h("span", { className: "dga-elemCount" }, String(entry.count)));
+              })),
+              list.some(function (e) { return e.key === "none"; })
+                ? h("p", { className: "dga-hint dga-panelFoot" }, "「其他」是元素随形态变化的旅行者与「奇偶」这类没有固定元素的角色。")
+                : null)
+          : null,
+
+        cards.length
+          ? h("section", { className: "dga-panel" },
+              h("header", { className: "dga-panelHead" },
+                h("h2", { className: "dga-panelTitle" }, "进度"),
+                h("span", { className: "dga-panelMeta" }, cards.length + " 项")),
+              h("div", { className: "dga-progressList" }, cards.map(function (card) {
+                return h("div", { className: "dga-progressRow", key: card.key },
+                  h("span", { className: "dga-progressK" }, card.label),
+                  h("span", { className: "dga-progressV" }, card.value),
+                  card.sub ? h("span", { className: "dga-progressS" }, card.sub) : null);
+              })))
+          : null),
+
+      // ── 等级分布 + 数据状态 ──────────────────────────────────────────────
+      h("div", { className: "dga-bento" },
+        levelBands
+          ? h("section", { className: "dga-panel dga-spanWide" },
+              h("header", { className: "dga-panelHead" },
+                h("h2", { className: "dga-panelTitle" }, "等级分布"),
+                h("span", { className: "dga-panelMeta" }, "满级 " + (levelBands[1].count + levelBands[0].count) + " 个")),
+              h("div", { className: "dga-levelStrip" }, levelBands.map(function (band) {
+                return h("span", {
+                  key: "strip-" + band.key,
+                  className: "dga-levelSeg",
+                  style: { flex: band.count, opacity: 1 - 0.14 * levelBands.indexOf(band) },
+                  title: band.label + " · " + band.count + " 个",
+                });
+              })),
+              h("div", { className: "dga-bars" }, levelBands.map(function (band) {
+                return h("div", { className: "dga-barRow", key: band.key },
+                  h("span", { className: "dga-barLabel", style: { width: 62 } }, band.label),
+                  h("span", { className: "dga-barTrack" },
+                    h("span", {
+                      className: "dga-barFill",
+                      style: { width: Math.max(3, Math.round((band.count / maxBand) * 100)) + "%", background: "var(--dga-bar)" },
+                    })),
+                  h("span", { className: "dga-barValue" }, String(band.count)));
+              })))
+          : null,
+
+        h("section", { className: "dga-panel" },
+          h("header", { className: "dga-panelHead" }, h("h2", { className: "dga-panelTitle" }, "数据状态")),
+          h("p", { className: "dga-sub" }, o.noteShort || "暂无说明"),
+          o.fetchedAt
+            ? h("p", { className: "dga-sub" }, "同步于 " + when(o.fetchedAt))
+            : null)));
+  }
+
+  // ── about ───────────────────────────────────────────────────────────────
+  /**
+   * 关于页：插件介绍、版本、来源与链接。
+   *
+   * 版本号由 host 从 package.json 读出（state.version），链接也来自 state，
+   * 避免界面上写死一份、包里再写一份。
+   */
+  function AboutTab(props) {
+    var state = props.state || {};
+    var version = state.version || "";
+    var repo = state.repo || "https://github.com/EagleClark/dsh-genshin-account";
+    var blog = state.blog || "https://eagle90.com";
+    var copiedState = React.useState("");
+    var copied = copiedState[0], setCopied = copiedState[1];
+
+    function copy(text, key) {
+      var done = function () {
+        setCopied(key);
+        setTimeout(function () { setCopied(""); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () {});
+      }
+    }
+
+    var facts = [
+      ["数据来源", "米游社记录接口 + 游戏内角色展柜"],
+      ["同步方式", "扫码登录后手动同步，也可定时自动同步"],
+      ["存储位置", "本机 DSH 数据目录，不上传任何服务器"],
+      ["开源协议", "MIT"],
+    ];
+    var features = [
+      ["账号概览", "角色数量、元素分布、等级分布、深渊与成就进度"],
+      ["角色练度", "等级、命座、天赋、面板、武器精炼与套装效果"],
+      ["圣遗物评分", "CV 与权重评分双口径，含理之冠主词条与强化次数"],
+      ["抽卡记录", "总抽数、五星、保底进度与欧非比"],
+      ["武器库", "按类型与稀有度浏览，标注装备角色"],
+      ["分享海报", "一键导出角色长图，可切换评分口径"],
+    ];
+
+    return h("div", { className: "dga-scroll dga-scrollV2" },
+      h("section", { className: "dga-aboutHero" },
+        h("div", { className: "dga-aboutTitle" },
+          h("h1", { className: "dga-aboutName" }, "原神启动"),
+          version ? h("span", { className: "dga-versionChip" }, "v" + version) : null),
+        h("p", { className: "dga-aboutLead" },
+          "读取你的原神账号：角色、武器、圣遗物与抽卡记录，并在对话里直接回答关于练度的问题。"),
+        h("p", { className: "dga-aboutLead dga-aboutLeadDim" },
+          "数据只在本机读取与缓存，插件不上传任何内容。")),
+
+      h("div", { className: "dga-bento" },
+        h("section", { className: "dga-panel dga-spanWide" },
+          h("header", { className: "dga-panelHead" }, h("h2", { className: "dga-panelTitle" }, "功能")),
+          h("div", { className: "dga-featureGrid" }, features.map(function (item) {
+            return h("div", { className: "dga-feature", key: item[0] },
+              h("div", { className: "dga-featureK" }, item[0]),
+              h("div", { className: "dga-featureV" }, item[1]));
+          }))),
+        h("section", { className: "dga-panel" },
+          h("header", { className: "dga-panelHead" }, h("h2", { className: "dga-panelTitle" }, "信息")),
+          h("dl", { className: "dga-facts" }, facts.map(function (fact) {
+            return h("div", { className: "dga-fact", key: fact[0] },
+              h("dt", null, fact[0]),
+              h("dd", null, fact[1]));
+          })))),
+
+      h("section", { className: "dga-panel" },
+        h("header", { className: "dga-panelHead" }, h("h2", { className: "dga-panelTitle" }, "链接")),
+        h("div", { className: "dga-linkList" }, [
+          { key: "repo", label: "GitHub 仓库", url: repo, note: "源码、更新日志与问题反馈" },
+          { key: "blog", label: "作者博客", url: blog, note: "eagle90.com" },
+        ].map(function (link) {
+          return h("div", { className: "dga-linkRow", key: link.key },
+            h("div", { className: "dga-linkText" },
+              h("div", { className: "dga-linkK" }, link.label),
+              h("a", { className: "dga-linkV", href: link.url, target: "_blank", rel: "noreferrer noopener" }, link.url),
+              h("div", { className: "dga-linkNote" }, link.note)),
+            h("button", {
+              className: "dga-btn dga-linkCopy",
+              onClick: function () { copy(link.url, link.key); },
+            }, copied === link.key ? "已复制" : "复制"));
+        }))),
+
+      h("section", { className: "dga-panel dga-panelQuiet" },
+        h("p", { className: "dga-sub" },
+          "非官方工具，与米哈游 / HoYoverse 无关。数据版权归原公司所有，仅用于个人查看自己的账号。"),
+        h("p", { className: "dga-sub" }, "如果在使用中遇到数据缺失，多半是接口暂时不可用，稍后重新同步即可。")));
   }
 
   /** Chinese element name → key, for colour lookup. */
@@ -2835,6 +3060,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       { id: "gacha", label: "抽卡" },
       { id: "weapons", label: "武器" },
       { id: "settings", label: "设置" },
+      { id: "about", label: "关于" },
     ];
 
     var state = summary && summary.state ? summary.state : null;
@@ -2911,6 +3137,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         onSelect: function (name) { setCharacter(null); loadCharacter(name); },
         onExport: exportCharacterImage,
       });
+    } else if (tab === "about") {
+      body = h(AboutTab, { state: state });
     } else if (tab === "gacha") {
       body = h(GachaTab, {
         // `gacha` already holds the analysis object (`setGacha(data.analysis)`),

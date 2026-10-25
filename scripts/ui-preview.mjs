@@ -21,6 +21,8 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+const PKG_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
+
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..')
 const outDir = join(tmpdir(), 'dsh-genshin-preview')
@@ -89,10 +91,16 @@ async function buildLocal() {
       note: snapshot.note,
       uid: snapshot.uid,
       config: { source: snapshot.source, miyousheUid: snapshot.uid, hasCookie: true, cacheSeconds: 600 },
+      version: PKG_VERSION,
+      repo: 'https://github.com/EagleClark/dsh-genshin-account',
+      blog: 'https://eagle90.com',
     },
     '/summary': {
       ok: true,
-      state: { source: snapshot.source, uid: snapshot.uid, fetchedAt: snapshot.fetchedAt, configured: true, note: snapshot.note },
+      state: {
+        source: snapshot.source, uid: snapshot.uid, fetchedAt: snapshot.fetchedAt, configured: true, note: snapshot.note,
+        version: PKG_VERSION, repo: 'https://github.com/EagleClark/dsh-genshin-account', blog: 'https://eagle90.com',
+      },
       overview: model.overview(snapshot),
       characters,
     },
@@ -147,6 +155,7 @@ const TABS = [
   { index: 2, name: 'gacha' },
   { index: 3, name: 'weapons' },
   { index: 4, name: 'settings' },
+  { index: 5, name: 'about' },
 ]
 
 const THEME = process.env.PREVIEW_THEME === 'light' ? 'light' : 'dark'
