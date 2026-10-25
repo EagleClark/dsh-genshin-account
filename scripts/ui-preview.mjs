@@ -17,7 +17,6 @@ import { spawn } from 'node:child_process'
 import { createServer } from 'node:http'
 import { existsSync as fileExists } from 'node:fs'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -26,16 +25,6 @@ const PKG_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.me
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..')
-const APEX_FILE = (() => {
-  try {
-    const req = createRequire(import.meta.url)
-    const pkg = req.resolve('apexcharts/package.json')
-    return join(dirname(pkg), 'dist', 'apexcharts.min.js')
-  } catch {
-    return ''
-  }
-})()
-
 const outDir = join(tmpdir(), 'dsh-genshin-preview')
 mkdirSync(outDir, { recursive: true })
 
@@ -334,16 +323,6 @@ await send('Page.enable')
 const MIME = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.js': 'text/javascript' }
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1')
-  if (url.pathname.endsWith('/asset/apexcharts.js')) {
-    if (!APEX_FILE) {
-      res.writeHead(404)
-      res.end('no apexcharts')
-      return
-    }
-    res.writeHead(200, { 'content-type': 'application/javascript; charset=utf-8' })
-    res.end(readFileSync(APEX_FILE))
-    return
-  }
   let target = null
   const asset = url.pathname.match(/^\/dsh-genshin-account\/asset\/element\/([a-z]+\.webp)$/)
   if (asset) target = join(root, 'data', 'element-icons', asset[1])
