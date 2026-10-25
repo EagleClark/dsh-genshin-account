@@ -222,6 +222,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-fact:first-child{border-top:none;padding-top:0}",
     ".dga-fact dt{flex:0 0 68px;margin:0;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}",
     ".dga-fact dd{margin:0;font-size:12px;line-height:1.55;color:var(--dsw-alias-label-secondary);min-width:0}",
+    ".dga-fiveRow{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--dsw-alias-border-l1)}",
+    ".dga-fiveRow:first-child{border-top:none}",
+    ".dga-tierChip{flex:0 0 auto;font-size:10.5px;font-weight:600;border:1px solid currentColor;border-radius:999px;padding:0 7px;line-height:17px;white-space:nowrap}",
+    ".dga-lostChip{flex:0 0 auto;font-size:10.5px;font-weight:700;color:var(--dga-red);border:1px solid var(--dga-red);border-radius:999px;padding:0 6px;line-height:17px}",
+    ".dga-fivePool{width:60px;flex:0 0 auto;color:var(--dsw-alias-label-tertiary)}",
     ".dga-cmdList{display:flex;flex-direction:column;gap:6px;margin:2px 0 12px 28px}",
     ".dga-cmdRow{display:flex;align-items:center;gap:8px;min-width:0}",
     ".dga-cmdTag{flex:0 0 auto;font-size:11px;color:var(--dsw-alias-label-tertiary);min-width:36px}",
@@ -1677,9 +1682,37 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       props.label);
   }
 
+  /** 五星记录能按池子筛，和上面的「各祈愿池」保持一致的分组。 */
+  var FIVE_FILTERS = [
+    { key: "all", label: "全部" },
+    { key: "character", label: "角色" },
+    { key: "weapon", label: "武器" },
+    { key: "standard", label: "常驻" },
+  ];
+  var FIVE_POOL = { "100": "standard", "200": "standard", "301": "character", "302": "weapon", "400": "chronicled", "500": "chronicled" };
+  var FIVE_POOL_LABEL = { character: "角色活动", weapon: "武器活动", standard: "常驻", chronicled: "集录" };
+  var FIVE_TIER_COLOR = {
+    lucky: "var(--dga-gold)",
+    good: "var(--dga-green)",
+    normal: "var(--dga-blue)",
+    late: "var(--dsw-alias-label-tertiary)",
+    soft: "var(--dga-orange)",
+    hard: "var(--dga-red)",
+  };
+
+  function fivePoolOf(item) {
+    return FIVE_POOL[String(item && item.bannerType ? item.bannerType : "")] || "standard";
+  }
+
+  function fivePoolLabel(item) {
+    return FIVE_POOL_LABEL[fivePoolOf(item)] || "";
+  }
+
   function GachaTab(props) {
     var a = props.analysis;
     var busy = props.busy;
+    var filterState = React.useState("all");
+    var fiveFilter = filterState[0], setFiveFilter = filterState[1];
     var copiedState = React.useState("");
     var copiedCmd = copiedState[0], setCopiedCmd = copiedState[1];
 
@@ -1829,22 +1862,51 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
       a.fiveStars.length
         ? h("div", { className: "dga-block" },
-            h("div", { className: "dga-sec" }, "五星记录（最新在前）"),
-            a.fiveStars.slice(0, 40).map(function (item, index) {
-              var pity = Number(item.pity) || 0;
-              var early = pity > 0 && pity <= 40;
-              return h("div", { className: "dga-fiveRow", key: item.id || index },
-                h("span", { className: "dga-fiveName" }, item.name),
-                h("span", { className: "dga-fiveMeta" }, item.banner || ""),
-                h("span", { className: "dga-pityBar" },
-                  h("span", {
-                    className: "dga-pityFill",
-                    style: { width: Math.max(2, Math.min(100, (pity / 90) * 100)) + "%", background: early ? "var(--dga-green)" : "var(--dga-gold)" },
-                  })),
-                h("span", { className: "dga-num", style: { width: 62, textAlign: "right", color: early ? "var(--dga-green)" : "var(--dsw-alias-label-secondary)" } }, pity + " / 90"),
-                h("span", { className: "dga-fiveMeta", style: { width: 96, textAlign: "right" } }, String(item.time || "").slice(0, 10)));
-            }),
-            h("p", { className: "dga-hint" }, "绿色 = 40 抽内出金（比较欧）。"))
+            h("div", { className: "dga-secRow" },
+              h("div", { className: "dga-sec" }, "五星记录（最新在前）"),
+              h("div", { className: "dga-seg" }, FIVE_FILTERS.concat(
+                a.fiveStars.some(function (item) { return fivePoolOf(item) === "chronicled"; })
+                  ? [{ key: "chronicled", label: "集录" }]
+                  : []
+              ).map(function (filter) {
+                var count = filter.key === "all"
+                  ? a.fiveStars.length
+                  : a.fiveStars.filter(function (item) { return fivePoolOf(item) === filter.key; }).length;
+                return h("button", {
+                  key: filter.key,
+                  className: "dga-segBtn" + (fiveFilter === filter.key ? " dga-segBtnOn" : ""),
+                  onClick: function () { setFiveFilter(filter.key); },
+                }, filter.label + (count ? " " + count : ""));
+              }))),
+            (function () {
+              var rows = a.fiveStars.filter(function (item) {
+                return fiveFilter === "all" ? true : fivePoolOf(item) === fiveFilter;
+              }).slice(0, 40);
+              if (!rows.length) {
+                return h("p", { className: "dga-hint" }, "这个池子还没有五星记录。");
+              }
+              return h("div", null, rows.map(function (item, index) {
+                var pity = Number(item.pity) || 0;
+                var tier = FIVE_TIER_COLOR[item.tierKey] || FIVE_TIER_COLOR.normal;
+                return h("div", { className: "dga-fiveRow", key: item.id || index },
+                  h("span", { className: "dga-fiveName" }, item.name),
+                  h("span", { className: "dga-tierChip", style: { color: tier, borderColor: tier } }, item.tier || ""),
+                  item.lost
+                    ? h("span", { className: "dga-lostChip", title: "角色 / 武器活动祈愿里出到常驻，通常就是小保底歪了" }, "歪")
+                    : null,
+                  h("span", { className: "dga-fiveMeta dga-fivePool" }, fivePoolLabel(item)),
+                  h("span", { className: "dga-pityBar" },
+                    h("span", {
+                      className: "dga-pityFill",
+                      style: { width: Math.max(2, Math.min(100, (pity / 90) * 100)) + "%", background: tier },
+                    })),
+                  h("span", { className: "dga-num", style: { width: 62, textAlign: "right", color: tier } }, pity + " / 90"),
+                  h("span", { className: "dga-fiveMeta", style: { width: 90, textAlign: "right" } }, String(item.time || "").slice(0, 10)));
+              }));
+            })(),
+            h("p", { className: "dga-hint" },
+              "分档按垫了多少抽：≤20 欧皇 · 21-40 小欧 · 41-60 正常 · 61-73 有点非 · 74-89 软保底 · ≥90 硬保底。",
+              "「歪」= 角色 / 武器活动祈愿出到常驻池的五星（集录祈愿没有这个概念）。"))
         : null,
 
       a.pityBuckets && a.five

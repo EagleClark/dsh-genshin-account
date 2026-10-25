@@ -109,13 +109,28 @@ async function buildLocal() {
   }
 }
 
-// Wish history always comes from the running host: it is a local store, not
-// something the snapshot rebuild touches.
+// Wish history：本地模式下用本地代码重算，否则新字段（分档 / 歪）看不到
+const GACHA_STORE = join(
+  process.env.APPDATA || join(process.env.USERPROFILE || '', 'AppData', 'Roaming'),
+  'dsh-desktop', 'harness', 'data', 'dsh-genshin-account',
+)
+
 let gacha = null
-try {
-  gacha = await grab('/gacha')
-} catch {
-  /* no wish history yet is fine */
+if (LOCAL) {
+  const gachaMod = await import('../lib/sources/miyoushe-gacha.js')
+  let uidForGacha = ''
+  try {
+    uidForGacha = JSON.parse(readFileSync(join(GACHA_STORE, 'snapshot-miyoushe.json'), 'utf8')).uid || ''
+  } catch {
+    /* no snapshot is fine */
+  }
+  gacha = { ok: true, analysis: gachaMod.analyze(gachaMod.readRecords(uidForGacha)) }
+} else {
+  try {
+    gacha = await grab('/gacha')
+  } catch {
+    /* no wish history yet is fine */
+  }
 }
 
 const local = LOCAL ? await buildLocal() : null

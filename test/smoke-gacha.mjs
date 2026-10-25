@@ -2,7 +2,7 @@
  * Wish-history analytics test — pure data in, numbers out:
  *   node test/smoke-gacha.mjs
  */
-import { analyze, bannerLabel, BANNERS } from '../lib/sources/miyoushe-gacha.js'
+import { analyze, bannerLabel, BANNERS, fiveTierOf, isStandardFive } from '../lib/sources/miyoushe-gacha.js'
 
 const fails = []
 const check = (name, condition, detail) => {
