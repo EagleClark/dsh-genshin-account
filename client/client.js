@@ -129,6 +129,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-row-on{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-border-l2)}",
     ".dga-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}",
     ".dga-rowname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    ".dga-levelNote{color:var(--dsw-alias-label-tertiary);font-weight:400}",
     ".dga-rowlv{color:var(--dsw-alias-label-tertiary);font-size:12px;font-variant-numeric:tabular-nums}",
     ".dga-chipRow{display:flex;gap:6px;flex-wrap:wrap;padding:2px 0 8px}",
     ".dga-chipBtn{appearance:none;font:inherit;font-size:12px;cursor:pointer;padding:3px 10px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-tertiary)}",
@@ -1592,7 +1593,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         h("div", { className: "dga-charHeadText" },
           h("div", { className: "dga-charName" }, c.name),
           h("div", { className: "dga-sub" },
-            "Lv." + c.level + " · " + c.rarity + "★ · " + (c.elementZh || c.element) + " · " + (c.weaponTypeZh || c.weaponType)),
+            "Lv." + c.level + " · " + c.rarity + "★ · " + (c.elementZh || c.element) + " · " + (c.weaponTypeZh || c.weaponType),
+            c.levelHintOnly
+              ? h("span", { className: "dga-levelNote", title: "养成计算器的等级上限是 90；这个等级取自历史记录" }, " · 历史记录")
+              : null),
           h("div", { className: "dga-sub" },
             "命之座 " + c.constellation +
             (c.talents ? " · 天赋 " + [c.talents.auto, c.talents.skill, c.talents.burst].map(function (v) { return v == null ? "-" : v; }).join(" / ") : ""))),
@@ -1782,7 +1786,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             h("span", { className: "dga-rowname" }, c.name),
             h("div", { className: "dga-rowBadges" },
               c.showcase ? h("span", { className: "dga-showcaseTag", title: "在游戏内角色展柜里，能读到圣遗物主副词条" }, "展柜") : null),
-            h("span", { className: "dga-rowlv" }, "Lv." + c.level));
+            h("span", { className: "dga-rowlv", title: c.levelHintOnly ? "等级取自历史记录（计算器上限 90）" : undefined }, "Lv." + c.level));
         })),
       h("div", { className: "dga-col-detail" },
         props.loading
