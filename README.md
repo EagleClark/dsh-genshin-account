@@ -129,7 +129,7 @@ iex(irm 'https://www.lelaer.com/cn.ps1')
 | 元素精通 | ×0.33 | 小攻击 | ×0.199 |
 | 元素充能 | ×1.1979 | 小生命 / 小防御 | ×0.0172 / ×0.221 |
 
-角色权重在 `data/character-weights.json`（122 个角色 × 8 项，按百分比存），未收录的回落「通用」模板；取值约定与新角色怎么补见 `data/weights-notes.md`。
+角色权重在 `data/character-weights.json`（133 条 × 8 项，按百分比存，覆盖全部角色），未收录的回落「通用」模板；取值约定与新角色怎么补见 `data/weights-notes.md`。
 一次满档强化约 7.75 分；六档门槛：普通部位 23.3 / 31 / 38.8 / 46.5 / 54.3，理之冠 85.3 / 93 / 100.8 / 108.5 / 116.3，五件合计 178.3 / 217 / 255.8 / 294.5 / 333.3。
 
 角色页可在 **CV / 权重评分** 之间切换，卡片与总分一起变。
@@ -177,7 +177,7 @@ iex(irm 'https://www.lelaer.com/cn.ps1')
 | `characters.json` | 124 个角色：中文名 / 英文名 / 元素 / 武器类型 / 稀有度 / 别名 |
 | `weapons.json` | 255 把武器：中文名 / 类型 / 稀有度 |
 | `artifact-sets.json` | 63 套圣遗物：中文名 + 2 / 4 件套效果原文 |
-| `character-weights.json` | 122 个角色的权重评分系数（含 7.2 新角色；缺失的按「通用」估，见 `data/weights-notes.md`） |
+| `character-weights.json` | 133 个角色的权重评分系数（覆盖全部 124 个角色 + 形态变化的复用项，见 `data/weights-notes.md`） |
 | `weapon-details.json` | 90 级基础攻击、副属性、精炼 1–5 被动原文 |
 | `aliases.json` / `names-zh.json` | 别名与 hash 索引 |
 | `skill-orders.json` | 每角色的「普攻 / 战技 / 爆发」顺序（技能 id 不按此递增，按 id 排序会张冠李戴） |

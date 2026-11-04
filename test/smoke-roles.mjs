@@ -6,6 +6,8 @@
  */
 import { COEFFICIENTS, CHARACTER_WEIGHTS, EFF_LABELS, EFF_THRESHOLDS, ROLES, hasTableWeights, pieceGradeOf, roleOf, scorePiece, scoreSub, totalGradeOf, weightOf, weightsFor } from '../lib/roles.js'
 
+import { readFileSync } from 'node:fs'
+
 let failures = 0
 let checks = 0
 function check(label, ok, detail) {
@@ -122,6 +124,12 @@ for (const name of ['米提亚', '瓦列里']) {
   check(name + ' is not the generic preset',
     JSON.stringify(w) !== JSON.stringify(ROLES.generic.weights),
     JSON.stringify(w))
+}
+// --- 字典里的每个角色都得有权重，不能有漏网的 ---
+{
+  const chars = JSON.parse(readFileSync(new URL('../data/characters.json', import.meta.url), 'utf8'))
+  const gaps = Object.values(chars).filter((c) => !hasTableWeights(c.name)).map((c) => c.name)
+  check('every roster character has weights', gaps.length === 0, gaps.join(', '))
 }
 if (failures) {
   console.log('roles: ' + (checks - failures) + '/' + checks + ' checks passed')
