@@ -112,6 +112,17 @@ const totalBands = [EFF_THRESHOLDS.total[0] - 0.1, ...EFF_THRESHOLDS.total]
 check('total bands map to the six labels', JSON.stringify(totalBands.map(totalGradeOf)) === JSON.stringify(labels), JSON.stringify(totalBands.map(totalGradeOf)))
 check('six labels are used for both scales', EFF_LABELS.length === 6, EFF_LABELS.length)
 
+// --- 新版本角色要有独立权重，不能掉到「通用」模板 ---
+for (const name of ['米提亚', '瓦列里']) {
+  check(name + ' has table weights', hasTableWeights(name), JSON.stringify(weightsFor(name)))
+  const w = weightsFor(name)
+  check(name + ' weights stay in 0..1',
+    Object.values(w).every((v) => typeof v === 'number' && v >= 0 && v <= 1),
+    JSON.stringify(w))
+  check(name + ' is not the generic preset',
+    JSON.stringify(w) !== JSON.stringify(ROLES.generic.weights),
+    JSON.stringify(w))
+}
 if (failures) {
   console.log('roles: ' + (checks - failures) + '/' + checks + ' checks passed')
   process.exit(1)
