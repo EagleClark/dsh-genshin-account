@@ -105,10 +105,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-sub{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.5}",
     // 武器卡片里的两行说明固定一行高，避免换行把卡片撑高
     ".dga-wCard .dga-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}",
-    ".dga-wCardOff .dga-artiIcon,.dga-wCardOff img{filter:grayscale(1);opacity:.42}",
-    ".dga-wCardOff .dga-itemName{color:var(--dsw-alias-label-secondary)}",
+    // 未拥有：图标保持彩色，用虚线边框区分，不靠去色
+    ".dga-wCardOff{border-style:dashed;border-color:color-mix(in srgb, var(--dsw-alias-border-l2) 85%, transparent);background:color-mix(in srgb, var(--dsw-alias-bg-layer-2) 55%, transparent)}",
+    // 图鉴卡片的数值行允许换行，避免「元素充能效率 36.8%」被省略号吃掉
+    ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
+    ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
-    ".dga-codexBadge{align-self:flex-start;margin-top:2px;padding:1px 7px;border-radius:999px;font-size:11px;line-height:1.7;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary)}",
+    ".dga-codexBadge{margin-top:auto;align-self:flex-start;margin-top:2px;padding:1px 7px;border-radius:999px;font-size:11px;line-height:1.7;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary)}",
     ".dga-codexBadgeOwn{color:var(--dga-blue);border-color:color-mix(in srgb, var(--dga-blue) 45%, transparent)}",
     ".dga-codexBadgeOn{color:var(--dga-gold);border-color:color-mix(in srgb, var(--dga-gold) 45%, transparent)}",
     ".dga-wCard .dga-itemText{min-width:0;justify-content:center}",
@@ -876,7 +879,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       onLoad: function (event) {
         var img = event && event.currentTarget;
         if (!img) return;
-        if (img.naturalWidth >= 512) {
+        // 占位图是 1200×1200；真实图标有 256 也有 512，所以阈值必须远大于 512，
+        // 否则 512 的武器图标会被当成占位图换源，最终显示成灰方块。
+        if (img.naturalWidth >= 1024 && img.naturalHeight >= 1024) {
           // 占位图 → 换 Enka 同名资源
           if (altStatus === "idle") setAltStatus("using");
           else setBroken(true);
@@ -1823,14 +1828,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       onMouseEnter: function () { setHover(true); },
       onMouseLeave: function () { setHover(false); },
     },
-      h("div", { className: "dga-wCard" + (w.owned ? "" : " dga-wCardOff") },
+      h("div", { className: "dga-wCard dga-wCodex" + (w.owned ? "" : " dga-wCardOff") },
         h(Art, { src: w.icon, alt: w.name, size: 56, style: { borderColor: RARITY_COLOR[w.rarity] || "var(--dga-el-none)" } }),
         h("div", { className: "dga-itemText" },
           h("div", { className: "dga-itemName" }, w.name),
           h("div", { className: "dga-sub" },
             w.rarity + "★ · " + (w.typeZh || w.type) + (w.owned && w.level ? " · Lv." + w.level : "") +
             (w.owned && w.refinement ? " · 精炼 " + w.refinement : "")),
-          h("div", { className: "dga-sub" },
+          h("div", { className: "dga-sub dga-wStats" },
             detail.baseAtk ? "基础攻击 " + detail.baseAtk + (sub ? " · " + sub : "") : (sub || "—")),
           h("div", { className: "dga-codexBadge" + (w.owner ? " dga-codexBadgeOn" : w.owned ? " dga-codexBadgeOwn" : "") },
             w.owner ? "已装备 · " + w.owner : w.owned ? "已拥有" : "未拥有"))),
