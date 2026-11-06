@@ -315,7 +315,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-cardGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:4px 0 24px;align-items:stretch}",
     // 卡片撑满单元格：否则同一行里内容少的卡片会矮一截，行底边参差不齐
     ".dga-cardGrid > *{display:flex;min-width:0}",
-    ".dga-cardGrid > * > .dga-wCard{flex:1 1 auto;height:100%}",
+    ".dga-cardGrid > * > .dga-wCard{flex:1 1 auto;min-height:0}",
     ".dga-itemCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
     ".dga-itemText{min-width:0;display:flex;flex-direction:column;gap:3px}",
     ".dga-itemName{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
