@@ -1579,6 +1579,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   // ── one character ───────────────────────────────────────────────────────
   function CharacterDetail(props) {
     var c = props.character;
+    // hook 必须在任何 early return 之前：
+    // 未选中角色时提前返回，会让两次渲染的 hook 数量不一致（React error #300）。
+    var modeState = React.useState("eff");
+    var scoreMode = modeState[0], setScoreMode = modeState[1];
     if (!c) return h("div", { className: "dga-empty" }, "从左侧选择一个角色。");
     var stats = c.stats || {};
     var statDefs = [
@@ -1595,8 +1599,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var scored = c.artifacts || [];
     var color = elementColor(c.elementId || c.element);
     // 两种评分：CV（双暴）或 权重评分（角色权重）
-    var modeState = React.useState("eff");
-    var scoreMode = modeState[0], setScoreMode = modeState[1];
     var effMode = scoreMode === "eff";
 
     return h("div", { className: "dga-detail" },
@@ -1870,6 +1872,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       return function () { cancelled = true; };
     }, [mode, codex]);
 
+    React.useEffect(function () { setShown(PAGE); }, [mode, typeFilter, rarityFilter, ownFilter, query]);
+
     var types = ["sword", "claymore", "polearm", "bow", "catalyst"];
     var chip = function (key, label, active, onClick) {
       return h("button", {
@@ -1892,8 +1896,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (query && w.name.indexOf(query) === -1) return false;
       return true;
     });
-
-    React.useEffect(function () { setShown(PAGE); }, [mode, typeFilter, rarityFilter, ownFilter, query]);
 
     var header = h("div", { className: "dga-chipRow", style: { paddingTop: 12 } },
       chip("mine", "我的 " + rows.length, mode === "mine", function () { setMode("mine"); }),

@@ -519,5 +519,24 @@ if (fails.length) {
   console.error('\nFAILED:\n' + fails.map((f) => ' - ' + f).join('\n'))
   process.exitCode = 1
 } else {
-  console.log('\nall checks passed')
+  // --- hooks 不能写在 early return 之后（React error #300） ---
+{
+  const source = readFileSync(new URL('../client/client.js', import.meta.url), 'utf8')
+  const lines = source.split('\n')
+  let current = null
+  let sawReturn = false
+  const offenders = []
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i]
+    const fn = line.match(/^\s*function ([A-Za-z0-9_]+)\(props\) \{/)
+    if (fn) { current = fn[1]; sawReturn = false; continue }
+    if (!current) continue
+    if (/^\s{4}\}/.test(line)) { current = null; continue }
+    if (/^\s*if \(.*\) return /.test(line)) sawReturn = true
+    if (sawReturn && /React\.use(State|Effect|Memo|Ref|Callback)\(/.test(line)) offenders.push(current + ':' + (i + 1))
+  }
+  check('hooks 不能写在 early return 之后', offenders.length === 0, offenders.join(', '))
+}
+
+console.log('\nall checks passed')
 }
