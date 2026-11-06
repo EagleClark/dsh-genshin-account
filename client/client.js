@@ -322,6 +322,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-pieceCard{width:104px;padding:10px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}",
     ".dga-pieceName{font-size:11px;line-height:1.35;color:var(--dsw-alias-label-secondary)}",
     ".dga-cardGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:4px 0 24px;align-items:stretch}",
+    "@media (max-width: 1040px){.dga-cardGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}",
+    "@media (max-width: 720px){.dga-cardGrid{grid-template-columns:minmax(0,1fr)}}",
     // 卡片撑满单元格：否则同一行里内容少的卡片会矮一截，行底边参差不齐
     ".dga-cardGrid > *{display:flex;min-width:0}",
     ".dga-cardGrid > * > .dga-wCard{flex:1 1 auto;min-height:0}",
@@ -412,7 +414,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-inlineHover{border-radius:10px;background:color-mix(in srgb,var(--dga-gold) 8%,transparent)}",
     ".dga-wCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);transition:transform .14s ease,border-color .14s ease}",
     ".dga-wCardRel:hover .dga-wCard{transform:translateY(-1px);border-color:var(--dsw-alias-label-dimmed)}",
-    ".dga-wPop{position:fixed;z-index:60;width:320px;overflow:auto;padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-3));border:1px solid var(--dsw-alias-border-l2);box-shadow:0 12px 32px rgba(0,0,0,.22);font-size:12px;line-height:1.75}",
+    ".dga-wPop{position:absolute;z-index:60;box-sizing:border-box;width:320px;overflow:auto;padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-3));border:1px solid var(--dsw-alias-border-l2);box-shadow:0 12px 32px rgba(0,0,0,.22);font-size:12px;line-height:1.75}",
     ".dga-wPopStats{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin-bottom:8px}",
     ".dga-wPopPassive{font-weight:600;color:var(--dsw-alias-label-primary);margin-bottom:2px}",
     ".dga-wPopRefine{color:var(--dsw-alias-label-secondary)}",
@@ -1814,7 +1816,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   }
 
   // ── weapons ─────────────────────────────────────────────────────────────
-  /** 图鉴卡片：未拥有的图标灰掉，角标说明拥有 / 装备情况。 */
+  /** 图鉴卡片：图标保持彩色，角标说明拥有 / 装备情况。 */
   function CodexCard(props) {
     var w = props.w;
     var hoverState = React.useState(null);
@@ -1825,7 +1827,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       : "";
     return h("div", {
       className: "dga-wCardRel",
-      onMouseEnter: function (event) { setRect(event.currentTarget.getBoundingClientRect()); },
+      onMouseEnter: function (event) { setRect(hoverBoxOf(event.currentTarget)); },
       onMouseLeave: function () { setRect(null); },
     },
       h("div", { className: "dga-wCard dga-wCodex" + (w.owned ? "" : " dga-wCardOff") },
@@ -1839,7 +1841,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             detail.baseAtk ? "基础攻击 " + detail.baseAtk + (sub ? " · " + sub : "") : (sub || "—")),
           h("div", { className: "dga-codexBadge" + (w.owner ? " dga-codexBadgeOn" : w.owned ? " dga-codexBadgeOwn" : "") },
             w.owner ? "已装备 · " + w.owner : w.owned ? "已拥有" : "未拥有"))),
-      rect ? h(WeaponPopoverLayer, { w: { name: w.name, rarity: w.rarity, type: w.type, typeZh: w.typeZh, icon: w.icon, refinement: w.refinement, detail: w.detail }, rect: rect, onClose: function () { setRect(null); } }) : null);
+      rect ? h(WeaponPopover, { w: { name: w.name, rarity: w.rarity, type: w.type, typeZh: w.typeZh, icon: w.icon, refinement: w.refinement, detail: w.detail }, box: rect }) : null);
   }
 
   function WeaponsTab(props) {
@@ -1977,11 +1979,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     return h("div", {
       className: "dga-wCardRel",
       style: { position: "relative", display: "block" },
-      onMouseEnter: function (event) { setRect(event.currentTarget.getBoundingClientRect()); },
+      onMouseEnter: function (event) { setRect(hoverBoxOf(event.currentTarget)); },
       onMouseLeave: function () { setRect(null); },
     },
       props.children(Boolean(rect)),
-      rect ? h(WeaponPopoverLayer, { w: props.weapon, rect: rect, onClose: function () { setRect(null); } }) : null);
+      rect ? h(WeaponPopover, { w: props.weapon, box: rect }) : null);
   }
 
   /**
@@ -1991,47 +1993,58 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
    */
 
 
-  /** 包一层：记录触发元素的位置，滚动或缩放时关掉浮层（fixed 定位不会跟着滚）。 */
-  function WeaponPopoverLayer(props) {
-    React.useEffect(function () {
-      var close = function () { props.onClose(); };
-      window.addEventListener("scroll", close, true);
-      window.addEventListener("resize", close);
-      return function () {
-        window.removeEventListener("scroll", close, true);
-        window.removeEventListener("resize", close);
-      };
-    }, []);
-    return h(WeaponPopover, { w: props.w, rect: props.rect });
-  }
-
   /**
-   * 武器悬浮卡的位置。
+   * 武器悬浮卡的位置（相对卡片的偏移）。
    *
-   * 原来用 position:absolute + top:100%：卡片在底部时会把滚动内容撑高（页面抖动），
-   * 在最右侧时 320px 宽的浮层会溢出被裁掉。改成 fixed + 现算坐标：
-   * 下方放不下就翻到上方，左右夹紧在视口内，高度取可用空间。
+   * 用 absolute 挂在卡片里：它是卡片的后代，滚动时自然跟随，不会像 fixed 那样
+   * 在带 transform 的祖先下算错坐标。坐标限制在滚动容器的可见区域内，
+   * 因此不会把滚动内容撑高，也不会被容器右边缘裁掉。
    */
   var POP_W = 320;
   var POP_GAP = 6;
   var POP_MARGIN = 8;
-  function popoverPlacement(rect) {
-    var vw = (typeof window !== "undefined" && window.innerWidth) || 1280;
-    var vh = (typeof window !== "undefined" && window.innerHeight) || 800;
-    var spaceBelow = vh - rect.bottom - POP_GAP - POP_MARGIN;
-    var spaceAbove = rect.top - POP_GAP - POP_MARGIN;
-    var openUp = spaceBelow < 220 && spaceAbove > spaceBelow;
-    var left = Math.min(Math.max(POP_MARGIN, rect.left), Math.max(POP_MARGIN, vw - POP_W - POP_MARGIN));
-    var style = openUp
-      ? { left: left, bottom: vh - rect.top + POP_GAP, maxHeight: Math.max(160, Math.min(340, spaceAbove)) }
-      : { left: left, top: rect.bottom + POP_GAP, maxHeight: Math.max(160, Math.min(340, spaceBelow)) };
-    return style;
+  var POP_MAX_H = 340;
+  function popoverOffset(card, container) {
+    var box = container || { left: 0, top: 0, right: (window.innerWidth || 1280), bottom: (window.innerHeight || 800) };
+    var minTop = box.top + POP_MARGIN;
+    var maxBottom = box.bottom - POP_MARGIN;
+    var left = Math.min(Math.max(box.left + POP_MARGIN, card.left), box.right - POP_W - POP_MARGIN);
+    left = Math.max(box.left + POP_MARGIN, left);
+    var roomAbove = card.top - POP_GAP - minTop;
+    var roomBelow = maxBottom - (card.bottom + POP_GAP);
+    // 优先放下方；下方放不下就翻到上方；两边都放不下就贴着空间大的一侧并限高。
+    var openUp = roomBelow < 200 && roomAbove > roomBelow;
+    var top;
+    var maxHeight;
+    if (openUp) {
+      maxHeight = Math.max(140, Math.min(POP_MAX_H, roomAbove));
+      top = card.top - POP_GAP - maxHeight;
+    } else {
+      maxHeight = Math.max(140, Math.min(POP_MAX_H, roomBelow));
+      top = card.bottom + POP_GAP;
+    }
+    // 无论如何都留在容器可见区域内（卡片本身被滚出可视区时也不会跑到外面）
+    top = Math.min(Math.max(minTop, top), Math.max(minTop, maxBottom - 140));
+    return {
+      left: Math.round(left - card.left),
+      top: Math.round(top - card.top),
+      maxHeight: Math.round(maxHeight),
+    };
+  }
+
+  /** 记下卡片与它所在滚动容器的位置：滚动容器边界用来夹住浮层。 */
+  function hoverBoxOf(node) {
+    if (!node || !node.getBoundingClientRect) return null;
+    var card = node.getBoundingClientRect();
+    var scroller = node.closest ? node.closest(".dga-scroll") : null;
+    var container = scroller ? scroller.getBoundingClientRect() : null;
+    return { card: card, container: container };
   }
 
   function WeaponPopover(props) {
     var w = props.w;
     var d = w.detail;
-    var boxStyle = props.rect ? popoverPlacement(props.rect) : { left: POP_MARGIN, top: 80 };
+    var boxStyle = props.box ? popoverOffset(props.box.card, props.box.container) : { left: 0, top: 8 };
     if (!d) {
       return h("div", { className: "dga-wPop", style: boxStyle },
         h("div", { className: "dga-hint", style: { margin: 0 } }, "暂无这把武器的资料。"));
@@ -2059,7 +2072,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var rect = hoverState[0], setRect = hoverState[1];
     return h("div", {
       className: "dga-wCardRel",
-      onMouseEnter: function (event) { setRect(event.currentTarget.getBoundingClientRect()); },
+      onMouseEnter: function (event) { setRect(hoverBoxOf(event.currentTarget)); },
       onMouseLeave: function () { setRect(null); },
     },
       h("div", { className: "dga-wCard" },
@@ -2071,7 +2084,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             (w.refinement ? " · 精炼 " + w.refinement : "")),
           h("div", { className: "dga-sub" }, w.owner ? "装备于 " + w.owner : "未装备"))),
       rect
-        ? h(WeaponPopoverLayer, { w: w, rect: rect, onClose: function () { setRect(null); } })
+        ? h(WeaponPopover, { w: w, box: rect })
         : null);
   }
 
