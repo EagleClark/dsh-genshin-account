@@ -1994,41 +1994,46 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
 
   /**
-   * 武器悬浮卡的位置（相对卡片的偏移）。
+   * 武器悬浮卡的定位。
    *
-   * 用 absolute 挂在卡片里：它是卡片的后代，滚动时自然跟随，不会像 fixed 那样
-   * 在带 transform 的祖先下算错坐标。坐标限制在滚动容器的可见区域内，
-   * 因此不会把滚动内容撑高，也不会被容器右边缘裁掉。
+   * 高度是内容决定的，所以先用一个估算高度渲染，量到真实高度后再定位：
+   * 下方放得下就贴着卡片下沿展开，否则贴着卡片上沿向上展开。两个方向都用
+   * calc(100% ± 6px) 贴边，因此浮层与卡片之间永远只差 6px，不会出现空隙。
+   * 左右夹在「滚动容器 ∩ 视口」里，面板比窗口宽时也不会溢出。
    */
   var POP_W = 320;
   var POP_GAP = 6;
   var POP_MARGIN = 8;
   var POP_MAX_H = 340;
-  function popoverOffset(card, container) {
-    var box = container || { left: 0, top: 0, right: (window.innerWidth || 1280), bottom: (window.innerHeight || 800) };
-    var minTop = box.top + POP_MARGIN;
-    var maxBottom = box.bottom - POP_MARGIN;
-    var left = Math.min(Math.max(box.left + POP_MARGIN, card.left), box.right - POP_W - POP_MARGIN);
-    left = Math.max(box.left + POP_MARGIN, left);
-    var roomAbove = card.top - POP_GAP - minTop;
-    var roomBelow = maxBottom - (card.bottom + POP_GAP);
-    // 优先放下方；下方放不下就翻到上方；两边都放不下就贴着空间大的一侧并限高。
-    var openUp = roomBelow < 200 && roomAbove > roomBelow;
-    var top;
-    var maxHeight;
-    if (openUp) {
-      maxHeight = Math.max(140, Math.min(POP_MAX_H, roomAbove));
-      top = card.top - POP_GAP - maxHeight;
-    } else {
-      maxHeight = Math.max(140, Math.min(POP_MAX_H, roomBelow));
-      top = card.bottom + POP_GAP;
-    }
-    // 无论如何都留在容器可见区域内（卡片本身被滚出可视区时也不会跑到外面）
-    top = Math.min(Math.max(minTop, top), Math.max(minTop, maxBottom - 140));
+
+  function popoverBounds(container) {
+    var vw = (typeof window !== "undefined" && window.innerWidth) || 1280;
+    var vh = (typeof window !== "undefined" && window.innerHeight) || 800;
+    var raw = container || { left: 0, top: 0, right: vw, bottom: vh };
+    return {
+      left: Math.max(raw.left, 0),
+      top: Math.max(raw.top, 0),
+      right: Math.min(raw.right, vw),
+      bottom: Math.min(raw.bottom, vh),
+    };
+  }
+
+  /** 已知浮层高度时的最终位置。 */
+  function popoverStyle(card, container, height) {
+    var box = popoverBounds(container);
+    var left = Math.min(Math.max(box.left + POP_MARGIN, card.left), Math.max(box.left + POP_MARGIN, box.right - POP_W - POP_MARGIN));
+    var roomBelow = box.bottom - card.bottom - POP_GAP - POP_MARGIN;
+    var roomAbove = card.top - box.top - POP_GAP - POP_MARGIN;
+    // 选「放得下」的一侧；都放不下就选空间大的那侧，并用 maxHeight 截断到正好放得下。
+    var openUp;
+    if (roomBelow >= height) openUp = false;
+    else if (roomAbove >= height) openUp = true;
+    else openUp = roomAbove > roomBelow;
+    var room = Math.max(120, openUp ? roomAbove : roomBelow);
     return {
       left: Math.round(left - card.left),
-      top: Math.round(top - card.top),
-      maxHeight: Math.round(maxHeight),
+      maxHeight: Math.min(POP_MAX_H, room),
+      up: openUp,
     };
   }
 
@@ -2044,14 +2049,30 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   function WeaponPopover(props) {
     var w = props.w;
     var d = w.detail;
-    var boxStyle = props.box ? popoverOffset(props.box.card, props.box.container) : { left: 0, top: 8 };
+    // 先按 220px 估算，量到真实高度后重排：这样上/下展开都能精确贴住卡片
+    var sizeState = React.useState(0);
+    var measured = sizeState[0], setMeasured = sizeState[1];
+    var boxRef = React.useRef(null);
+    React.useLayoutEffect(function () {
+      var node = boxRef.current;
+      if (!node) return;
+      var h = Math.round(node.getBoundingClientRect().height);
+      if (h && Math.abs(h - measured) > 1) setMeasured(h);
+    });
+    var offset = props.box
+      ? popoverStyle(props.box.card, props.box.container, measured || 220)
+      : { left: 0, up: false, maxHeight: POP_MAX_H };
+    var boxStyle = { left: offset.left, maxHeight: offset.maxHeight };
+    // 贴着卡片下沿或上沿：高度变化时不会出现空档
+    if (offset.up) boxStyle.bottom = "calc(100% + " + POP_GAP + "px)";
+    else boxStyle.top = "calc(100% + " + POP_GAP + "px)";
     if (!d) {
-      return h("div", { className: "dga-wPop", style: boxStyle },
+      return h("div", { className: "dga-wPop", style: boxStyle, ref: boxRef },
         h("div", { className: "dga-hint", style: { margin: 0 } }, "暂无这把武器的资料。"));
     }
     var refineIndex = Math.max(0, Math.min(4, (Number(w.refinement) || 1) - 1));
     var passiveText = (d.refines && d.refines[refineIndex]) || (d.refines && d.refines[0]) || "";
-    return h("div", { className: "dga-wPop", style: boxStyle },
+    return h("div", { className: "dga-wPop", style: boxStyle, ref: boxRef },
       h("div", { className: "dga-wPopStats" },
         h("span", { className: "dga-wPopK" }, "基础攻击力"),
         h("span", { className: "dga-wPopV" }, d.baseAtk == null ? "—" : String(d.baseAtk)),
