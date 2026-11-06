@@ -103,6 +103,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:0 0 auto}",
     ".dga-title{font-size:15px;font-weight:600;margin:0}",
     ".dga-sub{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.5}",
+    // 武器卡片里的两行说明固定一行高，避免换行把卡片撑高
+    ".dga-wCard .dga-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}",
+    ".dga-wCard .dga-itemText{min-width:0;justify-content:center}",
     ".dga-grow{flex:1;min-width:0}",
     ".dga-btn{appearance:none;font:inherit;cursor:pointer;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-secondary);border-radius:8px;padding:8px 14px;min-height:36px;font-size:13px;line-height:1.5;transition:transform .12s ease,color .12s ease,border-color .12s ease}",
     ".dga-btn:active:not(:disabled){transform:translateY(1px)}",
@@ -309,7 +312,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-pieceRow{display:flex;gap:12px;flex-wrap:wrap}",
     ".dga-pieceCard{width:104px;padding:10px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}",
     ".dga-pieceName{font-size:11px;line-height:1.35;color:var(--dsw-alias-label-secondary)}",
-    ".dga-cardGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:4px 0 24px}",
+    ".dga-cardGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:4px 0 24px;align-items:stretch}",
+    // 卡片撑满单元格：否则同一行里内容少的卡片会矮一截，行底边参差不齐
+    ".dga-cardGrid > *{display:flex;min-width:0}",
+    ".dga-cardGrid > * > .dga-wCard{flex:1 1 auto;height:100%}",
     ".dga-itemCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
     ".dga-itemText{min-width:0;display:flex;flex-direction:column;gap:3px}",
     ".dga-itemName{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
