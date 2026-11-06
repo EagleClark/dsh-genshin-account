@@ -77,6 +77,15 @@ async function buildLocal() {
   })
   const snapshot = showcase.builds.length ? microgg.mergeShowcase(base, showcase) : base
 
+  let catalog = null
+  try {
+    const cached = JSON.parse(readFileSync(join(storageDir, 'weapon-catalog-' + showcaseUid + '.json'), 'utf8'))
+    if (cached && Array.isArray(cached.weapons) && cached.weapons.length) catalog = cached
+  } catch {
+    /* no cached catalog yet */
+  }
+  const codex = model.weaponCodex(snapshot, catalog || model.catalogFromDict(), {})
+
   const characters = model.listCharacters(snapshot, {})
   const chosen = characters.find((c) => c.showcase) || characters[0]
   const found = chosen ? model.getCharacter(snapshot, chosen.name) : { error: '无角色' }
@@ -106,6 +115,7 @@ async function buildLocal() {
       characters,
     },
     '/weapons': { ok: true, weapons: model.listWeapons(snapshot, { limit: 100 }) },
+    '/weaponCodex': { ok: true, ...codex },
     '/character': found.error ? { ok: false, error: found.error } : { ok: true, character: model.characterView(snapshot, found) },
   }
 }
@@ -138,6 +148,14 @@ const local = LOCAL ? await buildLocal() : null
 const state = local ? local['/state'] : await grab('/state')
 const summary = local ? local['/summary'] : await grab('/summary')
 const weapons = local ? local['/weapons'] : await grab('/weapons')
+let weaponCodex = local ? local['/weaponCodex'] : null
+if (!local) {
+  try {
+    weaponCodex = await grab('/weaponCodex')
+  } catch {
+    weaponCodex = { ok: false, error: 'host has no /weaponCodex yet' }
+  }
+}
 
 // A showcase character has artifacts; fall back to the first one either way.
 const withArtifacts = (summary.characters || []).find((c) => c.showcase) || (summary.characters || [])[0]
@@ -152,6 +170,7 @@ const fixtures = {
   '/state': state,
   '/summary': summary,
   '/weapons': weapons,
+  '/weaponCodex': weaponCodex,
   '/gacha': gacha || { ok: false, error: 'no wish history' },
   '/character': character || { ok: false },
 }

@@ -105,6 +105,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-sub{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.5}",
     // 武器卡片里的两行说明固定一行高，避免换行把卡片撑高
     ".dga-wCard .dga-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}",
+    ".dga-wCardOff .dga-artiIcon,.dga-wCardOff img{filter:grayscale(1);opacity:.42}",
+    ".dga-wCardOff .dga-itemName{color:var(--dsw-alias-label-secondary)}",
+    ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
+    ".dga-codexBadge{align-self:flex-start;margin-top:2px;padding:1px 7px;border-radius:999px;font-size:11px;line-height:1.7;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary)}",
+    ".dga-codexBadgeOwn{color:var(--dga-blue);border-color:color-mix(in srgb, var(--dga-blue) 45%, transparent)}",
+    ".dga-codexBadgeOn{color:var(--dga-gold);border-color:color-mix(in srgb, var(--dga-gold) 45%, transparent)}",
     ".dga-wCard .dga-itemText{min-width:0;justify-content:center}",
     ".dga-grow{flex:1;min-width:0}",
     ".dga-btn{appearance:none;font:inherit;cursor:pointer;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-secondary);border-radius:8px;padding:8px 14px;min-height:36px;font-size:13px;line-height:1.5;transition:transform .12s ease,color .12s ease,border-color .12s ease}",
@@ -1801,22 +1807,70 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   }
 
   // ── weapons ─────────────────────────────────────────────────────────────
+  /** 图鉴卡片：未拥有的图标灰掉，角标说明拥有 / 装备情况。 */
+  function CodexCard(props) {
+    var w = props.w;
+    var hoverState = React.useState(false);
+    var hover = hoverState[0], setHover = hoverState[1];
+    var detail = w.detail || {};
+    var sub = detail.subLabel
+      ? (detail.subValue ? detail.subLabel + " " + detail.subValue : detail.subLabel)
+      : "";
+    return h("div", {
+      className: "dga-wCardRel",
+      onMouseEnter: function () { setHover(true); },
+      onMouseLeave: function () { setHover(false); },
+    },
+      h("div", { className: "dga-wCard" + (w.owned ? "" : " dga-wCardOff") },
+        h(Art, { src: w.icon, alt: w.name, size: 56, style: { borderColor: RARITY_COLOR[w.rarity] || "var(--dga-el-none)" } }),
+        h("div", { className: "dga-itemText" },
+          h("div", { className: "dga-itemName" }, w.name),
+          h("div", { className: "dga-sub" },
+            w.rarity + "★ · " + (w.typeZh || w.type) + (w.owned && w.level ? " · Lv." + w.level : "") +
+            (w.owned && w.refinement ? " · 精炼 " + w.refinement : "")),
+          h("div", { className: "dga-sub" },
+            detail.baseAtk ? "基础攻击 " + detail.baseAtk + (sub ? " · " + sub : "") : (sub || "—")),
+          h("div", { className: "dga-codexBadge" + (w.owner ? " dga-codexBadgeOn" : w.owned ? " dga-codexBadgeOwn" : "") },
+            w.owner ? "已装备 · " + w.owner : w.owned ? "已拥有" : "未拥有"))),
+      hover ? h(WeaponPopover, { w: { name: w.name, rarity: w.rarity, type: w.type, typeZh: w.typeZh, icon: w.icon, refinement: w.refinement, detail: w.detail } }) : null);
+  }
+
   function WeaponsTab(props) {
     var rows = props.rows || [];
     var typeState = React.useState("");
     var typeFilter = typeState[0], setTypeFilter = typeState[1];
     var rarityState = React.useState(0);
     var rarityFilter = rarityState[0], setRarityFilter = rarityState[1];
+    var modeState = React.useState("mine");
+    var mode = modeState[0], setMode = modeState[1];
+    var ownState = React.useState("all");
+    var ownFilter = ownState[0], setOwnFilter = ownState[1];
+    var queryState = React.useState("");
+    var query = queryState[0], setQuery = queryState[1];
+    var codexState = React.useState(null);
+    var codex = codexState[0], setCodex = codexState[1];
+    var codexErrorState = React.useState("");
+    var codexError = codexErrorState[0], setCodexError = codexErrorState[1];
+    // 图鉴一次只渲染这么多张：官方图标每张约 60KB，一次铺 253 张会很慢。
+    var PAGE = 60;
+    var shownState = React.useState(PAGE);
+    var shown = shownState[0], setShown = shownState[1];
 
-    if (props.loading) return h("div", { className: "dga-skelStack" }, h(ListSkeleton), h(ListSkeleton));
-    if (!rows.length) return h("div", { className: "dga-empty" }, "没有武器数据。");
+    React.useEffect(function () {
+      if (mode !== "codex" || codex) return;
+      var cancelled = false;
+      fetch(API + "/weaponCodex")
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (cancelled) return;
+          if (data && data.ok) setCodex(data);
+          else setCodexError((data && data.error) || "图鉴读取失败");
+        })
+        .catch(function (error) { if (!cancelled) setCodexError(String((error && error.message) || error)); });
+      return function () { cancelled = true; };
+    }, [mode, codex]);
 
     var types = ["sword", "claymore", "polearm", "bow", "catalyst"];
-    var filtered = rows.filter(function (w) {
-      if (typeFilter && w.type !== typeFilter) return false;
-      if (rarityFilter && w.rarity !== rarityFilter) return false;
-      return true;
-    });
     var chip = function (key, label, active, onClick) {
       return h("button", {
         key: key,
@@ -1825,8 +1879,50 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       }, label);
     };
 
+    if (props.loading) return h("div", { className: "dga-skelStack" }, h(ListSkeleton), h(ListSkeleton));
+
+    var source = mode === "codex" ? ((codex && codex.weapons) || []) : rows;
+    var filtered = source.filter(function (w) {
+      if (typeFilter && w.type !== typeFilter) return false;
+      if (rarityFilter && w.rarity !== rarityFilter) return false;
+      if (mode === "codex" && ownFilter !== "all") {
+        var want = ownFilter === "owned";
+        if (Boolean(w.owned) !== want) return false;
+      }
+      if (query && w.name.indexOf(query) === -1) return false;
+      return true;
+    });
+
+    React.useEffect(function () { setShown(PAGE); }, [mode, typeFilter, rarityFilter, ownFilter, query]);
+
+    var header = h("div", { className: "dga-chipRow", style: { paddingTop: 12 } },
+      chip("mine", "我的 " + rows.length, mode === "mine", function () { setMode("mine"); }),
+      chip("codex", "图鉴" + (codex ? " " + codex.total : ""), mode === "codex", function () { setMode("codex"); }),
+      mode === "codex"
+        ? [
+            h("span", { key: "gap", style: { width: 8 } }),
+            chip("o-all", "全部", ownFilter === "all", function () { setOwnFilter("all"); }),
+            chip("o-own", "已拥有", ownFilter === "owned", function () { setOwnFilter("owned"); }),
+            chip("o-no", "未拥有", ownFilter === "unowned", function () { setOwnFilter("unowned"); }),
+          ]
+        : null);
+
+    var emptyMine = h("div", { className: "dga-empty" }, "没有武器数据。");
+    if (mode === "mine" && !rows.length) return emptyMine;
+
     return h("div", { className: "dga-scroll" },
-      h("div", { className: "dga-chipRow", style: { paddingTop: 12 } },
+      header,
+      mode === "codex"
+        ? h("div", { className: "dga-chipRow" },
+            h("input", {
+              className: "dga-searcher",
+              placeholder: "搜索武器名…",
+              value: query,
+              onChange: function (event) { setQuery(event.target.value); },
+              style: { maxWidth: 220 },
+            }))
+        : null,
+      h("div", { className: "dga-chipRow" },
         chip("all", "全部", !typeFilter, function () { setTypeFilter(""); }),
         types.map(function (type) {
           return chip(type, WEAPON_ZH[type] || type, typeFilter === type, function () {
@@ -1835,16 +1931,33 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         })),
       h("div", { className: "dga-chipRow" },
         chip("r0", "全部星级", !rarityFilter, function () { setRarityFilter(0); }),
-        [5, 4, 3].map(function (star) {
+        [5, 4, 3, 2, 1].map(function (star) {
           return chip("r" + star, star + "★", rarityFilter === star, function () {
             setRarityFilter(rarityFilter === star ? 0 : star);
           });
         })),
       h("div", { className: "dga-sub", style: { padding: "0 2px 8px" } },
-        filtered.length + " / " + rows.length + " 把武器 · 精炼只对游戏内「角色展柜」中角色的武器可见"),
-      h("div", { className: "dga-cardGrid" }, filtered.map(function (w, index) {
-        return h(WeaponCard, { key: index, w: w });
-      })));
+        mode === "mine"
+          ? filtered.length + " / " + rows.length + " 把武器 · 精炼只对游戏内「角色展柜」中角色的武器可见"
+          : codex
+            ? filtered.length + " / " + codex.total + " 把 · 已拥有 " + codex.owned + " · " +
+              (codex.warning ? codex.warning : "数据来自官方图鉴" + (codex.cached ? "（缓存）" : ""))
+            : "正在读取官方图鉴…"),
+      codexError ? h("div", { className: "dga-empty" }, "图鉴读取失败：" + codexError) : null,
+      mode === "codex" && !codex && !codexError
+        ? h("div", { className: "dga-skelStack" }, h(ListSkeleton), h(ListSkeleton))
+        : h("div", { className: "dga-cardGrid" }, filtered.slice(0, mode === "codex" ? shown : filtered.length).map(function (w, index) {
+            return mode === "codex"
+              ? h(CodexCard, { key: w.id || index, w: w })
+              : h(WeaponCard, { key: index, w: w });
+          })),
+      mode === "codex" && filtered.length > shown
+        ? h("div", { className: "dga-moreRow" },
+            h("button", {
+              className: "dga-btn",
+              onClick: function () { setShown(shown + PAGE); },
+            }, "再显示 " + Math.min(PAGE, filtered.length - shown) + " 把（已显示 " + shown + " / " + filtered.length + "）"))
+        : null);
   }
 
   /**

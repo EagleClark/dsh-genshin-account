@@ -182,8 +182,9 @@ check('weapons ok', weaponsResult.value.ok === true, JSON.stringify(weaponsResul
 
 // --- http routes -----------------------------------------------------------
 const routePaths = [...routes.keys()]
-// 图表库已内联进客户端，不再单独注册路由
-check('routes mounted', routePaths.length === 15, routePaths.join(','))
+// 16 = 原来的 15 条 + 武器图鉴 /weaponCodex
+check('routes mounted', routePaths.length === 16, routePaths.join(','))
+check('weapon codex route exists', routePaths.includes('/dsh-genshin-account/weaponCodex'), routePaths.join(','))
 check('no chart asset route', !routePaths.some((p) => p.includes('chartlib') || p.includes('chart.js')), routePaths.join(','))
 
 function fakeRes() {
