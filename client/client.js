@@ -412,7 +412,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-inlineHover{border-radius:10px;background:color-mix(in srgb,var(--dga-gold) 8%,transparent)}",
     ".dga-wCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);transition:transform .14s ease,border-color .14s ease}",
     ".dga-wCardRel:hover .dga-wCard{transform:translateY(-1px);border-color:var(--dsw-alias-label-dimmed)}",
-    ".dga-wPop{position:absolute;left:0;top:calc(100% + 6px);z-index:20;width:320px;max-height:340px;overflow:auto;padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-3));border:1px solid var(--dsw-alias-border-l2);box-shadow:0 12px 32px rgba(0,0,0,.22);font-size:12px;line-height:1.75}",
+    ".dga-wPop{position:fixed;z-index:60;width:320px;overflow:auto;padding:12px 14px;border-radius:12px;background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-3));border:1px solid var(--dsw-alias-border-l2);box-shadow:0 12px 32px rgba(0,0,0,.22);font-size:12px;line-height:1.75}",
     ".dga-wPopStats{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin-bottom:8px}",
     ".dga-wPopPassive{font-weight:600;color:var(--dsw-alias-label-primary);margin-bottom:2px}",
     ".dga-wPopRefine{color:var(--dsw-alias-label-secondary)}",
@@ -1817,16 +1817,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   /** 图鉴卡片：未拥有的图标灰掉，角标说明拥有 / 装备情况。 */
   function CodexCard(props) {
     var w = props.w;
-    var hoverState = React.useState(false);
-    var hover = hoverState[0], setHover = hoverState[1];
+    var hoverState = React.useState(null);
+    var rect = hoverState[0], setRect = hoverState[1];
     var detail = w.detail || {};
     var sub = detail.subLabel
       ? (detail.subValue ? detail.subLabel + " " + detail.subValue : detail.subLabel)
       : "";
     return h("div", {
       className: "dga-wCardRel",
-      onMouseEnter: function () { setHover(true); },
-      onMouseLeave: function () { setHover(false); },
+      onMouseEnter: function (event) { setRect(event.currentTarget.getBoundingClientRect()); },
+      onMouseLeave: function () { setRect(null); },
     },
       h("div", { className: "dga-wCard dga-wCodex" + (w.owned ? "" : " dga-wCardOff") },
         h(Art, { src: w.icon, alt: w.name, size: 56, style: { borderColor: RARITY_COLOR[w.rarity] || "var(--dga-el-none)" } }),
@@ -1839,7 +1839,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             detail.baseAtk ? "基础攻击 " + detail.baseAtk + (sub ? " · " + sub : "") : (sub || "—")),
           h("div", { className: "dga-codexBadge" + (w.owner ? " dga-codexBadgeOn" : w.owned ? " dga-codexBadgeOwn" : "") },
             w.owner ? "已装备 · " + w.owner : w.owned ? "已拥有" : "未拥有"))),
-      hover ? h(WeaponPopover, { w: { name: w.name, rarity: w.rarity, type: w.type, typeZh: w.typeZh, icon: w.icon, refinement: w.refinement, detail: w.detail } }) : null);
+      rect ? h(WeaponPopoverLayer, { w: { name: w.name, rarity: w.rarity, type: w.type, typeZh: w.typeZh, icon: w.icon, refinement: w.refinement, detail: w.detail }, rect: rect, onClose: function () { setRect(null); } }) : null);
   }
 
   function WeaponsTab(props) {
@@ -1972,16 +1972,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
    * children and shows the weapon popover while the pointer is inside.
    */
   function WeaponHover(props) {
-    var on = React.useState(false);
-    var hover = on[0], setHover = on[1];
+    var on = React.useState(null);
+    var rect = on[0], setRect = on[1];
     return h("div", {
       className: "dga-wCardRel",
       style: { position: "relative", display: "block" },
-      onMouseEnter: function () { setHover(true); },
-      onMouseLeave: function () { setHover(false); },
+      onMouseEnter: function (event) { setRect(event.currentTarget.getBoundingClientRect()); },
+      onMouseLeave: function () { setRect(null); },
     },
-      props.children(hover),
-      hover ? h(WeaponPopover, { w: props.weapon }) : null);
+      props.children(Boolean(rect)),
+      rect ? h(WeaponPopoverLayer, { w: props.weapon, rect: rect, onClose: function () { setRect(null); } }) : null);
   }
 
   /**
@@ -1989,16 +1989,56 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
    * current refinement, and the lore line. Name/type/rarity/level/owner are
    * already on the card, so repeating them here would waste the popover.
    */
+
+
+  /** 包一层：记录触发元素的位置，滚动或缩放时关掉浮层（fixed 定位不会跟着滚）。 */
+  function WeaponPopoverLayer(props) {
+    React.useEffect(function () {
+      var close = function () { props.onClose(); };
+      window.addEventListener("scroll", close, true);
+      window.addEventListener("resize", close);
+      return function () {
+        window.removeEventListener("scroll", close, true);
+        window.removeEventListener("resize", close);
+      };
+    }, []);
+    return h(WeaponPopover, { w: props.w, rect: props.rect });
+  }
+
+  /**
+   * 武器悬浮卡的位置。
+   *
+   * 原来用 position:absolute + top:100%：卡片在底部时会把滚动内容撑高（页面抖动），
+   * 在最右侧时 320px 宽的浮层会溢出被裁掉。改成 fixed + 现算坐标：
+   * 下方放不下就翻到上方，左右夹紧在视口内，高度取可用空间。
+   */
+  var POP_W = 320;
+  var POP_GAP = 6;
+  var POP_MARGIN = 8;
+  function popoverPlacement(rect) {
+    var vw = (typeof window !== "undefined" && window.innerWidth) || 1280;
+    var vh = (typeof window !== "undefined" && window.innerHeight) || 800;
+    var spaceBelow = vh - rect.bottom - POP_GAP - POP_MARGIN;
+    var spaceAbove = rect.top - POP_GAP - POP_MARGIN;
+    var openUp = spaceBelow < 220 && spaceAbove > spaceBelow;
+    var left = Math.min(Math.max(POP_MARGIN, rect.left), Math.max(POP_MARGIN, vw - POP_W - POP_MARGIN));
+    var style = openUp
+      ? { left: left, bottom: vh - rect.top + POP_GAP, maxHeight: Math.max(160, Math.min(340, spaceAbove)) }
+      : { left: left, top: rect.bottom + POP_GAP, maxHeight: Math.max(160, Math.min(340, spaceBelow)) };
+    return style;
+  }
+
   function WeaponPopover(props) {
     var w = props.w;
     var d = w.detail;
+    var boxStyle = props.rect ? popoverPlacement(props.rect) : { left: POP_MARGIN, top: 80 };
     if (!d) {
-      return h("div", { className: "dga-wPop" },
+      return h("div", { className: "dga-wPop", style: boxStyle },
         h("div", { className: "dga-hint", style: { margin: 0 } }, "暂无这把武器的资料。"));
     }
     var refineIndex = Math.max(0, Math.min(4, (Number(w.refinement) || 1) - 1));
     var passiveText = (d.refines && d.refines[refineIndex]) || (d.refines && d.refines[0]) || "";
-    return h("div", { className: "dga-wPop" },
+    return h("div", { className: "dga-wPop", style: boxStyle },
       h("div", { className: "dga-wPopStats" },
         h("span", { className: "dga-wPopK" }, "基础攻击力"),
         h("span", { className: "dga-wPopV" }, d.baseAtk == null ? "—" : String(d.baseAtk)),
@@ -2015,12 +2055,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   /** One weapon card; hovering reveals the weapon's own details. */
   function WeaponCard(props) {
     var w = props.w;
-    var hoverState = React.useState(false);
-    var hover = hoverState[0], setHover = hoverState[1];
+    var hoverState = React.useState(null);
+    var rect = hoverState[0], setRect = hoverState[1];
     return h("div", {
       className: "dga-wCardRel",
-      onMouseEnter: function () { setHover(true); },
-      onMouseLeave: function () { setHover(false); },
+      onMouseEnter: function (event) { setRect(event.currentTarget.getBoundingClientRect()); },
+      onMouseLeave: function () { setRect(null); },
     },
       h("div", { className: "dga-wCard" },
         h(Art, { src: w.icon, alt: w.name, size: 56, style: { borderColor: RARITY_COLOR[w.rarity] || "var(--dga-el-none)" } }),
@@ -2030,8 +2070,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             w.rarity + "★ · " + w.typeZh + " · Lv." + w.level +
             (w.refinement ? " · 精炼 " + w.refinement : "")),
           h("div", { className: "dga-sub" }, w.owner ? "装备于 " + w.owner : "未装备"))),
-      hover
-        ? h(WeaponPopover, { w: w })
+      rect
+        ? h(WeaponPopoverLayer, { w: w, rect: rect, onClose: function () { setRect(null); } })
         : null);
   }
 
