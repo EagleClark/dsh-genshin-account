@@ -4469,9 +4469,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         return h("button", {
           key: item.id,
           className: "dga-tab" + (tab === item.id ? " dga-tab-on" : ""),
-          disabled: syncing || loading,
           onClick: function () {
-            if (syncing || loading) return;
             tabTouched.current = true;
             setTab(item.id);
           },
