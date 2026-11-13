@@ -126,6 +126,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-moreBtnHot{color:var(--dsw-alias-label-primary);border-style:solid}",
     ".dga-moreNum{font-size:11px;font-variant-numeric:tabular-nums;background:var(--dsw-alias-bg-layer-3);border-radius:999px;padding:0 6px}",
     ".dga-moreCaret{font-size:10px;opacity:.8}",
+    ".dga-tileLink{cursor:pointer;transition:background .14s ease,border-color .14s ease}",
+    ".dga-tileLink:hover{background:var(--dsw-alias-bg-layer-3)}",
+    ".dga-ribbonSeg.dga-clickable{cursor:pointer}",
+    ".dga-elPick{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:28px;min-width:32px;padding:0 9px;border-radius:9px;border:1.5px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);transition:background .14s ease,border-color .14s ease}",
+    ".dga-elPick:hover{background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary)}",
+    ".dga-elPickOn{border-width:2px;color:var(--dsw-alias-label-primary)}",
+    ".dga-elPick .dga-elemIcon{width:14px;height:14px}",
+    ".dga-elPick .dga-elemIcon img{width:14px;height:14px;display:block}",
     ".dga-modeSwitch{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
     ".dga-modeBtn{appearance:none;font:inherit;font-size:12.5px;line-height:1.7;cursor:pointer;border:0;border-radius:999px;padding:3px 14px;background:transparent;color:var(--dsw-alias-label-secondary);display:inline-flex;align-items:baseline;gap:6px;transition:background .16s ease,color .16s ease}",
     ".dga-modeBtn:hover{color:var(--dsw-alias-label-primary)}",
@@ -1239,7 +1247,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       build: function (Chart, c, canvas) {
         var hex = ELEMENT_CHART_HEX[c.dark ? "dark" : "light"];
         var labels = list.map(function (entry) { return entry.key === "none" ? "其他" : entry.zh; });
-        var keys = list.map(function (entry) { return entry.key; });
+        var keys = list.map(function (entry) { return entry.key; }); if (props.onPick && !canvas.dataset.pickBound) { canvas.dataset.pickBound = "1"; canvas.style.cursor = "pointer"; canvas.addEventListener("click", function (event) { var chart = Chart.getChart ? Chart.getChart(canvas) : null; if (!chart || !chart.scales || !chart.scales.y) return; var index = Math.round(chart.scales.y.getValueForPixel(event.offsetY)); if (index == null || index < 0 || index >= keys.length) return; props.onPick(keys[index]); }); }
         var iconPlugin = {
           id: "dgaElementGlyphs",
           afterDraw: function (chart) {
@@ -2153,13 +2161,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     React.useEffect(function () {
       var intent = props.intent;
       if (!intent || intent.tab !== "characters") return;
-      if (intent.rarity || intent.own) {
-        setMode("codex");
-      } else {
-        setMode("mine");
-        if (intent.element) setElementMulti(intent.element);
-      }
+      setMode("mine");
+      if (intent.element) setElementMulti(intent.element);
+      if (intent.rarity) setRarityPick(intent.rarity);
     }, [props.intent]);
+    var rarityPickState = React.useState([]);
+    var rarityPick = rarityPickState[0], setRarityPick = rarityPickState[1];
     var modeState = React.useState("mine");
     var mode = modeState[0], setMode = modeState[1];
     var codexState = React.useState(null);
@@ -2176,6 +2183,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     var filtered = list.filter(function (c) {
       if (elementFilter && c.element !== elementFilter) return false;
+      if (rarityPick.length && rarityPick.indexOf(String(c.rarity)) === -1) return false;
       if (!query) return true;
       return String(c.name).indexOf(query) >= 0 || String(c.elementZh || "").indexOf(query) >= 0;
     });
@@ -2234,6 +2242,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               onClick: function () { setElementFilter(on ? "" : key); },
               title: ELEMENT_ZH_KEY[key] || key,
             }, h(ElementGlyph, { element: key, size: 14 }));
+          })),
+        h("div", { className: "dga-chipRow" },
+          [["5", "5★"], ["4", "4★"]].map(function (pair) {
+            var on = rarityPick.indexOf(pair[0]) !== -1;
+            return h("span", {
+              key: pair[0],
+              className: "dga-elPick" + (on ? " dga-elPickOn" : ""),
+              onClick: function () { setRarityPick(on ? [] : [pair[0]]); },
+            }, pair[1]);
           })),
         h("div", { className: "dga-chipRow" },
           [["level", "等级"], ["rarity", "稀有度"], ["constellation", "命座"], ["name", "名字"]].map(function (pair) {
