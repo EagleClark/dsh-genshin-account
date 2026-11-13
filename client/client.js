@@ -2155,7 +2155,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     var sortState = React.useState("level");
     var sort = sortState[0], setSort = sortState[1];
-    var elementState = React.useState("");
+    var initialIntent = props.intent && props.intent.tab === "characters" ? props.intent : null;
+    var elementState = React.useState(function () { return initialIntent && initialIntent.element ? initialIntent.element : []; });
     var elementMulti = elementState[0], setElementMulti = elementState[1];
     var elementFilter = elementMulti[0] || "";
     var setElementFilter = function (next) { setElementMulti(next ? [next] : []); };
@@ -2166,7 +2167,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (intent.element) setElementMulti(intent.element);
       if (intent.rarity) setRarityPick(intent.rarity);
     }, [props.intent]);
-    var rarityPickState = React.useState([]);
+    var rarityPickState = React.useState(function () { return initialIntent && initialIntent.rarity ? initialIntent.rarity : []; });
     var rarityPick = rarityPickState[0], setRarityPick = rarityPickState[1];
     var modeState = React.useState("mine");
     var mode = modeState[0], setMode = modeState[1];
