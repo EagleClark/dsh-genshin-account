@@ -3669,12 +3669,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     return "";
   }
 
+  /** 记住用户最后一次选的 tab，避免加载完成时被强制拉回概览（含重新挂载的情况）。 */
+  var panelTabMemory = "";
+
   function GenshinPage(props) {
-    var tabState = React.useState("settings");
+    var tabState = React.useState(panelTabMemory || "settings");
     var tab = tabState[0], setTab = tabState[1];
     // The panel opens on the form so a first-time user sees the login steps; once
     // the account loads it moves to 概览 unless the user already clicked a tab.
-    var tabTouched = React.useRef(false);
+    var tabTouched = React.useRef(Boolean(panelTabMemory));
 
     var summaryState = React.useState(null);
     var summary = summaryState[0], setSummary = summaryState[1];
@@ -3901,7 +3904,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
      */
     function offerVerification(message) {
       if (!/1034/.test(String(message || ""))) return false;
-      setTab("settings");
+      panelTabMemory = "settings"; setTab("settings");
       if (!verifyBusy) beginVerify("index");
       return true;
     }
@@ -3947,8 +3950,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             // Land on the wizard until the account actually renders, then show
             // the account itself: opening on 设置 made the panel look stuck on
             // the login form even when everything was configured.
-            if (state.configured === false) setTab("settings");
-            else if (!tabTouched.current) setTab("overview");
+            if (state.configured === false) { panelTabMemory = "settings"; setTab("settings"); }
+            else if (!tabTouched.current) { panelTabMemory = "overview"; setTab("overview"); }
           }
           if (!data || data.ok === false) {
             var reason = (data && data.error) || "";
@@ -4050,7 +4053,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           setSummary(data);
           setDraft(draftFrom((data.state && data.state.config) || {}));
           showMessage("已同步：" + data.characters.length + " 个角色");
-          if (data.state && data.state.configured) setTab("overview");
+          if (data.state && data.state.configured) panelTabMemory = "overview"; setTab("overview");
         })
         .catch(function (failure) {
           showMessage("保存/同步失败：" + String(failure && failure.message ? failure.message : failure), true);
@@ -4168,7 +4171,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           setSummary(data);
           setDraft(draftFrom((data.state && data.state.config) || {}));
           showMessage("扫码登录成功，已同步 " + data.characters.length + " 个角色");
-          setTab("overview");
+          panelTabMemory = "overview"; setTab("overview");
         })
         .catch(function (failure) {
           showMessage("写入登录会话失败：" + String(failure && failure.message ? failure.message : failure), true);
@@ -4322,7 +4325,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           setSummary(data);
           setDraft(draftFrom((data.state && data.state.config) || {}));
           showMessage("验证通过，已同步 " + data.characters.length + " 个角色");
-          setTab("overview");
+          panelTabMemory = "overview"; setTab("overview");
         })
         .catch(function (failure) {
           setVerifyStatus("仍未通过：" + String(failure && failure.message ? failure.message : failure));
@@ -4419,7 +4422,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         overview: summary.overview,
         allCharacters: summary.characters || [],
         onOpenCharacter: function (name) {
-          setTab("characters");
+          panelTabMemory = "characters"; setTab("characters");
           setCharacter(null);
           loadCharacter(name);
         },
@@ -4471,6 +4474,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           className: "dga-tab" + (tab === item.id ? " dga-tab-on" : ""),
           onClick: function () {
             tabTouched.current = true;
+            panelTabMemory = item.id;
             setTab(item.id);
           },
         }, item.label);
