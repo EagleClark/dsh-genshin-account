@@ -1247,7 +1247,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       build: function (Chart, c, canvas) {
         var hex = ELEMENT_CHART_HEX[c.dark ? "dark" : "light"];
         var labels = list.map(function (entry) { return entry.key === "none" ? "其他" : entry.zh; });
-        var keys = list.map(function (entry) { return entry.key; }); if (props.onPick && !canvas.dataset.pickBound) { canvas.dataset.pickBound = "1"; canvas.style.cursor = "pointer"; canvas.addEventListener("click", function (event) { var chart = Chart.getChart ? Chart.getChart(canvas) : null; if (!chart || !chart.scales || !chart.scales.y) return; var index = Math.round(chart.scales.y.getValueForPixel(event.offsetY)); if (index == null || index < 0 || index >= keys.length) return; props.onPick(keys[index]); }); }
+        var keys = list.map(function (entry) { return entry.key; }); if (props.onPick && !canvas.dataset.pickBound) { canvas.dataset.pickBound = "1"; var host = canvas.parentElement || canvas; host.style.cursor = "pointer"; host.addEventListener("click", function (event) { var chart = Chart.getChart ? Chart.getChart(canvas) : null; if (!chart || !chart.scales || !chart.scales.y) return; var rect = canvas.getBoundingClientRect(); var index = Math.round(chart.scales.y.getValueForPixel(event.clientY - rect.top)); if (index == null || index < 0 || index >= keys.length) return; props.onPick(keys[index]); }); }
         var iconPlugin = {
           id: "dgaElementGlyphs",
           afterDraw: function (chart) {
