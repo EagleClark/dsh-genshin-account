@@ -2156,7 +2156,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var sortState = React.useState("level");
     var sort = sortState[0], setSort = sortState[1];
     var initialIntent = props.intent && props.intent.tab === "characters" ? props.intent : null;
-    var elementState = React.useState(function () { return initialIntent && initialIntent.element ? initialIntent.element : []; });
+    var elementState = React.useState(function () { return initialIntent && initialIntent.element ? initialIntent.element : charFilterMemory.element.slice(); });
     var elementMulti = elementState[0], setElementMulti = elementState[1];
     var elementFilter = elementMulti[0] || "";
     var setElementFilter = function (next) { setElementMulti(next ? [next] : []); };
@@ -2167,12 +2167,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (intent.element) setElementMulti(intent.element);
       if (intent.rarity) setRarityPick(intent.rarity);
     }, [props.intent]);
-    var rarityPickState = React.useState(function () { return initialIntent && initialIntent.rarity ? initialIntent.rarity : []; });
+    var rarityPickState = React.useState(function () { return initialIntent && initialIntent.rarity ? initialIntent.rarity : charFilterMemory.rarity.slice(); });
     var lastIntentRef = React.useRef(0);
     if (props.intent && props.intent.tab === "characters" && props.intent.id !== lastIntentRef.current) {
       lastIntentRef.current = props.intent.id;
       rarityPickState[1](props.intent.rarity || []);
-      if (props.intent.element) elementState[1](props.intent.element);
+      elementState[1](props.intent.element || []);
+      charFilterMemory = { element: props.intent.element || [], rarity: props.intent.rarity || [] };
     }
     var rarityPick = rarityPickState[0], setRarityPick = rarityPickState[1];
     var modeState = React.useState("mine");
@@ -2195,6 +2196,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (!query) return true;
       return String(c.name).indexOf(query) >= 0 || String(c.elementZh || "").indexOf(query) >= 0;
     });
+    charFilterMemory = { element: elementMulti.slice(), rarity: rarityPick.slice() };
     var sorted = filtered.slice().sort(function (a, b) {
       // Showcase characters are the ones with artifact stats, so they always
       // sit above the rest regardless of the chosen sort.
@@ -3728,6 +3730,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
   /** 记住用户最后一次选的 tab，避免加载完成时被强制拉回概览（含重新挂载的情况）。 */
   var panelTabMemory = "";
+  /** 角色页最近一次的筛选（元素/星级），用于跨挂载保留，避免进入时被重置。 */
+  var charFilterMemory = { element: [], rarity: [] };
 
   function GenshinPage(props) {
     var tabState = React.useState(panelTabMemory || "settings");
