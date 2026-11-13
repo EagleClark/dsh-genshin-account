@@ -111,6 +111,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
     ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
+    ".dga-modeSwitch{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);margin:10px 0 4px}",
+    ".dga-modeBtn{appearance:none;font:inherit;font-size:12.5px;line-height:1.7;cursor:pointer;border:0;border-radius:999px;padding:3px 14px;background:transparent;color:var(--dsw-alias-label-secondary);display:inline-flex;align-items:baseline;gap:6px;transition:background .16s ease,color .16s ease}",
+    ".dga-modeBtn:hover{color:var(--dsw-alias-label-primary)}",
+    ".dga-modeBtnOn{background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.18)}",
+    ".dga-modeNum{font-size:11.5px;font-variant-numeric:tabular-nums;opacity:.7;font-weight:400}",
     ".dga-searchRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 2px}",
     ".dga-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 4px 2px 10px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);font-size:12px;line-height:1.6;background:color-mix(in srgb, var(--dsw-alias-bg-layer-3) 60%, transparent)}",
     ".dga-tagX{appearance:none;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;font-size:13px;line-height:1;padding:0 3px;border-radius:999px}",
@@ -1823,6 +1828,19 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     return COLLECT_COLOR[key] || "var(--dsw-alias-label-secondary)";
   }
 
+  /** 「我的 / 图鉴」切换：两个分段，当前项高亮，带数量。 */
+  function CharacterModeSwitch(props) {
+    return h("div", { className: "dga-modeSwitch" },
+      h("button", {
+        className: "dga-modeBtn" + (props.mode === "mine" ? " dga-modeBtnOn" : ""),
+        onClick: function () { props.onChange("mine"); },
+      }, "我的", h("span", { className: "dga-modeNum" }, props.owned == null ? "" : String(props.owned))),
+      h("button", {
+        className: "dga-modeBtn" + (props.mode === "codex" ? " dga-modeBtnOn" : ""),
+        onClick: function () { props.onChange("codex"); },
+      }, "图鉴", h("span", { className: "dga-modeNum" }, props.total == null ? "" : String(props.total))));
+  }
+
   /** 角色图鉴：收藏进度（体型 / 七神 / 执行官 / 地区）+ 全量角色网格。 */
   function CharacterCodexView(props) {
     var codex = props.codex;
@@ -1911,6 +1929,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     };
 
     return h("div", { className: "dga-scroll" },
+      props.header || null,
       h("div", { className: "dga-searchRow" },
         h("input", {
           className: "dga-searcher",
@@ -2082,13 +2101,17 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       }, label);
     };
 
-    if (mode === "codex" && codex) return h(CharacterCodexView, { codex: codex, onBack: function () { setMode("mine"); } });
+    var modeSwitch = h(CharacterModeSwitch, {
+      mode: mode,
+      owned: list.length,
+      total: codex ? codex.total : null,
+      onChange: function (next) { setMode(next); },
+    });
+    if (mode === "codex" && codex) return h(CharacterCodexView, { codex: codex, header: modeSwitch });
 
     return h("div", { className: "dga-body" },
       h("div", { className: "dga-col-list" },
-        h("div", { className: "dga-chipRow" },
-          chip("mine", "我的", mode === "mine", function () { setMode("mine"); }),
-          chip("codex", "图鉴", false, function () { setMode("codex"); })),
+        modeSwitch,
         h("input", {
           className: "dga-searcher",
           placeholder: "搜索角色…",
