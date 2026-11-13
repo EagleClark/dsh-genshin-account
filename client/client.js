@@ -2168,6 +2168,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (intent.rarity) setRarityPick(intent.rarity);
     }, [props.intent]);
     var rarityPickState = React.useState(function () { return initialIntent && initialIntent.rarity ? initialIntent.rarity : []; });
+    var lastIntentRef = React.useRef(0);
+    if (props.intent && props.intent.tab === "characters" && props.intent.id !== lastIntentRef.current) {
+      lastIntentRef.current = props.intent.id;
+      rarityPickState[1](props.intent.rarity || []);
+      if (props.intent.element) elementState[1](props.intent.element);
+    }
     var rarityPick = rarityPickState[0], setRarityPick = rarityPickState[1];
     var modeState = React.useState("mine");
     var mode = modeState[0], setMode = modeState[1];
@@ -2246,11 +2252,18 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             }, h(ElementGlyph, { element: key, size: 14 }));
           })),
         h("div", { className: "dga-chipRow" },
-          [["5", "5★"], ["4", "4★"]].map(function (pair) {
+          [["5", "5★", "#d8b566"], ["4", "4★", "#a884d8"]].map(function (pair) {
             var on = rarityPick.indexOf(pair[0]) !== -1;
+            var tone = pair[2];
             return h("span", {
               key: pair[0],
-              className: "dga-elPick" + (on ? " dga-elPickOn" : ""),
+              className: "dga-elPick dga-rarityPick" + (on ? " dga-rarityPickOn" : ""),
+              style: {
+                color: tone,
+                borderColor: on ? tone : "color-mix(in srgb, " + tone + " 40%, transparent)",
+                borderWidth: on ? 2 : 1.5,
+                background: "color-mix(in srgb, " + tone + " " + (on ? 22 : 8) + "%, transparent)",
+              },
               onClick: function () { setRarityPick(on ? [] : [pair[0]]); },
             }, pair[1]);
           })),
