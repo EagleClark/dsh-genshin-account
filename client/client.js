@@ -111,6 +111,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
     ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
+    ".dga-collectGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:6px 0 14px}",
+    ".dga-collect{appearance:none;font:inherit;text-align:left;cursor:pointer;padding:10px 12px;border-radius:12px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:inherit;display:flex;flex-direction:column;gap:6px}",
+    ".dga-collectOn{border-color:color-mix(in srgb, var(--dga-gold) 55%, transparent);background:color-mix(in srgb, var(--dga-gold) 8%, var(--dsw-alias-bg-layer-2))}",
+    ".dga-collectHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12.5px}",
+    ".dga-collectLabel{font-weight:600}",
+    ".dga-collectNum{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;font-size:12px}",
+    ".dga-collectMissing{font-size:11.5px;color:var(--dsw-alias-label-tertiary);line-height:1.5;max-height:2.9em;overflow:hidden}",
+    ".dga-collectDone{color:var(--dga-gold)}",
     ".dga-codexBadge{margin-top:auto;align-self:flex-start;margin-top:2px;padding:1px 7px;border-radius:999px;font-size:11px;line-height:1.7;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary)}",
     ".dga-codexBadgeOwn{color:var(--dga-blue);border-color:color-mix(in srgb, var(--dga-blue) 45%, transparent)}",
     ".dga-codexBadgeOn{color:var(--dga-gold);border-color:color-mix(in srgb, var(--dga-gold) 45%, transparent)}",
@@ -1738,6 +1746,82 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   var SLOT_ZH = { flower: "生之花", plume: "死之羽", sands: "时之沙", goblet: "空之杯", circlet: "理之冠" };
 
   // ── character list + detail ─────────────────────────────────────────────
+  /** 角色图鉴：收藏进度（体型 / 七神 / 执行官 / 地区）+ 全量角色网格。 */
+  function CharacterCodexView(props) {
+    var codex = props.codex;
+    var groupState = React.useState("");
+    var groupFilter = groupState[0], setGroupFilter = groupState[1];
+    var ownState = React.useState("all");
+    var ownFilter = ownState[0], setOwnFilter = ownState[1];
+    var queryState = React.useState("");
+    var query = queryState[0], setQuery = queryState[1];
+    if (!codex) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-skelStack" }, h(ListSkeleton)));
+    if (codex.error) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-empty" }, "图鉴读取失败：" + codex.error));
+
+    var rows = codex.characters || [];
+    var activeGroup = null;
+    for (var i = 0; i < (codex.groups || []).length; i += 1) {
+      if (codex.groups[i].key === groupFilter) activeGroup = codex.groups[i];
+    }
+    var filtered = rows.filter(function (c) {
+      if (activeGroup && activeGroup.names.indexOf(c.name) === -1) return false;
+      if (ownFilter === "owned" && !c.owned) return false;
+      if (ownFilter === "unowned" && c.owned) return false;
+      if (query && String(c.name).indexOf(query) === -1) return false;
+      return true;
+    });
+    var chip = function (key, label, active, onClick) {
+      return h("button", { key: key, className: "dga-chipBtn" + (active ? " dga-chipBtnOn" : ""), onClick: onClick }, label);
+    };
+
+    return h("div", { className: "dga-scroll" },
+      h("div", { className: "dga-chipRow", style: { paddingTop: 12 } },
+        h("button", { className: "dga-chipBtn", onClick: props.onBack }, "返回我的角色"),
+        chip("o-all", "全部", ownFilter === "all", function () { setOwnFilter("all"); }),
+        chip("o-own", "已收集", ownFilter === "owned", function () { setOwnFilter("owned"); }),
+        chip("o-no", "未收集", ownFilter === "unowned", function () { setOwnFilter("unowned"); })),
+      h("div", { className: "dga-chipRow" },
+        h("input", {
+          className: "dga-searcher",
+          placeholder: "搜索角色…",
+          value: query,
+          onChange: function (event) { setQuery(event.target.value); },
+          style: { maxWidth: 200 },
+        })),
+      h("div", { className: "dga-collectGrid" }, (codex.groups || []).map(function (group) {
+        var pct = group.total ? Math.round((group.owned / group.total) * 100) : 0;
+        var on = groupFilter === group.key;
+        return h("button", {
+          key: group.key,
+          className: "dga-collect" + (on ? " dga-collectOn" : ""),
+          onClick: function () { setGroupFilter(on ? "" : group.key); },
+        },
+          h("div", { className: "dga-collectHead" },
+            h("span", { className: "dga-collectLabel" }, group.label),
+            h("span", { className: "dga-collectNum" }, group.owned + " / " + group.total)),
+          h("div", { className: "dga-barTrack" },
+            h("span", { className: "dga-barFill", style: { width: pct + "%", background: pct >= 100 ? "var(--dga-gold)" : "var(--dga-blue)" } })),
+          group.missing.length
+            ? h("div", { className: "dga-collectMissing" }, "缺：" + group.missing.join("、"))
+            : h("div", { className: "dga-collectMissing dga-collectDone" }, "已集齐"));
+      })),
+      h("div", { className: "dga-sub", style: { padding: "4px 2px 8px" } },
+        filtered.length + " / " + codex.total + " 个角色 · 已收集 " + codex.owned +
+        (codex.warning ? " · " + codex.warning : codex.cached ? " · 缓存" : "")),
+      h("div", { className: "dga-cardGrid" }, filtered.map(function (c) {
+        return h("div", { key: c.id, className: "dga-wCard dga-wCodex" + (c.owned ? "" : " dga-wCardOff") },
+          h(Art, { src: c.icon, alt: c.name, size: 56, style: { borderColor: RARITY_COLOR[c.rarity] || "var(--dga-el-none)" } }),
+          h("div", { className: "dga-itemText" },
+            h("div", { className: "dga-itemName" }, c.name),
+            h("div", { className: "dga-sub" },
+              c.rarity + "★ · " + (c.elementZh || "") + " · " + (c.typeZh || "")),
+            h("div", { className: "dga-sub dga-wStats" },
+              c.owned ? "Lv." + c.level + (c.constellation ? " · " + c.constellation + "命" : "") : (c.body || c.region || "")),
+            h("div", { className: "dga-codexBadge" + (c.owned ? " dga-codexBadgeOwn" : "") },
+              c.owned ? (c.showcase ? "已收集 · 展柜" : "已收集") : "未收集")));
+      })));
+  }
+
   function CharactersTab(props) {
     var snapshot = props.summary;
     var list = snapshot.characters || [];
@@ -1748,6 +1832,19 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var sort = sortState[0], setSort = sortState[1];
     var elementState = React.useState("");
     var elementFilter = elementState[0], setElementFilter = elementState[1];
+    var modeState = React.useState("mine");
+    var mode = modeState[0], setMode = modeState[1];
+    var codexState = React.useState(null);
+    var codex = codexState[0], setCodex = codexState[1];
+    React.useEffect(function () {
+      if (mode !== "codex" || codex) return undefined;
+      var cancelled = false;
+      fetch(API + "/characterCodex")
+        .then(function (res) { return res.json(); })
+        .then(function (data) { if (!cancelled) setCodex(data && data.ok ? data : { error: (data && data.error) || "图鉴读取失败" }); })
+        .catch(function (error) { if (!cancelled) setCodex({ error: String((error && error.message) || error) }); });
+      return function () { cancelled = true; };
+    }, [mode, codex]);
 
     var filtered = list.filter(function (c) {
       if (elementFilter && c.element !== elementFilter) return false;
@@ -1775,8 +1872,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       }, label);
     };
 
+    if (mode === "codex") return h(CharacterCodexView, { codex: codex, onBack: function () { setMode("mine"); } });
+
     return h("div", { className: "dga-body" },
       h("div", { className: "dga-col-list" },
+        h("div", { className: "dga-chipRow" },
+          chip("mine", "我的", mode === "mine", function () { setMode("mine"); }),
+          chip("codex", "图鉴", false, function () { setMode("codex"); })),
         h("input", {
           className: "dga-searcher",
           placeholder: "搜索角色…",
