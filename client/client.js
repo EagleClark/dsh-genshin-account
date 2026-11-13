@@ -116,6 +116,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-tagX{appearance:none;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;font-size:13px;line-height:1;padding:0 3px;border-radius:999px}",
     ".dga-tagX:hover{color:var(--dsw-alias-label-primary)}",
     ".dga-pillTick{font-size:10.5px;opacity:.95}",
+    ".dga-filterRow{display:flex;align-items:flex-start;gap:10px;padding:2px 0}",
     ".dga-filterCat{flex:0 0 28px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);padding-top:6px}",
     ".dga-pillRow{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px;flex:1 1 auto;min-width:0}",
     ".dga-pill{appearance:none;font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:baseline;gap:6px;padding:3px 12px;border-radius:999px;border:1.5px solid transparent;font-size:12.5px;line-height:1.7;transition:background .14s ease,border-color .14s ease,transform .12s ease}",
@@ -1853,16 +1854,23 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
 
     var GROUPS = codex.groups || [];
     var activeGroups = GROUPS.filter(function (group) { return groupFilter.indexOf(group.key) !== -1; });
-    var activeNames = null;
-    if (activeGroups.length) {
-      activeNames = {};
-      for (var g = 0; g < activeGroups.length; g += 1) {
-        var names = activeGroups[g].names;
-        for (var n = 0; n < names.length; n += 1) activeNames[names[n]] = true;
-      }
+    var bodySel = {};
+    var regionSel = {};
+    var listSel = {};
+    for (var g = 0; g < activeGroups.length; g += 1) {
+      var gk = activeGroups[g].key;
+      if (gk.indexOf("body:") === 0) bodySel[activeGroups[g].label] = true;
+      else if (gk.indexOf("region:") === 0) regionSel[activeGroups[g].label] = true;
+      else for (var gn = 0; gn < activeGroups[g].names.length; gn += 1) listSel[activeGroups[g].names[gn]] = true;
     }
+    var hasBody = Object.keys(bodySel).length > 0;
+    var hasRegion = Object.keys(regionSel).length > 0;
+    var hasList = Object.keys(listSel).length > 0;
     var filtered = rows.filter(function (c) {
-      if (activeNames && !activeNames[c.name]) return false;
+      // 同类多选是「或」，不同类之间是「且」
+      if (hasBody && !bodySel[c.body]) return false;
+      if (hasRegion && !regionSel[c.region]) return false;
+      if (hasList && !listSel[c.name]) return false;
       if (ownFilter === "owned" && !c.owned) return false;
       if (ownFilter === "unowned" && c.owned) return false;
       if (query && String(c.name).indexOf(query) === -1) return false;
