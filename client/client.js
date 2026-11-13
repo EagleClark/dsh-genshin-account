@@ -111,6 +111,21 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
     ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
+    ".dga-pillRow{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 14px}",
+    ".dga-pill{appearance:none;font:inherit;cursor:pointer;display:inline-flex;align-items:baseline;gap:6px;padding:3px 11px;border-radius:999px;border:1px solid transparent;background:transparent;font-size:12.5px;line-height:1.7;transition:background .14s ease,border-color .14s ease}",
+    ".dga-pill:hover{background:color-mix(in srgb, currentColor 9%, transparent)}",
+    ".dga-pillOn{font-weight:600}",
+    ".dga-pillLabel{letter-spacing:.01em}",
+    ".dga-pillNum{font-size:11.5px;font-variant-numeric:tabular-nums;opacity:.75}",
+    ".dga-pillTotal{opacity:.6}",
+    ".dga-pillNumDone{font-weight:700}",
+    ".dga-wCard .dga-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}",
+    // 未拥有：图标保持彩色，用虚线边框区分，不靠去色
+    ".dga-wCardOff{border-style:dashed;border-color:color-mix(in srgb, var(--dsw-alias-border-l2) 85%, transparent);background:color-mix(in srgb, var(--dsw-alias-bg-layer-2) 55%, transparent)}",
+    // 图鉴卡片的数值行允许换行，避免「元素充能效率 36.8%」被省略号吃掉
+    ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
+    ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
+    ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
     ".dga-collectGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px;padding:6px 0 16px}",
     ".dga-collect{appearance:none;font:inherit;text-align:left;cursor:pointer;padding:10px 12px 11px;border-radius:10px;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:inherit;display:flex;flex-direction:column;gap:8px;transition:border-color .14s ease,background .14s ease}",
     ".dga-collect:hover{border-color:var(--dsw-alias-label-dimmed)}",
@@ -1767,6 +1782,29 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   var SLOT_ZH = { flower: "生之花", plume: "死之羽", sands: "时之沙", goblet: "空之杯", circlet: "理之冠" };
 
   // ── character list + detail ─────────────────────────────────────────────
+  /** 收藏分组的颜色：地区用各国主题色，其余按印象分配。 */
+  var COLLECT_COLOR = {
+    "body:萝莉": "#e08bb0",
+    "body:少女": "#d98a9a",
+    "body:成女": "#b48ad0",
+    "body:成男": "#5b8fd6",
+    "body:少年": "#5fae8a",
+    "list:七神": "#d8b566",
+    "list:harbinger": "#c2564f",
+    "region:蒙德": "#74c2a8",
+    "region:璃月": "#d3a24a",
+    "region:稻妻": "#a48bd0",
+    "region:须弥": "#8fbf4d",
+    "region:枫丹": "#4aa8d8",
+    "region:纳塔": "#e2683c",
+    "region:至冬": "#9fd6e3",
+    "region:挪德卡莱": "#8a7fd0",
+    "region:其他": "#8b93a5",
+  };
+  function collectColor(key) {
+    return COLLECT_COLOR[key] || "var(--dsw-alias-label-secondary)";
+  }
+
   /** 角色图鉴：收藏进度（体型 / 七神 / 执行官 / 地区）+ 全量角色网格。 */
   function CharacterCodexView(props) {
     var codex = props.codex;
@@ -1809,28 +1847,25 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           onChange: function (event) { setQuery(event.target.value); },
           style: { maxWidth: 200 },
         })),
-      h("div", { className: "dga-collectGrid" }, (codex.groups || []).map(function (group) {
+      h("div", { className: "dga-pillRow" }, (codex.groups || []).map(function (group) {
         var on = groupFilter === group.key;
         var done = group.total > 0 && group.owned >= group.total;
-        var dots = [];
-        for (var d = 0; d < group.total; d += 1) {
-          dots.push(h("span", {
-            key: "d" + d,
-            className: "dga-dot" + (d < group.owned ? " dga-dotOn" : "") + (done ? " dga-dotDone" : ""),
-          }));
+        var color = collectColor(group.key);
+        var tint = { color: color, borderColor: "color-mix(in srgb, " + color + " 42%, transparent)" };
+        if (on) {
+          tint.background = "color-mix(in srgb, " + color + " 16%, transparent)";
+          tint.borderColor = color;
         }
         return h("button", {
           key: group.key,
-          className: "dga-collect" + (on ? " dga-collectOn" : "") + (done ? " dga-collectDoneCard" : ""),
+          className: "dga-pill" + (on ? " dga-pillOn" : ""),
+          style: tint,
           title: group.missing.length ? "缺：" + group.missing.join("、") : "已集齐",
           onClick: function () { setGroupFilter(on ? "" : group.key); },
         },
-          h("div", { className: "dga-collectHead" },
-            h("span", { className: "dga-collectLabel" }, group.label),
-            h("span", { className: "dga-collectNum" + (done ? " dga-collectNumDone" : "") },
-              group.owned,
-              h("span", { className: "dga-collectTotal" }, " / " + group.total))),
-          h("div", { className: "dga-dots" }, dots));
+          h("span", { className: "dga-pillLabel" }, group.label),
+          h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
+            group.owned, h("span", { className: "dga-pillTotal" }, "/" + group.total)));
       })),
       h("div", { className: "dga-sub", style: { padding: "4px 2px 8px" } },
         filtered.length + " / " + codex.total + " 个角色 · 已收集 " + codex.owned +
@@ -1859,7 +1894,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var sort = sortState[0], setSort = sortState[1];
     var elementState = React.useState("");
     var elementFilter = elementState[0], setElementFilter = elementState[1];
-    var modeState = React.useState("mine");
+    var modeState = React.useState("codex");
     var mode = modeState[0], setMode = modeState[1];
     var codexState = React.useState(null);
     var codex = codexState[0], setCodex = codexState[1];
@@ -1899,7 +1934,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       }, label);
     };
 
-    if (mode === "codex") return h(CharacterCodexView, { codex: codex, onBack: function () { setMode("mine"); } });
+    if (mode === "codex" && codex) return h(CharacterCodexView, { codex: codex, onBack: function () { setMode("mine"); } });
 
     return h("div", { className: "dga-body" },
       h("div", { className: "dga-col-list" },
