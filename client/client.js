@@ -1875,39 +1875,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           style: { maxWidth: 200 },
         })),
       (function () {
-        var TYPES = [["sword", "单手剑"], ["claymore", "双手剑"], ["polearm", "长柄武器"], ["bow", "弓"], ["catalyst", "法器"]];
-        return h("div", { className: "dga-filterRow", key: "weapon" },
-          h("span", { className: "dga-filterCat" }, "武器"),
-          h("div", { className: "dga-pillRow" }, TYPES.map(function (pair) {
-            var on = weaponFilter === pair[0];
-            return h("button", {
-              key: pair[0],
-              className: "dga-pill" + (on ? " dga-pillOn" : ""),
-              style: (function () {
-                var tone = WEAPON_COLOR[pair[0]] || "var(--dsw-alias-label-secondary)";
-                return {
-                  color: tone,
-                  borderColor: "color-mix(in srgb, " + tone + " " + (on ? "100%" : "45%") + ", transparent)",
-                  background: "color-mix(in srgb, " + tone + " " + (on ? 22 : 10) + "%, transparent)",
-                };
-              })(),
-              onClick: function () { setWeaponFilter(on ? "" : pair[0]); },
-            },
-              h("span", { className: "dga-pillLabel" }, pair[1]),
-              (function () {
-                var stat = typeStats[pair[0]];
-                if (!stat) return null;
-                var done = stat.owned >= stat.total;
-                return h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
-                  stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total));
-              })());
-          })));
-      })(),
-      (function () {
         var CATS = [
-          { key: "region:", label: "地区" },
           { key: "body:", label: "体型" },
           { key: "list:", label: "阵营" },
+          { key: "region:", label: "地区" },
         ];
         return CATS.map(function (cat) {
           var members = (codex.groups || []).filter(function (group) {
@@ -1938,6 +1909,35 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                   group.owned, h("span", { className: "dga-pillTotal" }, "/" + group.total)));
             })));
         });
+      })(),
+      (function () {
+        var TYPES = [["sword", "单手剑"], ["claymore", "双手剑"], ["polearm", "长柄武器"], ["bow", "弓"], ["catalyst", "法器"]];
+        return h("div", { className: "dga-filterRow", key: "weapon" },
+          h("span", { className: "dga-filterCat" }, "武器"),
+          h("div", { className: "dga-pillRow" }, TYPES.map(function (pair) {
+            var on = weaponFilter === pair[0];
+            return h("button", {
+              key: pair[0],
+              className: "dga-pill" + (on ? " dga-pillOn" : ""),
+              style: (function () {
+                var tone = WEAPON_COLOR[pair[0]] || "var(--dsw-alias-label-secondary)";
+                return {
+                  color: tone,
+                  borderColor: "color-mix(in srgb, " + tone + " " + (on ? "100%" : "45%") + ", transparent)",
+                  background: "color-mix(in srgb, " + tone + " " + (on ? 22 : 10) + "%, transparent)",
+                };
+              })(),
+              onClick: function () { setWeaponFilter(on ? "" : pair[0]); },
+            },
+              h("span", { className: "dga-pillLabel" }, pair[1]),
+              (function () {
+                var stat = typeStats[pair[0]];
+                if (!stat) return null;
+                var done = stat.owned >= stat.total;
+                return h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
+                  stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total));
+              })());
+          })));
       })(),
       h("div", { className: "dga-sub", style: { padding: "4px 2px 8px" } },
         filtered.length + " / " + codex.total + " 个角色 · 已收集 " + codex.owned +
