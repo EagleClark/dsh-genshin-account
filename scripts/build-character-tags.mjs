@@ -17,6 +17,23 @@ const PAGE = 'https://wiki.biligame.com/ys/' + encodeURIComponent('角色筛选'
 // wiki 把萝莉叫「幼女」，对外统一显示成「萝莉」
 const BODY_ALIAS = { 幼女: '萝莉', 萝莉: '萝莉', 少女: '少女', 成女: '成女', 成男: '成男', 少年: '少年' }
 
+/**
+ * 人工校正。
+ *
+ * wiki 对旅行者、奇偶这类"形态会变"的角色不标体型，多莉则漏标；玩家对这几个
+ * 的认知是明确的，所以在这里补上（按用户确认的口径）：
+ * 空 → 少年，荧 → 少女，奇偶男 → 少年，奇偶女 → 少女，多莉 → 萝莉。
+ */
+const MANUAL = {
+  多莉: { body: '萝莉' },
+  旅行者: { body: '少年' },
+  '旅行者（空）': { body: '少年' },
+  '旅行者（荧）': { body: '少女' },
+  奇偶: { body: '少年' },
+  '奇偶·男性': { body: '少年' },
+  '奇偶·女性': { body: '少女' },
+}
+
 const html = await (await fetch(PAGE, { headers: { 'user-agent': 'Mozilla/5.0' } })).text()
 
 // 每个角色是一行 <tr data-param1="5星" data-param2="长柄武器" ... data-param10="少女">
@@ -40,6 +57,11 @@ for (const [, attrs, cell] of rows) {
     ...(sex === '男' || sex === '女' ? { sex } : {}),
   }
   parsed += 1
+}
+
+// 人工校正覆盖抓取结果
+for (const [name, patch] of Object.entries(MANUAL)) {
+  tags[name] = { ...(tags[name] || {}), ...patch }
 }
 
 const countBy = (key) => {
