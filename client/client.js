@@ -113,9 +113,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
     ".dga-col{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}",
     ".dga-modeRow{flex:0 0 auto;padding:10px 20px 2px}",
-    ".dga-pillIcon{display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1;padding:2px 10px;min-height:24px}",
+    ".dga-pillIcon{display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1;padding:0 11px;height:26px;box-sizing:border-box}",
     ".dga-pillIcon .dga-elemIcon{display:inline-flex;align-items:center;justify-content:center;line-height:0;width:12px !important;height:12px !important}",
     ".dga-pillIcon .dga-elemIcon img{width:12px !important;height:12px !important;display:block}",
+    ".dga-pillIcon .dga-pillNum{display:inline-flex;align-items:center;line-height:1}",
     ".dga-pillIcon .dga-pillTick{font-size:10px;line-height:1;display:inline-flex;align-items:center}",
     ".dga-pillIcon .dga-elemIcon{display:inline-flex;align-items:center;line-height:0}",
     ".dga-moreBtn{appearance:none;font:inherit;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;border:1px dashed var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-tertiary)}",
@@ -2034,12 +2035,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 color: tone,
                 borderColor: on ? tone : "color-mix(in srgb, " + tone + " 40%, transparent)",
                 borderWidth: on ? 2 : 1.5,
-                background: "color-mix(in srgb, " + tone + " 12%, transparent)",
+                background: "color-mix(in srgb, " + tone + " " + (on ? 22 : 12) + "%, transparent)",
               },
               title: pair[1] + " · " + stat.owned + "/" + stat.total,
               onClick: function () { toggle(elementFilter, setElementFilter, pair[0]); },
             },
-              on ? h("span", { className: "dga-pillTick" }, "✓") : null,
+              
               h(ElementGlyph, { element: pair[0], size: 13 }),
               h("span", { className: "dga-pillNum" }, stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total)));
           })));
