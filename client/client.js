@@ -1859,6 +1859,24 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           style: { maxWidth: 200 },
         })),
       (function () {
+        var TYPES = [["sword", "单手剑"], ["claymore", "双手剑"], ["polearm", "长柄武器"], ["bow", "弓"], ["catalyst", "法器"]];
+        return h("div", { className: "dga-filterRow", key: "weapon" },
+          h("span", { className: "dga-filterCat" }, "武器"),
+          h("div", { className: "dga-pillRow" }, TYPES.map(function (pair) {
+            var on = weaponFilter === pair[0];
+            return h("button", {
+              key: pair[0],
+              className: "dga-pill" + (on ? " dga-pillOn" : ""),
+              style: {
+                color: "var(--dsw-alias-label-secondary)",
+                borderColor: on ? "var(--dsw-alias-label-dimmed)" : "var(--dsw-alias-border-l2)",
+                background: on ? "var(--dsw-alias-bg-layer-3)" : "transparent",
+              },
+              onClick: function () { setWeaponFilter(on ? "" : pair[0]); },
+            }, pair[1]);
+          })));
+      })(),
+      (function () {
         var CATS = [
           { key: "region:", label: "地区" },
           { key: "body:", label: "体型" },
@@ -1905,7 +1923,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             h("div", { className: "dga-sub" },
               c.rarity + "★ · " + (c.elementZh || "") + " · " + (c.typeZh || "")),
             h("div", { className: "dga-sub dga-wStats" },
-              c.owned ? "Lv." + c.level + (c.constellation ? " · " + c.constellation + "命" : "") : (c.body || c.region || "")),
+              (c.body ? c.body + " · " : "") + (c.owned ? "Lv." + c.level + (c.constellation ? " · " + c.constellation + "命" : "") : (c.region || "未收集"))),
             h("div", { className: "dga-codexBadge" + (c.owned ? " dga-codexBadgeOwn" : "") },
               c.owned ? (c.showcase ? "已收集 · 展柜" : "已收集") : "未收集")));
       })));
