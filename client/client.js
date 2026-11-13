@@ -111,6 +111,27 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
     ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
+    ".dga-collectGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px;padding:6px 0 16px}",
+    ".dga-collect{appearance:none;font:inherit;text-align:left;cursor:pointer;padding:10px 12px 11px;border-radius:10px;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:inherit;display:flex;flex-direction:column;gap:8px;transition:border-color .14s ease,background .14s ease}",
+    ".dga-collect:hover{border-color:var(--dsw-alias-label-dimmed)}",
+    ".dga-collectOn{border-color:var(--dga-blue)}",
+    ".dga-collectDoneCard{border-color:color-mix(in srgb, var(--dga-gold) 45%, var(--dsw-alias-border-l2))}",
+    ".dga-collectHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px}",
+    ".dga-collectLabel{font-size:12.5px;font-weight:600;letter-spacing:.01em}",
+    ".dga-collectNum{font-size:13px;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);font-weight:600}",
+    ".dga-collectNumDone{color:var(--dga-gold)}",
+    ".dga-collectTotal{font-size:11.5px;font-weight:400;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-dots{display:flex;flex-wrap:wrap;gap:3px}",
+    ".dga-dot{width:6px;height:6px;border-radius:2px;background:var(--dsw-alias-bg-layer-3);box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--dsw-alias-border-l2) 70%, transparent)}",
+    ".dga-dotOn{background:var(--dga-blue);box-shadow:none}",
+    ".dga-dotDone{background:var(--dga-gold)}",
+    ".dga-wCard .dga-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}",
+    // 未拥有：图标保持彩色，用虚线边框区分，不靠去色
+    ".dga-wCardOff{border-style:dashed;border-color:color-mix(in srgb, var(--dsw-alias-border-l2) 85%, transparent);background:color-mix(in srgb, var(--dsw-alias-bg-layer-2) 55%, transparent)}",
+    // 图鉴卡片的数值行允许换行，避免「元素充能效率 36.8%」被省略号吃掉
+    ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
+    ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
+    ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
     ".dga-collectGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:6px 0 14px}",
     ".dga-collect{appearance:none;font:inherit;text-align:left;cursor:pointer;padding:10px 12px;border-radius:12px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:inherit;display:flex;flex-direction:column;gap:6px}",
     ".dga-collectOn{border-color:color-mix(in srgb, var(--dga-gold) 55%, transparent);background:color-mix(in srgb, var(--dga-gold) 8%, var(--dsw-alias-bg-layer-2))}",
@@ -1789,21 +1810,27 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           style: { maxWidth: 200 },
         })),
       h("div", { className: "dga-collectGrid" }, (codex.groups || []).map(function (group) {
-        var pct = group.total ? Math.round((group.owned / group.total) * 100) : 0;
         var on = groupFilter === group.key;
+        var done = group.total > 0 && group.owned >= group.total;
+        var dots = [];
+        for (var d = 0; d < group.total; d += 1) {
+          dots.push(h("span", {
+            key: "d" + d,
+            className: "dga-dot" + (d < group.owned ? " dga-dotOn" : "") + (done ? " dga-dotDone" : ""),
+          }));
+        }
         return h("button", {
           key: group.key,
-          className: "dga-collect" + (on ? " dga-collectOn" : ""),
+          className: "dga-collect" + (on ? " dga-collectOn" : "") + (done ? " dga-collectDoneCard" : ""),
+          title: group.missing.length ? "缺：" + group.missing.join("、") : "已集齐",
           onClick: function () { setGroupFilter(on ? "" : group.key); },
         },
           h("div", { className: "dga-collectHead" },
             h("span", { className: "dga-collectLabel" }, group.label),
-            h("span", { className: "dga-collectNum" }, group.owned + " / " + group.total)),
-          h("div", { className: "dga-barTrack" },
-            h("span", { className: "dga-barFill", style: { width: pct + "%", background: pct >= 100 ? "var(--dga-gold)" : "var(--dga-blue)" } })),
-          group.missing.length
-            ? h("div", { className: "dga-collectMissing" }, "缺：" + group.missing.join("、"))
-            : h("div", { className: "dga-collectMissing dga-collectDone" }, "已集齐"));
+            h("span", { className: "dga-collectNum" + (done ? " dga-collectNumDone" : "") },
+              group.owned,
+              h("span", { className: "dga-collectTotal" }, " / " + group.total))),
+          h("div", { className: "dga-dots" }, dots));
       })),
       h("div", { className: "dga-sub", style: { padding: "4px 2px 8px" } },
         filtered.length + " / " + codex.total + " 个角色 · 已收集 " + codex.owned +

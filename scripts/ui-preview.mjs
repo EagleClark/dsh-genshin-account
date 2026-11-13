@@ -85,6 +85,27 @@ async function buildLocal() {
     /* no cached catalog yet */
   }
   const codex = model.weaponCodex(snapshot, catalog || model.catalogFromDict(), {})
+  let avatarCatalog = null
+  try {
+    avatarCatalog = JSON.parse(readFileSync(join(storageDir, 'character-catalog-' + showcaseUid + '.json'), 'utf8'))
+  } catch {
+    /* no cached avatar catalog */
+  }
+  let tags = {}
+  let collections = { groups: [] }
+  try {
+    tags = JSON.parse(readFileSync(join(root, 'data', 'character-tags.json'), 'utf8'))
+    collections = JSON.parse(readFileSync(join(root, 'data', 'character-collections.json'), 'utf8'))
+  } catch {
+    /* tags are optional in preview */
+  }
+  const charCodex = model.characterCodex(
+    snapshot,
+    avatarCatalog || { at: 0, characters: model.charactersFromDict() },
+    tags,
+    collections,
+    {},
+  )
 
   const characters = model.listCharacters(snapshot, {})
   const chosen = characters.find((c) => c.showcase) || characters[0]
@@ -116,6 +137,7 @@ async function buildLocal() {
     },
     '/weapons': { ok: true, weapons: model.listWeapons(snapshot, { limit: 100 }) },
     '/weaponCodex': { ok: true, ...codex },
+    '/characterCodex': { ok: true, ...charCodex },
     '/character': found.error ? { ok: false, error: found.error } : { ok: true, character: model.characterView(snapshot, found) },
   }
 }
