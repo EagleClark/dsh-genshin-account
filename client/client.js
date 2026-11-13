@@ -1829,6 +1829,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var query = queryState[0], setQuery = queryState[1];
     var weaponState = React.useState("");
     var weaponFilter = weaponState[0], setWeaponFilter = weaponState[1];
+    var rarityState = React.useState("");
+    var rarityFilter = rarityState[0], setRarityFilter = rarityState[1];
     if (!codex) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-skelStack" }, h(ListSkeleton)));
     if (codex.error) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-empty" }, "图鉴读取失败：" + codex.error));
 
@@ -1839,6 +1841,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       bucket.total += 1;
       if (rows[r].owned) bucket.owned += 1;
     }
+    var rarityStats = {};
+    for (var q = 0; q < rows.length; q += 1) {
+      var rb = rarityStats[rows[q].rarity] || (rarityStats[rows[q].rarity] = { total: 0, owned: 0 });
+      rb.total += 1;
+      if (rows[q].owned) rb.owned += 1;
+    }
     var activeGroup = null;
     for (var i = 0; i < (codex.groups || []).length; i += 1) {
       if (codex.groups[i].key === groupFilter) activeGroup = codex.groups[i];
@@ -1848,7 +1856,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (activeGroup && activeGroup.names.indexOf(c.name) === -1) return false;
       if (ownFilter === "owned" && !c.owned) return false;
       if (ownFilter === "unowned" && c.owned) return false;
-      if (query && String(c.name).indexOf(query) === -1) return false; if (weaponFilter && c.type !== weaponFilter) return false;
+      if (query && String(c.name).indexOf(query) === -1) return false; if (weaponFilter && c.type !== weaponFilter) return false; if (rarityFilter && String(c.rarity) !== rarityFilter) return false;
       return true;
     });
     if (order) {
@@ -1874,6 +1882,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           onChange: function (event) { setQuery(event.target.value); },
           style: { maxWidth: 200 },
         })),
+
       (function () {
         var CATS = [
           { key: "body:", label: "体型" },
@@ -1927,6 +1936,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                   background: "color-mix(in srgb, " + tone + " " + (on ? 22 : 10) + "%, transparent)",
                 };
               })(),
+
               onClick: function () { setWeaponFilter(on ? "" : pair[0]); },
             },
               h("span", { className: "dga-pillLabel" }, pair[1]),
@@ -1937,6 +1947,31 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 return h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
                   stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total));
               })());
+          })));
+      })(),
+      (function () {
+        var STARS = [[5, "5★"], [4, "4★"]];
+        return h("div", { className: "dga-filterRow", key: "rarity" },
+          h("span", { className: "dga-filterCat" }, "星级"),
+          h("div", { className: "dga-pillRow" }, STARS.map(function (pair) {
+            var key = String(pair[0]);
+            var on = rarityFilter === key;
+            var stat = rarityStats[pair[0]] || { total: 0, owned: 0 };
+            var done = stat.owned >= stat.total && stat.total > 0;
+            var tone = pair[0] === 5 ? "#d8b566" : "#a884d8";
+            return h("button", {
+              key: key,
+              className: "dga-pill" + (on ? " dga-pillOn" : ""),
+              style: {
+                color: tone,
+                borderColor: "color-mix(in srgb, " + tone + " " + (on ? "100%" : "45%") + ", transparent)",
+                background: "color-mix(in srgb, " + tone + " " + (on ? 22 : 10) + "%, transparent)",
+              },
+              onClick: function () { setRarityFilter(on ? "" : key); },
+            },
+              h("span", { className: "dga-pillLabel" }, pair[1]),
+              h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
+                stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total)));
           })));
       })(),
       h("div", { className: "dga-sub", style: { padding: "4px 2px 8px" } },
