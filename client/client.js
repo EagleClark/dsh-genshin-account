@@ -1468,6 +1468,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               h(ElementChart, {
                 list: list,
                 total: total,
+                onPick: function (key) { props.onNavigate({ tab: "characters", element: [key], own: "all" }); },
                 depsKey: list.map(function (entry) { return entry.key + entry.count; }).join(","),
               }),
               list.some(function (e) { return e.key === "none"; })
