@@ -966,7 +966,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   }
 
   function StatTile(props) {
-    return h("div", { className: "dga-tile" },
+    return h("div", { className: "dga-tile" + (props.onClick ? " dga-tileLink" : ""), onClick: props.onClick, title: props.title || "" },
       h("div", { className: "dga-tileValue" }, props.value),
       h("div", { className: "dga-tileLabel" }, props.label));
   }
@@ -1396,7 +1396,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           ? list.map(function (entry) {
               return h("span", {
                 key: entry.key,
-                className: "dga-ribbonSeg",
+                className: "dga-ribbonSeg dga-clickable", onClick: function () { props.onNavigate({ tab: "characters", element: [entry.key], own: "all" }); },
                 style: { flex: entry.count, background: elementColor(entry.key) },
                 title: (entry.key === "none" ? "其他" : entry.zh) + " " + entry.count + " 个 · " + pct(entry.count) + "%",
               });
@@ -1419,10 +1419,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 ? h("span", { className: "dga-tagSoft" }, "主力元素 " + (topElement.key === "none" ? "其他" : topElement.zh) + " " + pct(topElement.count) + "%")
                 : null)),
           h("div", { className: "dga-heroStats" },
-            h(StatTile, { value: String(counts.characters || 0), label: "角色" }),
-            h(StatTile, { value: String(five), label: "五星" }),
-            h(StatTile, { value: String(four), label: "四星" }),
-            h(StatTile, { value: String(showcase), label: "展柜" })))),
+            h(StatTile, { value: String(counts.characters || 0), label: "角色", onClick: function () { props.onNavigate({ tab: "characters", own: "all" }); } }),
+            h(StatTile, { value: String(five), label: "五星", onClick: function () { props.onNavigate({ tab: "characters", rarity: ["5"], own: "all" }); } }),
+            h(StatTile, { value: String(four), label: "四星", onClick: function () { props.onNavigate({ tab: "characters", rarity: ["4"], own: "all" }); } }),
+            h(StatTile, { value: String(showcase), label: "展柜", onClick: function () { props.onNavigate({ tab: "characters", own: "all" }); } })))),
 
       // ── 展柜角色 ────────────────────────────────────────────────────────
       (function () {
@@ -1886,6 +1886,13 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     if (!codex) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-skelStack" }, h(ListSkeleton)));
     if (codex.error) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-empty" }, "图鉴读取失败：" + codex.error));
 
+    React.useEffect(function () {
+      var intent = props.intent;
+      if (!intent || intent.tab !== "characters") return;
+      if (intent.element) setElementFilter(intent.element);
+      if (intent.rarity) setRarityFilter(intent.rarity);
+      if (intent.own) setOwnFilter(intent.own);
+    }, [props.intent]);
     var rows = codex.characters || [];
     var typeStats = {};
     var rarityStats = {};
@@ -2140,7 +2147,19 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var sortState = React.useState("level");
     var sort = sortState[0], setSort = sortState[1];
     var elementState = React.useState("");
-    var elementFilter = elementState[0], setElementFilter = elementState[1];
+    var elementMulti = elementState[0], setElementMulti = elementState[1];
+    var elementFilter = elementMulti[0] || "";
+    var setElementFilter = function (next) { setElementMulti(next ? [next] : []); };
+    React.useEffect(function () {
+      var intent = props.intent;
+      if (!intent || intent.tab !== "characters") return;
+      if (intent.rarity || intent.own) {
+        setMode("codex");
+      } else {
+        setMode("mine");
+        if (intent.element) setElementMulti(intent.element);
+      }
+    }, [props.intent]);
     var modeState = React.useState("mine");
     var mode = modeState[0], setMode = modeState[1];
     var codexState = React.useState(null);
@@ -2191,7 +2210,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     if (mode === "codex" && codex) {
       return h("div", { className: "dga-col" },
         h("div", { className: "dga-modeRow" }, modeSwitch),
-        h(CharacterCodexView, { codex: codex }));
+        h(CharacterCodexView, { codex: codex, intent: props.intent }));
     }
 
     return h("div", { className: "dga-col" },
@@ -2205,11 +2224,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           onChange: function (event) { props.onQuery(event.target.value); },
         }),
         h("div", { className: "dga-chipRow" },
-          chip("all", "全部", !elementFilter, function () { setElementFilter(""); }),
+          h("span", { key: "all", className: "dga-elPick" + (!elementFilter ? " dga-elPickOn" : ""), onClick: function () { setElementFilter(""); }, title: "全部" }, "全部"),
           elements.map(function (key) {
-            return chip(key, ELEMENT_ZH_KEY[key] || key, elementFilter === key, function () {
-              setElementFilter(elementFilter === key ? "" : key);
-            });
+            var on = elementFilter === key;
+            return h("span", {
+              key: key,
+              className: "dga-elPick" + (on ? " dga-elPickOn" : ""),
+              style: on ? { borderColor: elementColor(key) } : null,
+              onClick: function () { setElementFilter(on ? "" : key); },
+              title: ELEMENT_ZH_KEY[key] || key,
+            }, h(ElementGlyph, { element: key, size: 14 }));
           })),
         h("div", { className: "dga-chipRow" },
           [["level", "等级"], ["rarity", "稀有度"], ["constellation", "命座"], ["name", "名字"]].map(function (pair) {
@@ -4420,6 +4444,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         "还没有可显示的数据。" + (configured === false ? "先到「设置」里选一种数据源。" : "配置好数据源后点右上角「同步」。"));
     } else if (tab === "overview") {
       body = h(OverviewTab, {
+        onNavigate: goTo,
         overview: summary.overview,
         allCharacters: summary.characters || [],
         onOpenCharacter: function (name) {
@@ -4430,6 +4455,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       });
     } else if (tab === "characters") {
       body = h(CharactersTab, {
+        intent: navIntent,
         summary: summary,
         query: query,
         onQuery: setQuery,
