@@ -1838,7 +1838,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             w.rarity + "★ · " + (w.typeZh || w.type) + (w.owned && w.level ? " · Lv." + w.level : "") +
             (w.owned && w.refinement ? " · 精炼 " + w.refinement : "")),
           h("div", { className: "dga-sub dga-wStats" },
-            detail.baseAtk ? "基础攻击 " + detail.baseAtk + (sub ? " · " + sub : "") : (sub || "—")),
+            detail.baseAtk
+              ? "基础攻击 " + detail.baseAtk + (sub ? " · " + sub : "")
+              : sub || (w.detail ? "—" : "数据未收录")),
           h("div", { className: "dga-codexBadge" + (w.owner ? " dga-codexBadgeOn" : w.owned ? " dga-codexBadgeOwn" : "") },
             w.owner ? "已装备 · " + w.owner : w.owned ? "已拥有" : "未拥有"))),
       rect ? h(WeaponPopover, { w: { name: w.name, rarity: w.rarity, type: w.type, typeZh: w.typeZh, icon: w.icon, refinement: w.refinement, detail: w.detail }, box: rect }) : null);
