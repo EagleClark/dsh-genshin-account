@@ -113,6 +113,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
     ".dga-col{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}",
     ".dga-modeRow{flex:0 0 auto;padding:10px 20px 2px}",
+    ".dga-pillIcon{padding:3px 9px;align-items:center}",
+    ".dga-pillIcon .dga-elemIcon{display:inline-flex;align-items:center;line-height:0}",
+    ".dga-moreBtn{appearance:none;font:inherit;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;border:1px dashed var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-tertiary)}",
+    ".dga-moreBtn:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}",
+    ".dga-moreBtnOn{border-style:solid}",
+    ".dga-moreBtnHot{color:var(--dsw-alias-label-primary);border-style:solid}",
+    ".dga-moreNum{font-size:11px;font-variant-numeric:tabular-nums;background:var(--dsw-alias-bg-layer-3);border-radius:999px;padding:0 6px}",
+    ".dga-moreCaret{font-size:10px;opacity:.8}",
     ".dga-modeSwitch{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
     ".dga-modeBtn{appearance:none;font:inherit;font-size:12.5px;line-height:1.7;cursor:pointer;border:0;border-radius:999px;padding:3px 14px;background:transparent;color:var(--dsw-alias-label-secondary);display:inline-flex;align-items:baseline;gap:6px;transition:background .16s ease,color .16s ease}",
     ".dga-modeBtn:hover{color:var(--dsw-alias-label-primary)}",
@@ -1818,6 +1826,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     "list:七神": "#d8b566",
     "list:harbinger": "#c2564f",
   };
+  /** 元素配色，和概览页的元素色一致。 */
+  var ELEMENT_COLOR = {
+    pyro: "#e2683c",
+    hydro: "#4aa8d8",
+    anemo: "#74c2a8",
+    electro: "#a48bd0",
+    cryo: "#9fd6e3",
+    geo: "#d3a24a",
+    dendro: "#8fbf4d",
+  };
   /** 武器类型的颜色（各自一个色相，便于在筛选行里区分）。 */
   var WEAPON_COLOR = {
     sword: "#6fa8dc",
@@ -1856,12 +1874,17 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var weaponFilter = weaponState[0], setWeaponFilter = weaponState[1];
     var rarityState = React.useState([]);
     var rarityFilter = rarityState[0], setRarityFilter = rarityState[1];
+    var elementState = React.useState([]);
+    var elementFilter = elementState[0], setElementFilter = elementState[1];
+    var moreState = React.useState(false);
+    var showMore = moreState[0], setShowMore = moreState[1];
     if (!codex) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-skelStack" }, h(ListSkeleton)));
     if (codex.error) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-empty" }, "图鉴读取失败：" + codex.error));
 
     var rows = codex.characters || [];
     var typeStats = {};
     var rarityStats = {};
+    var elementStats = {};
     for (var r = 0; r < rows.length; r += 1) {
       var rowItem = rows[r];
       var bucket = typeStats[rowItem.type] || (typeStats[rowItem.type] = { total: 0, owned: 0 });
@@ -1870,6 +1893,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       var rb = rarityStats[rowItem.rarity] || (rarityStats[rowItem.rarity] = { total: 0, owned: 0 });
       rb.total += 1;
       if (rowItem.owned) rb.owned += 1;
+      var eb = elementStats[rowItem.element] || (elementStats[rowItem.element] = { total: 0, owned: 0 });
+      eb.total += 1;
+      if (rowItem.owned) eb.owned += 1;
     }
 
     var GROUPS = codex.groups || [];
@@ -1896,6 +1922,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (query && String(c.name).indexOf(query) === -1) return false;
       if (weaponFilter.length && weaponFilter.indexOf(c.type) === -1) return false;
       if (rarityFilter.length && rarityFilter.indexOf(String(c.rarity)) === -1) return false;
+      if (elementFilter.length && elementFilter.indexOf(c.element) === -1) return false;
       return true;
     });
     if (activeGroups.length) {
@@ -1918,6 +1945,10 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     for (var w2 = 0; w2 < weaponFilter.length; w2 += 1) {
       tags.push({ key: weaponFilter[w2], label: TYPE_LABEL[weaponFilter[w2]] || weaponFilter[w2], kind: "weapon" });
     }
+    var ELEMENT_LABEL = { pyro: "火", hydro: "水", anemo: "风", electro: "雷", cryo: "冰", geo: "岩", dendro: "草" };
+    for (var e2 = 0; e2 < elementFilter.length; e2 += 1) {
+      tags.push({ key: elementFilter[e2], label: ELEMENT_LABEL[elementFilter[e2]] || elementFilter[e2], kind: "element" });
+    }
     for (var r2 = 0; r2 < rarityFilter.length; r2 += 1) {
       tags.push({ key: rarityFilter[r2], label: rarityFilter[r2] + "★", kind: "rarity" });
     }
@@ -1925,6 +1956,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (tag.kind === "group") setGroupFilter(groupFilter.filter(function (k) { return k !== tag.key; }));
       if (tag.kind === "weapon") setWeaponFilter(weaponFilter.filter(function (k) { return k !== tag.key; }));
       if (tag.kind === "rarity") setRarityFilter(rarityFilter.filter(function (k) { return k !== tag.key; }));
+      if (tag.kind === "element") setElementFilter(elementFilter.filter(function (k) { return k !== tag.key; }));
     };
     var toggle = function (list, setList, key) {
       setList(list.indexOf(key) === -1 ? list.concat([key]) : list.filter(function (k) { return k !== key; }));
@@ -1984,6 +2016,44 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         });
       })(),
       (function () {
+        var moreCount = elementFilter.length + weaponFilter.length + rarityFilter.length;
+        return h("div", { className: "dga-filterRow", key: "more" },
+          h("span", { className: "dga-filterCat" }, ""),
+          h("div", { className: "dga-pillRow" },
+            h("button", {
+              className: "dga-moreBtn" + (showMore ? " dga-moreBtnOn" : "") + (moreCount && !showMore ? " dga-moreBtnHot" : ""),
+              onClick: function () { setShowMore(!showMore); },
+            },
+              showMore ? "收起筛选" : "更多筛选",
+              moreCount ? h("span", { className: "dga-moreNum" }, String(moreCount)) : null,
+              h("span", { className: "dga-moreCaret" }, showMore ? "▴" : "▾"))));
+      })(),
+      showMore ? [
+      (function () {
+        var ELEMENTS = [["pyro", "火"], ["hydro", "水"], ["anemo", "风"], ["electro", "雷"], ["cryo", "冰"], ["geo", "岩"], ["dendro", "草"]];
+        return h("div", { className: "dga-filterRow", key: "element" },
+          h("span", { className: "dga-filterCat" }, "元素"),
+          h("div", { className: "dga-pillRow" }, ELEMENTS.map(function (pair) {
+            var on = elementFilter.indexOf(pair[0]) !== -1;
+            var tone = ELEMENT_COLOR[pair[0]] || "#8b93a5";
+            var stat = elementStats[pair[0]] || { total: 0, owned: 0 };
+            return h("button", {
+              key: pair[0],
+              className: "dga-pill dga-pillIcon" + (on ? " dga-pillOn" : ""),
+              style: {
+                color: tone,
+                borderColor: on ? tone : "color-mix(in srgb, " + tone + " 40%, transparent)",
+                borderWidth: on ? 2 : 1.5,
+                background: "color-mix(in srgb, " + tone + " 12%, transparent)",
+              },
+              title: pair[1] + " · " + stat.owned + "/" + stat.total,
+              onClick: function () { toggle(elementFilter, setElementFilter, pair[0]); },
+            },
+              on ? h("span", { className: "dga-pillTick" }, "✓") : null,
+              h(ElementGlyph, { element: pair[0], size: 15 }));
+          })));
+      })(),
+      (function () {
         var TYPES = [["sword", "单手剑"], ["claymore", "双手剑"], ["polearm", "长柄武器"], ["bow", "弓"], ["catalyst", "法器"]];
         return h("div", { className: "dga-filterRow", key: "weapon" },
           h("span", { className: "dga-filterCat" }, "武器"),
@@ -2036,6 +2106,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total)));
           })));
       })(),
+      ] : null,
       h("div", { className: "dga-sub", style: { padding: "4px 2px 8px" } },
         filtered.length + " / " + codex.total + " 个角色 · 已收集 " + codex.owned +
         (codex.warning ? " · " + codex.warning : codex.cached ? " · 缓存" : "")),
