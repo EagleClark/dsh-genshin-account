@@ -3703,6 +3703,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     // The panel opens on the form so a first-time user sees the login steps; once
     // the account loads it moves to 概览 unless the user already clicked a tab.
     var tabTouched = React.useRef(Boolean(panelTabMemory));
+    var navState = React.useState(null);
+    var navIntent = navState[0], setNavIntent = navState[1];
+    var goTo = function (intent) {
+      if (!intent) return;
+      tabTouched.current = true;
+      panelTabMemory = intent.tab;
+      setNavIntent({ id: Date.now(), tab: intent.tab, element: intent.element, rarity: intent.rarity, own: intent.own });
+      setTab(intent.tab);
+    };
 
     var summaryState = React.useState(null);
     var summary = summaryState[0], setSummary = summaryState[1];
