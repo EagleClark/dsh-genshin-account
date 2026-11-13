@@ -1819,6 +1819,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var ownFilter = ownState[0], setOwnFilter = ownState[1];
     var queryState = React.useState("");
     var query = queryState[0], setQuery = queryState[1];
+    var weaponState = React.useState("");
+    var weaponFilter = weaponState[0], setWeaponFilter = weaponState[1];
     if (!codex) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-skelStack" }, h(ListSkeleton)));
     if (codex.error) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-empty" }, "图鉴读取失败：" + codex.error));
 

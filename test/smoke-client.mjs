@@ -535,7 +535,12 @@ if (fails.length) {
     if (/^\s*if \(.*\) return /.test(line)) sawReturn = true
     if (sawReturn && /React\.use(State|Effect|Memo|Ref|Callback)\(/.test(line)) offenders.push(current + ':' + (i + 1))
   }
-  check('hooks 不能写在 early return 之后', offenders.length === 0, offenders.join(', '))
+  // 视图内用到的筛选变量必须真的声明过（0.61.7 把 weaponFilter 用到了没声明的地方）
+for (const name of ['weaponFilter', 'groupFilter', 'ownFilter']) {
+  check('筛选变量已声明: ' + name, new RegExp('var ' + name + '\\b').test(clientSource), name)
+}
+
+check('hooks 不能写在 early return 之后', offenders.length === 0, offenders.join(', '))
 }
 
 console.log('\nall checks passed')
