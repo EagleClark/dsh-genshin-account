@@ -1806,6 +1806,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     "list:七神": "#d8b566",
     "list:harbinger": "#c2564f",
   };
+  /** 武器类型的颜色（各自一个色相，便于在筛选行里区分）。 */
+  var WEAPON_COLOR = {
+    sword: "#6fa8dc",
+    claymore: "#c0703c",
+    polearm: "#7aa05a",
+    bow: "#b98cc9",
+    catalyst: "#4fbfa8",
+  };
   function collectColor(key) {
     return COLLECT_COLOR[key] || "var(--dsw-alias-label-secondary)";
   }
@@ -1834,7 +1842,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (activeGroup && activeGroup.names.indexOf(c.name) === -1) return false;
       if (ownFilter === "owned" && !c.owned) return false;
       if (ownFilter === "unowned" && c.owned) return false;
-      if (query && String(c.name).indexOf(query) === -1) return false;
+      if (query && String(c.name).indexOf(query) === -1) return false; if (weaponFilter && c.type !== weaponFilter) return false;
       return true;
     });
     if (order) {
@@ -1869,11 +1877,14 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             return h("button", {
               key: pair[0],
               className: "dga-pill" + (on ? " dga-pillOn" : ""),
-              style: {
-                color: "var(--dsw-alias-label-secondary)",
-                borderColor: on ? "var(--dsw-alias-label-dimmed)" : "var(--dsw-alias-border-l2)",
-                background: on ? "var(--dsw-alias-bg-layer-3)" : "transparent",
-              },
+              style: (function () {
+                var tone = WEAPON_COLOR[pair[0]] || "var(--dsw-alias-label-secondary)";
+                return {
+                  color: tone,
+                  borderColor: "color-mix(in srgb, " + tone + " " + (on ? "100%" : "45%") + ", transparent)",
+                  background: "color-mix(in srgb, " + tone + " " + (on ? 22 : 10) + "%, transparent)",
+                };
+              })(),
               onClick: function () { setWeaponFilter(on ? "" : pair[0]); },
             }, pair[1]);
           })));

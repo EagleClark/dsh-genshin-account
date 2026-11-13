@@ -535,7 +535,9 @@ if (fails.length) {
     if (/^\s*if \(.*\) return /.test(line)) sawReturn = true
     if (sawReturn && /React\.use(State|Effect|Memo|Ref|Callback)\(/.test(line)) offenders.push(current + ':' + (i + 1))
   }
-  // 视图内用到的筛选变量必须真的声明过（0.61.7 把 weaponFilter 用到了没声明的地方）
+  check('武器筛选真的应用了', clientSource.includes('c.type !== weaponFilter'), 'predicate')
+
+// 视图内用到的筛选变量必须真的声明过（0.61.7 把 weaponFilter 用到了没声明的地方）
 for (const name of ['weaponFilter', 'groupFilter', 'ownFilter']) {
   check('筛选变量已声明: ' + name, new RegExp('var ' + name + '\\b').test(clientSource), name)
 }
