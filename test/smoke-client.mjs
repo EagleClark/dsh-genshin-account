@@ -535,7 +535,10 @@ if (fails.length) {
     if (/^\s*if \(.*\) return /.test(line)) sawReturn = true
     if (sawReturn && /React\.use(State|Effect|Memo|Ref|Callback)\(/.test(line)) offenders.push(current + ':' + (i + 1))
   }
-  check('武器筛选真的应用了', clientSource.includes('c.type !== weaponFilter'), 'predicate')
+  check('多选筛选用数组状态', clientSource.includes('groupFilter.indexOf(') && clientSource.includes('weaponFilter.indexOf('), 'multi')
+check('已选筛选可删除', clientSource.includes('removeTag') && clientSource.includes('dga-tagX'), 'tags')
+
+check('武器筛选真的应用了', clientSource.includes('c.type !== weaponFilter'), 'predicate')
 
 // 视图内用到的筛选变量必须真的声明过（0.61.7 把 weaponFilter 用到了没声明的地方）
 for (const name of ['weaponFilter', 'groupFilter', 'ownFilter']) {

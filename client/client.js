@@ -111,7 +111,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
     ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
-    ".dga-filterRow{display:flex;align-items:flex-start;gap:10px;padding:2px 0}",
+    ".dga-searchRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 2px}",
+    ".dga-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 4px 2px 10px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);font-size:12px;line-height:1.6;background:color-mix(in srgb, var(--dsw-alias-bg-layer-3) 60%, transparent)}",
+    ".dga-tagX{appearance:none;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;font-size:13px;line-height:1;padding:0 3px;border-radius:999px}",
+    ".dga-tagX:hover{color:var(--dsw-alias-label-primary)}",
+    ".dga-pillTick{font-size:10.5px;opacity:.95}",
     ".dga-filterCat{flex:0 0 28px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);padding-top:6px}",
     ".dga-pillRow{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px;flex:1 1 auto;min-width:0}",
     ".dga-pill{appearance:none;font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:baseline;gap:6px;padding:3px 12px;border-radius:999px;border:1.5px solid transparent;font-size:12.5px;line-height:1.7;transition:background .14s ease,border-color .14s ease,transform .12s ease}",
@@ -1821,68 +1825,100 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   /** 角色图鉴：收藏进度（体型 / 七神 / 执行官 / 地区）+ 全量角色网格。 */
   function CharacterCodexView(props) {
     var codex = props.codex;
-    var groupState = React.useState("");
+    var groupState = React.useState([]);
     var groupFilter = groupState[0], setGroupFilter = groupState[1];
     var ownState = React.useState("all");
     var ownFilter = ownState[0], setOwnFilter = ownState[1];
     var queryState = React.useState("");
     var query = queryState[0], setQuery = queryState[1];
-    var weaponState = React.useState("");
+    var weaponState = React.useState([]);
     var weaponFilter = weaponState[0], setWeaponFilter = weaponState[1];
-    var rarityState = React.useState("");
+    var rarityState = React.useState([]);
     var rarityFilter = rarityState[0], setRarityFilter = rarityState[1];
     if (!codex) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-skelStack" }, h(ListSkeleton)));
     if (codex.error) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-empty" }, "图鉴读取失败：" + codex.error));
 
     var rows = codex.characters || [];
     var typeStats = {};
-    for (var r = 0; r < rows.length; r += 1) {
-      var bucket = typeStats[rows[r].type] || (typeStats[rows[r].type] = { total: 0, owned: 0 });
-      bucket.total += 1;
-      if (rows[r].owned) bucket.owned += 1;
-    }
     var rarityStats = {};
-    for (var q = 0; q < rows.length; q += 1) {
-      var rb = rarityStats[rows[q].rarity] || (rarityStats[rows[q].rarity] = { total: 0, owned: 0 });
+    for (var r = 0; r < rows.length; r += 1) {
+      var rowItem = rows[r];
+      var bucket = typeStats[rowItem.type] || (typeStats[rowItem.type] = { total: 0, owned: 0 });
+      bucket.total += 1;
+      if (rowItem.owned) bucket.owned += 1;
+      var rb = rarityStats[rowItem.rarity] || (rarityStats[rowItem.rarity] = { total: 0, owned: 0 });
       rb.total += 1;
-      if (rows[q].owned) rb.owned += 1;
+      if (rowItem.owned) rb.owned += 1;
     }
-    var activeGroup = null;
-    for (var i = 0; i < (codex.groups || []).length; i += 1) {
-      if (codex.groups[i].key === groupFilter) activeGroup = codex.groups[i];
+
+    var GROUPS = codex.groups || [];
+    var activeGroups = GROUPS.filter(function (group) { return groupFilter.indexOf(group.key) !== -1; });
+    var activeNames = null;
+    if (activeGroups.length) {
+      activeNames = {};
+      for (var g = 0; g < activeGroups.length; g += 1) {
+        var names = activeGroups[g].names;
+        for (var n = 0; n < names.length; n += 1) activeNames[names[n]] = true;
+      }
     }
-    var order = activeGroup ? activeGroup.names : null;
     var filtered = rows.filter(function (c) {
-      if (activeGroup && activeGroup.names.indexOf(c.name) === -1) return false;
+      if (activeNames && !activeNames[c.name]) return false;
       if (ownFilter === "owned" && !c.owned) return false;
       if (ownFilter === "unowned" && c.owned) return false;
-      if (query && String(c.name).indexOf(query) === -1) return false; if (weaponFilter && c.type !== weaponFilter) return false; if (rarityFilter && String(c.rarity) !== rarityFilter) return false;
+      if (query && String(c.name).indexOf(query) === -1) return false;
+      if (weaponFilter.length && weaponFilter.indexOf(c.type) === -1) return false;
+      if (rarityFilter.length && rarityFilter.indexOf(String(c.rarity)) === -1) return false;
       return true;
     });
-    if (order) {
-      filtered = filtered.slice().sort(function (a, b) {
-        return order.indexOf(a.name) - order.indexOf(b.name);
+    if (activeGroups.length) {
+      var order = activeGroups[0].names;
+      filtered = filtered.slice().sort(function (x, y) {
+        return order.indexOf(x.name) - order.indexOf(y.name);
       });
     }
     var chip = function (key, label, active, onClick) {
       return h("button", { key: key, className: "dga-chipBtn" + (active ? " dga-chipBtnOn" : ""), onClick: onClick }, label);
     };
 
+    // 已选的筛选 → 搜索框后面的可删除标签
+    var tags = [];
+    for (var t = 0; t < GROUPS.length; t += 1) {
+      if (groupFilter.indexOf(GROUPS[t].key) === -1) continue;
+      tags.push({ key: GROUPS[t].key, label: GROUPS[t].label, kind: "group" });
+    }
+    var TYPE_LABEL = { sword: "单手剑", claymore: "双手剑", polearm: "长柄武器", bow: "弓", catalyst: "法器" };
+    for (var w2 = 0; w2 < weaponFilter.length; w2 += 1) {
+      tags.push({ key: weaponFilter[w2], label: TYPE_LABEL[weaponFilter[w2]] || weaponFilter[w2], kind: "weapon" });
+    }
+    for (var r2 = 0; r2 < rarityFilter.length; r2 += 1) {
+      tags.push({ key: rarityFilter[r2], label: rarityFilter[r2] + "★", kind: "rarity" });
+    }
+    var removeTag = function (tag) {
+      if (tag.kind === "group") setGroupFilter(groupFilter.filter(function (k) { return k !== tag.key; }));
+      if (tag.kind === "weapon") setWeaponFilter(weaponFilter.filter(function (k) { return k !== tag.key; }));
+      if (tag.kind === "rarity") setRarityFilter(rarityFilter.filter(function (k) { return k !== tag.key; }));
+    };
+    var toggle = function (list, setList, key) {
+      setList(list.indexOf(key) === -1 ? list.concat([key]) : list.filter(function (k) { return k !== key; }));
+    };
+
     return h("div", { className: "dga-scroll" },
-      h("div", { className: "dga-chipRow", style: { paddingTop: 12 } },
-        h("button", { className: "dga-chipBtn", onClick: props.onBack }, "返回我的角色"),
-        chip("o-all", "全部", ownFilter === "all", function () { setOwnFilter("all"); }),
-        chip("o-own", "已收集", ownFilter === "owned", function () { setOwnFilter("owned"); }),
-        chip("o-no", "未收集", ownFilter === "unowned", function () { setOwnFilter("unowned"); })),
-      h("div", { className: "dga-chipRow" },
+      h("div", { className: "dga-searchRow" },
         h("input", {
           className: "dga-searcher",
           placeholder: "搜索角色…",
           value: query,
           onChange: function (event) { setQuery(event.target.value); },
-          style: { maxWidth: 200 },
+        }),
+        tags.map(function (tag) {
+          return h("span", { key: tag.kind + tag.key, className: "dga-tag" },
+            tag.label,
+            h("button", { className: "dga-tagX", onClick: function () { removeTag(tag); }, title: "移除筛选" }, "×"));
         })),
-
+      h("div", { className: "dga-chipRow", style: { paddingTop: 4 } },
+        chip("o-all", "全部", ownFilter === "all", function () { setOwnFilter("all"); }),
+        chip("o-own", "已收集", ownFilter === "owned", function () { setOwnFilter("owned"); }),
+        chip("o-no", "未收集", ownFilter === "unowned", function () { setOwnFilter("unowned"); })),
       (function () {
         var CATS = [
           { key: "body:", label: "体型" },
@@ -1890,29 +1926,26 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           { key: "region:", label: "地区" },
         ];
         return CATS.map(function (cat) {
-          var members = (codex.groups || []).filter(function (group) {
-            return group.key.indexOf(cat.key) === 0;
-          });
+          var members = GROUPS.filter(function (group) { return group.key.indexOf(cat.key) === 0; });
           if (!members.length) return null;
           return h("div", { className: "dga-filterRow", key: cat.label },
             h("span", { className: "dga-filterCat" }, cat.label),
             h("div", { className: "dga-pillRow" }, members.map(function (group) {
-              var on = groupFilter === group.key;
+              var on = groupFilter.indexOf(group.key) !== -1;
               var done = group.total > 0 && group.owned >= group.total;
               var color = collectColor(group.key);
-              var style = {
-                color: color,
-                borderColor: "color-mix(in srgb, " + color + " 55%, transparent)",
-              };
-              style.background = "color-mix(in srgb, " + color + " " + (on ? 22 : 12) + "%, transparent)";
-              if (on) style.borderColor = color;
               return h("button", {
                 key: group.key,
                 className: "dga-pill" + (on ? " dga-pillOn" : ""),
-                style: style,
+                style: {
+                  color: color,
+                  borderColor: on ? color : "color-mix(in srgb, " + color + " 40%, transparent)",
+                  borderWidth: on ? 2 : 1.5,
+                },
                 title: group.missing.length ? "缺：" + group.missing.join("、") : "已集齐",
-                onClick: function () { setGroupFilter(on ? "" : group.key); },
+                onClick: function () { toggle(groupFilter, setGroupFilter, group.key); },
               },
+                on ? h("span", { className: "dga-pillTick" }, "✓") : null,
                 h("span", { className: "dga-pillLabel" }, group.label),
                 h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
                   group.owned, h("span", { className: "dga-pillTotal" }, "/" + group.total)));
@@ -1924,29 +1957,24 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
         return h("div", { className: "dga-filterRow", key: "weapon" },
           h("span", { className: "dga-filterCat" }, "武器"),
           h("div", { className: "dga-pillRow" }, TYPES.map(function (pair) {
-            var on = weaponFilter === pair[0];
+            var on = weaponFilter.indexOf(pair[0]) !== -1;
+            var stat = typeStats[pair[0]] || { total: 0, owned: 0 };
+            var done = stat.owned >= stat.total && stat.total > 0;
+            var tone = WEAPON_COLOR[pair[0]] || "var(--dsw-alias-label-secondary)";
             return h("button", {
               key: pair[0],
               className: "dga-pill" + (on ? " dga-pillOn" : ""),
-              style: (function () {
-                var tone = WEAPON_COLOR[pair[0]] || "var(--dsw-alias-label-secondary)";
-                return {
-                  color: tone,
-                  borderColor: "color-mix(in srgb, " + tone + " " + (on ? "100%" : "45%") + ", transparent)",
-                  background: "color-mix(in srgb, " + tone + " " + (on ? 22 : 10) + "%, transparent)",
-                };
-              })(),
-
-              onClick: function () { setWeaponFilter(on ? "" : pair[0]); },
+              style: {
+                color: tone,
+                borderColor: on ? tone : "color-mix(in srgb, " + tone + " 40%, transparent)",
+                borderWidth: on ? 2 : 1.5,
+              },
+              onClick: function () { toggle(weaponFilter, setWeaponFilter, pair[0]); },
             },
+              on ? h("span", { className: "dga-pillTick" }, "✓") : null,
               h("span", { className: "dga-pillLabel" }, pair[1]),
-              (function () {
-                var stat = typeStats[pair[0]];
-                if (!stat) return null;
-                var done = stat.owned >= stat.total;
-                return h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
-                  stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total));
-              })());
+              h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
+                stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total)));
           })));
       })(),
       (function () {
@@ -1955,7 +1983,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           h("span", { className: "dga-filterCat" }, "星级"),
           h("div", { className: "dga-pillRow" }, STARS.map(function (pair) {
             var key = String(pair[0]);
-            var on = rarityFilter === key;
+            var on = rarityFilter.indexOf(key) !== -1;
             var stat = rarityStats[pair[0]] || { total: 0, owned: 0 };
             var done = stat.owned >= stat.total && stat.total > 0;
             var tone = pair[0] === 5 ? "#d8b566" : "#a884d8";
@@ -1964,11 +1992,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               className: "dga-pill" + (on ? " dga-pillOn" : ""),
               style: {
                 color: tone,
-                borderColor: "color-mix(in srgb, " + tone + " " + (on ? "100%" : "45%") + ", transparent)",
-                background: "color-mix(in srgb, " + tone + " " + (on ? 22 : 10) + "%, transparent)",
+                borderColor: on ? tone : "color-mix(in srgb, " + tone + " 40%, transparent)",
+                borderWidth: on ? 2 : 1.5,
               },
-              onClick: function () { setRarityFilter(on ? "" : key); },
+              onClick: function () { toggle(rarityFilter, setRarityFilter, key); },
             },
+              on ? h("span", { className: "dga-pillTick" }, "✓") : null,
               h("span", { className: "dga-pillLabel" }, pair[1]),
               h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
                 stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total)));
