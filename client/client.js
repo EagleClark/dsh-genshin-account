@@ -113,7 +113,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
     ".dga-col{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}",
     ".dga-modeRow{flex:0 0 auto;padding:10px 20px 2px}",
-    ".dga-pillIcon{padding:3px 9px;align-items:center}",
+    ".dga-pillIcon{padding:3px 10px;align-items:center;justify-content:center;gap:5px;line-height:1}",
     ".dga-pillIcon .dga-elemIcon{display:inline-flex;align-items:center;line-height:0}",
     ".dga-moreBtn{appearance:none;font:inherit;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;border:1px dashed var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-tertiary)}",
     ".dga-moreBtn:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}",
@@ -130,7 +130,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 4px 2px 10px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);font-size:12px;line-height:1.6;background:color-mix(in srgb, var(--dsw-alias-bg-layer-3) 60%, transparent)}",
     ".dga-tagX{appearance:none;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;font-size:13px;line-height:1;padding:0 3px;border-radius:999px}",
     ".dga-tagX:hover{color:var(--dsw-alias-label-primary)}",
-    ".dga-pillTick{font-size:10.5px;opacity:.95}",
+    ".dga-pillTick{font-size:10.5px;opacity:.95;display:inline-flex;align-items:center;line-height:1}",
     ".dga-filterRow{display:flex;align-items:flex-start;gap:10px;padding:2px 0}",
     ".dga-filterCat{flex:0 0 28px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);padding-top:6px}",
     ".dga-pillRow{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px;flex:1 1 auto;min-width:0}",
@@ -2015,19 +2015,6 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
             })));
         });
       })(),
-      (function () {
-        var moreCount = elementFilter.length + weaponFilter.length + rarityFilter.length;
-        return h("div", { className: "dga-filterRow", key: "more" },
-          h("span", { className: "dga-filterCat" }, ""),
-          h("div", { className: "dga-pillRow" },
-            h("button", {
-              className: "dga-moreBtn" + (showMore ? " dga-moreBtnOn" : "") + (moreCount && !showMore ? " dga-moreBtnHot" : ""),
-              onClick: function () { setShowMore(!showMore); },
-            },
-              showMore ? "收起筛选" : "更多筛选",
-              moreCount ? h("span", { className: "dga-moreNum" }, String(moreCount)) : null,
-              h("span", { className: "dga-moreCaret" }, showMore ? "▴" : "▾"))));
-      })(),
       showMore ? [
       (function () {
         var ELEMENTS = [["pyro", "火"], ["hydro", "水"], ["anemo", "风"], ["electro", "雷"], ["cryo", "冰"], ["geo", "岩"], ["dendro", "草"]];
@@ -2050,7 +2037,8 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
               onClick: function () { toggle(elementFilter, setElementFilter, pair[0]); },
             },
               on ? h("span", { className: "dga-pillTick" }, "✓") : null,
-              h(ElementGlyph, { element: pair[0], size: 15 }));
+              h(ElementGlyph, { element: pair[0], size: 13 }),
+              h("span", { className: "dga-pillNum" }, stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total)));
           })));
       })(),
       (function () {
@@ -2107,6 +2095,19 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           })));
       })(),
       ] : null,
+      (function () {
+        var moreCount = elementFilter.length + weaponFilter.length + rarityFilter.length;
+        return h("div", { className: "dga-filterRow", key: "more" },
+          h("span", { className: "dga-filterCat" }, ""),
+          h("div", { className: "dga-pillRow" },
+            h("button", {
+              className: "dga-moreBtn" + (showMore ? " dga-moreBtnOn" : "") + (moreCount && !showMore ? " dga-moreBtnHot" : ""),
+              onClick: function () { setShowMore(!showMore); },
+            },
+              showMore ? "收起筛选" : "更多筛选",
+              moreCount ? h("span", { className: "dga-moreNum" }, String(moreCount)) : null,
+              h("span", { className: "dga-moreCaret" }, showMore ? "▴" : "▾"))));
+      })(),
       h("div", { className: "dga-sub", style: { padding: "4px 2px 8px" } },
         filtered.length + " / " + codex.total + " 个角色 · 已收集 " + codex.owned +
         (codex.warning ? " · " + codex.warning : codex.cached ? " · 缓存" : "")),
