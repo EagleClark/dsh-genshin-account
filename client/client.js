@@ -2141,7 +2141,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     var sort = sortState[0], setSort = sortState[1];
     var elementState = React.useState("");
     var elementFilter = elementState[0], setElementFilter = elementState[1];
-    var modeState = React.useState("codex");
+    var modeState = React.useState("mine");
     var mode = modeState[0], setMode = modeState[1];
     var codexState = React.useState(null);
     var codex = codexState[0], setCodex = codexState[1];
@@ -2181,6 +2181,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       }, label);
     };
 
+    // 默认停在「我的」，图鉴按需切换；不预设 codex 以避免首帧短暂显示列表再跳动
     var modeSwitch = h(CharacterModeSwitch, {
       mode: mode,
       owned: list.length,
