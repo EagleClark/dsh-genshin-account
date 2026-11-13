@@ -111,7 +111,9 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
     ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
-    ".dga-modeSwitch{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);margin:10px 0 4px}",
+    ".dga-col{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}",
+    ".dga-modeRow{flex:0 0 auto;padding:10px 20px 2px}",
+    ".dga-modeSwitch{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2)}",
     ".dga-modeBtn{appearance:none;font:inherit;font-size:12.5px;line-height:1.7;cursor:pointer;border:0;border-radius:999px;padding:3px 14px;background:transparent;color:var(--dsw-alias-label-secondary);display:inline-flex;align-items:baseline;gap:6px;transition:background .16s ease,color .16s ease}",
     ".dga-modeBtn:hover{color:var(--dsw-alias-label-primary)}",
     ".dga-modeBtnOn{background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.18)}",
@@ -2107,11 +2109,16 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       total: codex ? codex.total : null,
       onChange: function (next) { setMode(next); },
     });
-    if (mode === "codex" && codex) return h(CharacterCodexView, { codex: codex, header: modeSwitch });
+    if (mode === "codex" && codex) {
+      return h("div", { className: "dga-col" },
+        h("div", { className: "dga-modeRow" }, modeSwitch),
+        h(CharacterCodexView, { codex: codex }));
+    }
 
-    return h("div", { className: "dga-body" },
+    return h("div", { className: "dga-col" },
+      h("div", { className: "dga-modeRow" }, modeSwitch),
+      h("div", { className: "dga-body" },
       h("div", { className: "dga-col-list" },
-        modeSwitch,
         h("input", {
           className: "dga-searcher",
           placeholder: "搜索角色…",
@@ -2147,7 +2154,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       h("div", { className: "dga-col-detail" },
         props.loading
           ? h("div", { className: "dga-col-detail" }, h(ListSkeleton))
-          : h(CharacterDetail, { character: props.selected, onExport: props.onExport })));
+          : h(CharacterDetail, { character: props.selected, onExport: props.onExport }))));
   }
 
   // ── weapons ─────────────────────────────────────────────────────────────
