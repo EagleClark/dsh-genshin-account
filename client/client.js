@@ -1827,6 +1827,7 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     for (var i = 0; i < (codex.groups || []).length; i += 1) {
       if (codex.groups[i].key === groupFilter) activeGroup = codex.groups[i];
     }
+    var order = activeGroup ? activeGroup.names : null;
     var filtered = rows.filter(function (c) {
       if (activeGroup && activeGroup.names.indexOf(c.name) === -1) return false;
       if (ownFilter === "owned" && !c.owned) return false;
@@ -1834,6 +1835,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
       if (query && String(c.name).indexOf(query) === -1) return false;
       return true;
     });
+    if (order) {
+      filtered = filtered.slice().sort(function (a, b) {
+        return order.indexOf(a.name) - order.indexOf(b.name);
+      });
+    }
     var chip = function (key, label, active, onClick) {
       return h("button", { key: key, className: "dga-chipBtn" + (active ? " dga-chipBtnOn" : ""), onClick: onClick }, label);
     };
