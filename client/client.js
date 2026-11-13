@@ -1833,6 +1833,12 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     if (codex.error) return h("div", { className: "dga-scroll" }, h("div", { className: "dga-empty" }, "图鉴读取失败：" + codex.error));
 
     var rows = codex.characters || [];
+    var typeStats = {};
+    for (var r = 0; r < rows.length; r += 1) {
+      var bucket = typeStats[rows[r].type] || (typeStats[rows[r].type] = { total: 0, owned: 0 });
+      bucket.total += 1;
+      if (rows[r].owned) bucket.owned += 1;
+    }
     var activeGroup = null;
     for (var i = 0; i < (codex.groups || []).length; i += 1) {
       if (codex.groups[i].key === groupFilter) activeGroup = codex.groups[i];
@@ -1886,7 +1892,15 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
                 };
               })(),
               onClick: function () { setWeaponFilter(on ? "" : pair[0]); },
-            }, pair[1]);
+            },
+              h("span", { className: "dga-pillLabel" }, pair[1]),
+              (function () {
+                var stat = typeStats[pair[0]];
+                if (!stat) return null;
+                var done = stat.owned >= stat.total;
+                return h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
+                  stat.owned, h("span", { className: "dga-pillTotal" }, "/" + stat.total));
+              })());
           })));
       })(),
       (function () {
