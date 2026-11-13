@@ -111,9 +111,11 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
     ".dga-wCodex .dga-sub{white-space:normal;line-height:1.35}",
     ".dga-wCodex .dga-wStats{white-space:normal;line-height:1.35;min-height:2.7em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
     ".dga-moreRow{display:flex;justify-content:center;padding:6px 0 26px}",
-    ".dga-pillRow{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 14px}",
-    ".dga-pill{appearance:none;font:inherit;cursor:pointer;display:inline-flex;align-items:baseline;gap:6px;padding:3px 11px;border-radius:999px;border:1px solid transparent;background:transparent;font-size:12.5px;line-height:1.7;transition:background .14s ease,border-color .14s ease}",
-    ".dga-pill:hover{background:color-mix(in srgb, currentColor 9%, transparent)}",
+    ".dga-filterRow{display:flex;align-items:flex-start;gap:10px;padding:2px 0}",
+    ".dga-filterCat{flex:0 0 28px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);padding-top:6px}",
+    ".dga-pillRow{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px;flex:1 1 auto;min-width:0}",
+    ".dga-pill{appearance:none;font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:baseline;gap:6px;padding:3px 12px;border-radius:999px;border:1.5px solid transparent;font-size:12.5px;line-height:1.7;transition:background .14s ease,border-color .14s ease,transform .12s ease}",
+    ".dga-pill:hover{transform:translateY(-1px)}",
     ".dga-pillOn{font-weight:600}",
     ".dga-pillLabel{letter-spacing:.01em}",
     ".dga-pillNum{font-size:11.5px;font-variant-numeric:tabular-nums;opacity:.75}",
@@ -1784,22 +1786,25 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
   // ── character list + detail ─────────────────────────────────────────────
   /** 收藏分组的颜色：地区用各国主题色，其余按印象分配。 */
   var COLLECT_COLOR = {
-    "body:萝莉": "#e08bb0",
-    "body:少女": "#d98a9a",
-    "body:成女": "#b48ad0",
-    "body:成男": "#5b8fd6",
-    "body:少年": "#5fae8a",
+    // 地区：九个国家/聚落各占一个色相
+    "region:蒙德": "#5fbf9a",
+    "region:璃月": "#d0a24a",
+    "region:稻妻": "#a07ad0",
+    "region:须弥": "#8fbf3f",
+    "region:枫丹": "#3f9fd8",
+    "region:纳塔": "#e0673a",
+    "region:至冬": "#7cc6e0",
+    "region:挪德卡莱": "#6f6fd0",
+    "region:其他": "#8b93a5",
+    // 体型：冷暖分区，粉系两个拉开明度
+    "body:萝莉": "#eda6c8",
+    "body:少女": "#c8508a",
+    "body:成女": "#b07ad6",
+    "body:成男": "#4f7fd0",
+    "body:少年": "#3fa88f",
+    // 阵营
     "list:七神": "#d8b566",
     "list:harbinger": "#c2564f",
-    "region:蒙德": "#74c2a8",
-    "region:璃月": "#d3a24a",
-    "region:稻妻": "#a48bd0",
-    "region:须弥": "#8fbf4d",
-    "region:枫丹": "#4aa8d8",
-    "region:纳塔": "#e2683c",
-    "region:至冬": "#9fd6e3",
-    "region:挪德卡莱": "#8a7fd0",
-    "region:其他": "#8b93a5",
   };
   function collectColor(key) {
     return COLLECT_COLOR[key] || "var(--dsw-alias-label-secondary)";
@@ -1847,26 +1852,42 @@ window.__ModuleLoader__.load({ id: "dsh-genshin-account", factory: (require) => 
           onChange: function (event) { setQuery(event.target.value); },
           style: { maxWidth: 200 },
         })),
-      h("div", { className: "dga-pillRow" }, (codex.groups || []).map(function (group) {
-        var on = groupFilter === group.key;
-        var done = group.total > 0 && group.owned >= group.total;
-        var color = collectColor(group.key);
-        var tint = { color: color, borderColor: "color-mix(in srgb, " + color + " 42%, transparent)" };
-        if (on) {
-          tint.background = "color-mix(in srgb, " + color + " 16%, transparent)";
-          tint.borderColor = color;
-        }
-        return h("button", {
-          key: group.key,
-          className: "dga-pill" + (on ? " dga-pillOn" : ""),
-          style: tint,
-          title: group.missing.length ? "缺：" + group.missing.join("、") : "已集齐",
-          onClick: function () { setGroupFilter(on ? "" : group.key); },
-        },
-          h("span", { className: "dga-pillLabel" }, group.label),
-          h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
-            group.owned, h("span", { className: "dga-pillTotal" }, "/" + group.total)));
-      })),
+      (function () {
+        var CATS = [
+          { key: "region:", label: "地区" },
+          { key: "body:", label: "体型" },
+          { key: "list:", label: "阵营" },
+        ];
+        return CATS.map(function (cat) {
+          var members = (codex.groups || []).filter(function (group) {
+            return group.key.indexOf(cat.key) === 0;
+          });
+          if (!members.length) return null;
+          return h("div", { className: "dga-filterRow", key: cat.label },
+            h("span", { className: "dga-filterCat" }, cat.label),
+            h("div", { className: "dga-pillRow" }, members.map(function (group) {
+              var on = groupFilter === group.key;
+              var done = group.total > 0 && group.owned >= group.total;
+              var color = collectColor(group.key);
+              var style = {
+                color: color,
+                borderColor: "color-mix(in srgb, " + color + " 55%, transparent)",
+              };
+              style.background = "color-mix(in srgb, " + color + " " + (on ? 22 : 12) + "%, transparent)";
+              if (on) style.borderColor = color;
+              return h("button", {
+                key: group.key,
+                className: "dga-pill" + (on ? " dga-pillOn" : ""),
+                style: style,
+                title: group.missing.length ? "缺：" + group.missing.join("、") : "已集齐",
+                onClick: function () { setGroupFilter(on ? "" : group.key); },
+              },
+                h("span", { className: "dga-pillLabel" }, group.label),
+                h("span", { className: "dga-pillNum" + (done ? " dga-pillNumDone" : "") },
+                  group.owned, h("span", { className: "dga-pillTotal" }, "/" + group.total)));
+            })));
+        });
+      })(),
       h("div", { className: "dga-sub", style: { padding: "4px 2px 8px" } },
         filtered.length + " / " + codex.total + " 个角色 · 已收集 " + codex.owned +
         (codex.warning ? " · " + codex.warning : codex.cached ? " · 缓存" : "")),
